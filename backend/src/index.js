@@ -5,7 +5,7 @@ import multer from 'multer';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
 import { loadRoutes } from './routes/loads.js';
-import { documentRoutes } from './routes/documents.js';
+import documentRoutes from './routes/documents.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/logger.js';
 import { requestId } from './middleware/requestId.js';
