@@ -237,5 +237,21 @@ export const DocumentService = {
 
     if (error) throw error;
     return !!data;
+  },
+
+  /**
+   * Get all documents for a user
+   * @param {string} userId - The ID of the user
+   * @returns {Promise<Array>} Array of documents
+   */
+  getAllDocuments: async (userId) => {
+    const { data, error } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
   }
 }; 
