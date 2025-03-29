@@ -1,6 +1,6 @@
 import express from 'express';
 import { z } from 'zod';
-import { authenticateUser } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { LoadService } from '../services/loadService.js';
 
 const router = express.Router();
@@ -13,7 +13,7 @@ const createLoadSchema = z.object({
 });
 
 // Routes
-router.post('/', authenticateUser, async (req, res, next) => {
+router.post('/', requireAuth, async (req, res, next) => {
   try {
     const validatedData = createLoadSchema.parse(req.body);
     const load = await LoadService.createLoad(req.user.id, validatedData);
@@ -23,7 +23,7 @@ router.post('/', authenticateUser, async (req, res, next) => {
   }
 });
 
-router.get('/', authenticateUser, async (req, res, next) => {
+router.get('/', requireAuth, async (req, res, next) => {
   try {
     const loads = await LoadService.getAllLoads(req.user.id);
     res.json(loads);
@@ -32,7 +32,7 @@ router.get('/', authenticateUser, async (req, res, next) => {
   }
 });
 
-router.get('/:id', authenticateUser, async (req, res, next) => {
+router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const load = await LoadService.getLoadById(req.user.id, req.params.id);
     res.json(load);
