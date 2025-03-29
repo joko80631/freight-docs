@@ -22,6 +22,15 @@ const uploadSchema = z.object({
 });
 
 // Routes
+router.get('/', requireAuth, async (req, res, next) => {
+  try {
+    const documents = await DocumentService.getAllDocuments(req.user.id);
+    res.json(documents);
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/upload', requireAuth, upload.single('file'), validateFile, async (req, res, next) => {
   try {
     const validatedData = uploadSchema.parse(req.body);
