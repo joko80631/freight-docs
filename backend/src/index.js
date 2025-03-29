@@ -33,6 +33,38 @@ export const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Request size limits
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// CORS configuration with whitelist
+const allowedOrigins = [
+  'https://freight-docs-ten.vercel.app',
+  'http://localhost:3000'
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true
+}));
+
+// Root path handler
+app.get('/', (req, res) => {
+  res.json({
+    name: 'Freight Documents API',
+    version: '1.0.0',
+    status: 'healthy',
+    endpoints: ['/healthz', '/api/loads', '/api/documents']
+  });
+});
+
 // Health check endpoint
 app.get('/healthz', async (req, res) => {
   try {
@@ -105,18 +137,6 @@ try {
   // Fallback to basic security headers
   app.use(helmet());
 }
-
-// Request size limits
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// CORS configuration
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
 
 // Request ID middleware
 app.use(requestId);
