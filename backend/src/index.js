@@ -10,9 +10,18 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { requestLogger } from './middleware/logger.js';
 import { requestId } from './middleware/requestId.js';
 import { loadCreationLimiter, documentUploadLimiter } from './middleware/rateLimit.js';
+import { validateEnv } from './utils/env.js';
 
 // Load environment variables
 dotenv.config();
+
+// Validate environment variables
+try {
+  validateEnv();
+} catch (error) {
+  console.error('Environment validation failed:', error.message);
+  process.exit(1);
+}
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -20,20 +29,36 @@ const port = process.env.PORT || 3001;
 // Initialize Supabase client
 export const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 // Health check endpoint
 app.get('/healthz', async (req, res) => {
   try {
-    // Check Supabase connection
-    const { data, error } = await supabase.from('health_check').select('count').limit(1);
+    // Check Supabase connection by querying the loads table
+    const { data, error } = await supabase
+      .from('loads')
+      .select('count')
+      .limit(1);
+    
     if (error) throw error;
+    
+    // Check storage bucket access
+    const { data: storageData, error: storageError } = await supabase
+      .storage
+      .from('documents')
+      .list('', { limit: 1 });
+    
+    if (storageError) throw storageError;
     
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      supabase: 'connected'
+      supabase: {
+        database: 'connected',
+        storage: 'accessible'
+      },
+      environment: process.env.NODE_ENV || 'development'
     });
   } catch (error) {
     res.status(503).json({
