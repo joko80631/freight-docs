@@ -23,6 +23,27 @@ export const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY
 );
 
+// Health check endpoint
+app.get('/healthz', async (req, res) => {
+  try {
+    // Check Supabase connection
+    const { data, error } = await supabase.from('health_check').select('count').limit(1);
+    if (error) throw error;
+    
+    res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      supabase: 'connected'
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+});
+
 // Security middleware with error handling
 try {
   app.use(helmet({
