@@ -1,7 +1,7 @@
 import express from 'express';
 import multer from 'multer';
 import { z } from 'zod';
-import { authenticateUser } from '../middleware/auth.js';
+import { requireAuth } from '../middleware/auth.js';
 import { validateFile } from '../middleware/fileValidation.js';
 import { DocumentService } from '../services/documentService.js';
 import { LoadService } from '../services/loadService.js';
@@ -22,7 +22,7 @@ const uploadSchema = z.object({
 });
 
 // Routes
-router.post('/upload', authenticateUser, upload.single('file'), validateFile, async (req, res, next) => {
+router.post('/upload', requireAuth, upload.single('file'), validateFile, async (req, res, next) => {
   try {
     const validatedData = uploadSchema.parse(req.body);
     
@@ -46,7 +46,7 @@ router.post('/upload', authenticateUser, upload.single('file'), validateFile, as
   }
 });
 
-router.get('/:id', authenticateUser, async (req, res, next) => {
+router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const document = await DocumentService.getDocumentById(req.user.id, req.params.id);
     res.json(document);
@@ -55,7 +55,7 @@ router.get('/:id', authenticateUser, async (req, res, next) => {
   }
 });
 
-router.get('/:id/download', authenticateUser, async (req, res, next) => {
+router.get('/:id/download', requireAuth, async (req, res, next) => {
   try {
     const document = await DocumentService.getDocumentById(req.user.id, req.params.id);
     const signedUrl = await DocumentService.generateSignedUrl(document.file_url);
