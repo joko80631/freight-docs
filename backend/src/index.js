@@ -24,6 +24,7 @@ try {
 }
 
 const app = express();
+app.set('trust proxy', true);
 const port = process.env.PORT || 3001;
 
 // Initialize Supabase client
