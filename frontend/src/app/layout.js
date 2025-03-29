@@ -1,5 +1,6 @@
 import { Inter } from 'next/font/google'
 import Link from 'next/link'
+import { Toaster } from 'react-hot-toast'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -48,6 +49,7 @@ export default function RootLayout({ children }) {
         <main className="max-w-container mx-auto px-4 py-8">
           {children}
         </main>
+        <Toaster position="top-right" />
       </body>
     </html>
   )

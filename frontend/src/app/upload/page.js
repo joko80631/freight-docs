@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 
 export default function UploadPage() {
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loads, setLoads] = useState([])
   const [isLoadingLoads, setIsLoadingLoads] = useState(true)
@@ -19,7 +18,7 @@ export default function UploadPage() {
         const data = await response.json()
         setLoads(data)
       } catch (err) {
-        setError('Failed to load available loads')
+        toast.error('Failed to load available loads')
         console.error('Error fetching loads:', err)
       } finally {
         setIsLoadingLoads(false)
@@ -31,8 +30,6 @@ export default function UploadPage() {
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setError('')
-    setSuccess('')
     setIsSubmitting(true)
 
     const formData = new FormData(e.target)
@@ -40,7 +37,7 @@ export default function UploadPage() {
     const loadId = formData.get('load_id')
 
     if (!file) {
-      setError('Please select a file')
+      toast.error('Please select a file')
       setIsSubmitting(false)
       return
     }
@@ -56,10 +53,10 @@ export default function UploadPage() {
         throw new Error(error.message || 'Failed to upload file')
       }
 
-      setSuccess('File uploaded successfully')
+      toast.success('File uploaded successfully')
       e.target.reset()
     } catch (err) {
-      setError(err.message)
+      toast.error(err.message || 'Failed to upload file')
     } finally {
       setIsSubmitting(false)
     }
@@ -68,18 +65,6 @@ export default function UploadPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Upload Document</h1>
-      
-      {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded">
-          {error}
-        </div>
-      )}
-      
-      {success && (
-        <div className="p-4 bg-green-50 border border-green-200 text-green-700 rounded">
-          {success}
-        </div>
-      )}
       
       <form onSubmit={handleSubmit} className="space-y-6 border border-primary p-6">
         <div>
@@ -92,6 +77,7 @@ export default function UploadPage() {
             name="file"
             accept=".pdf,.txt"
             className="w-full border border-primary p-2"
+            disabled={isSubmitting}
           />
           <p className="mt-1 text-sm text-gray-600">
             Supported formats: PDF, TXT (max 10MB)
@@ -106,7 +92,7 @@ export default function UploadPage() {
             id="load_id"
             name="load_id"
             className="w-full border border-primary p-2"
-            disabled={isLoadingLoads}
+            disabled={isLoadingLoads || isSubmitting}
           >
             <option value="">Select a load...</option>
             {isLoadingLoads ? (
@@ -126,9 +112,19 @@ export default function UploadPage() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full px-4 py-2 border border-primary hover:bg-primary hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-4 py-2 border border-primary hover:bg-primary hover:text-background transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
-          {isSubmitting ? 'Uploading...' : 'Upload Document'}
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Uploading...
+            </>
+          ) : (
+            'Upload Document'
+          )}
         </button>
       </form>
     </div>
