@@ -1,9 +1,9 @@
-import { Inter } from 'next/font/google'
+// import { Inter } from 'next/font/google'
 import Link from 'next/link'
 import { Toaster } from 'react-hot-toast'
 import './globals.css'
 
-const inter = Inter({ subsets: ['latin'] })
+// const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'Freight Document System',
@@ -13,7 +13,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-background text-primary min-h-screen`}>
+      <body className="bg-background text-primary min-h-screen">
         <nav className="border-b border-primary">
           <div className="max-w-container mx-auto px-4">
             <div className="flex items-center h-16 space-x-8">
