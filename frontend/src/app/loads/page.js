@@ -8,16 +8,24 @@ import toast from 'react-hot-toast';
 import { Loader2, Plus } from 'lucide-react';
 import SupabaseTest from '@/components/SupabaseTest';
 
-// Get environment variables and log them for debugging
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-console.log('Supabase URL configured as:', supabaseUrl);
-console.log('Supabase Key available:', !!supabaseKey);
-
-// Initialize Supabase with explicit values
+// Temporarily hardcode Supabase credentials instead of using environment variables
+// This is just for testing - we'll revert to environment variables after confirming it works
 const supabase = createClientComponentClient({
-  supabaseUrl,
-  supabaseKey,
+  supabaseUrl: "https://wjgnnjnbnifprcnlazis.supabase.co",
+  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ25uam5ibmlmcHJjbmxhemlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyNDc5NTEsImV4cCI6MjA1ODgyMzk1MX0.rcCor1RadYKfbwBxuioZyHwmQT-5x57bvJOkv_5R2zE",
+  options: {
+    global: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false
+    },
+    realtime: {
+      eventsPerSecond: 10,
+      headers: {
+        'X-Client-Info': 'freight-docs-client',
+      }
+    }
+  }
 });
 
 // Required document types constant
@@ -140,6 +148,11 @@ export default function LoadsPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
+      <div className="p-4 m-4 bg-red-50 rounded-lg">
+        <h3 className="font-bold text-lg">Debug Info</h3>
+        <p>Using hardcoded Supabase credentials for testing</p>
+      </div>
+      
       <SupabaseTest />
       
       <div className="flex justify-between items-center mb-6">
