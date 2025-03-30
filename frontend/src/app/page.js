@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import toast from 'react-hot-toast'
+import DocumentStatusIndicator from '@/components/ui/DocumentStatusIndicator'
 
 const DOCUMENT_TYPES = {
   BOL: 'Bill of Lading',
@@ -23,6 +24,7 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true)
   const [sortBy, setSortBy] = useState('created_at')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [filterDocuments, setFilterDocuments] = useState('all')
   const supabase = createClientComponentClient()
 
   useEffect(() => {
@@ -54,12 +56,6 @@ export default function Dashboard() {
     }
   }
 
-  const getDocumentCompletion = (load) => {
-    const requiredDocs = Object.keys(DOCUMENT_TYPES)
-    const completedDocs = load.documents?.filter(doc => doc.status === 'completed') || []
-    return (completedDocs.length / requiredDocs.length) * 100
-  }
-
   const getStatusColor = (status) => {
     switch (status) {
       case LOAD_STATUSES.PENDING:
@@ -75,9 +71,21 @@ export default function Dashboard() {
     }
   }
 
-  const filteredLoads = loads.filter(load => 
-    filterStatus === 'all' || load.status === filterStatus
-  )
+  const getDocumentStatus = (load) => {
+    const requiredDocs = Object.keys(DOCUMENT_TYPES)
+    const completedDocs = load.documents?.filter(doc => doc.status === 'completed') || []
+    const completionPercentage = (completedDocs.length / requiredDocs.length) * 100
+    
+    if (completionPercentage === 100) return 'complete'
+    if (completionPercentage > 0) return 'partial'
+    return 'incomplete'
+  }
+
+  const filteredLoads = loads.filter(load => {
+    const statusMatch = filterStatus === 'all' || load.status === filterStatus
+    const documentMatch = filterDocuments === 'all' || getDocumentStatus(load) === filterDocuments
+    return statusMatch && documentMatch
+  })
 
   return (
     <div className="space-y-6">
@@ -112,6 +120,17 @@ export default function Dashboard() {
             <option key={status} value={status}>{status}</option>
           ))}
         </select>
+
+        <select
+          value={filterDocuments}
+          onChange={(e) => setFilterDocuments(e.target.value)}
+          className="border border-primary rounded-md p-2"
+        >
+          <option value="all">All Documents</option>
+          <option value="complete">Complete Documents</option>
+          <option value="partial">Partial Documents</option>
+          <option value="incomplete">No Documents</option>
+        </select>
       </div>
 
       {isLoading ? (
@@ -141,16 +160,7 @@ export default function Dashboard() {
               </div>
 
               <div className="mt-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Document Completion</span>
-                  <span>{Math.round(getDocumentCompletion(load))}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-primary h-2 rounded-full"
-                    style={{ width: `${getDocumentCompletion(load)}%` }}
-                  ></div>
-                </div>
+                <DocumentStatusIndicator documents={load.documents || []} />
               </div>
 
               <div className="mt-4 flex space-x-4 text-sm text-gray-600">
@@ -162,24 +172,6 @@ export default function Dashboard() {
                   <span className="font-medium">Delivery:</span>{' '}
                   {new Date(load.delivery_date).toLocaleDateString()}
                 </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                {Object.entries(DOCUMENT_TYPES).map(([type, label]) => {
-                  const doc = load.documents?.find(d => d.type === type)
-                  return (
-                    <span
-                      key={type}
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        doc?.status === 'completed'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {label}
-                    </span>
-                  )
-                })}
               </div>
             </Link>
           ))}

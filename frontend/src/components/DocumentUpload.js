@@ -1,25 +1,35 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ACCEPTED_FILE_TYPES = {
-  'application/pdf': ['.pdf'],
-  'image/jpeg': ['.jpg', '.jpeg'],
-  'image/png': ['.png']
-};
-
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000; // 1 second
 
+/**
+ * DocumentUpload component for handling file uploads in the freight management system.
+ * Supports drag-and-drop and click-to-upload functionality with file validation.
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.loadId - ID of the load to associate documents with
+ * @param {Function} props.onUploadComplete - Callback function called after successful upload
+ * @returns {JSX.Element} Document upload component
+ */
 export default function DocumentUpload({ loadId, onUploadComplete }) {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const supabase = createClientComponentClient();
+
+  // Memoize accepted file types to prevent unnecessary re-renders
+  const ACCEPTED_FILE_TYPES = useMemo(() => ({
+    'application/pdf': ['.pdf'],
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png']
+  }), []);
 
   const onDrop = useCallback((acceptedFiles) => {
     setFiles(prev => [...prev, ...acceptedFiles]);
@@ -32,18 +42,25 @@ export default function DocumentUpload({ loadId, onUploadComplete }) {
     multiple: true
   });
 
-  const removeFile = (index) => {
+  const removeFile = useCallback((index) => {
     setFiles(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
-  const formatFileSize = (bytes) => {
+  // Memoize formatFileSize function
+  const formatFileSize = useCallback((bytes) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  }, []);
 
+  /**
+   * Uploads a single file to Supabase storage and records it in the database
+   * @param {File} file - The file to upload
+   * @param {number} retryCount - Current retry attempt number
+   * @returns {Promise<Object>} Upload result with success status and file info
+   */
   const uploadFile = async (file, retryCount = 0) => {
     try {
       // Get current user
@@ -94,8 +111,6 @@ export default function DocumentUpload({ loadId, onUploadComplete }) {
 
       return { success: true, fileName: file.name };
     } catch (error) {
-      console.error('Upload error:', error);
-      
       // Retry logic
       if (retryCount < MAX_RETRIES) {
         await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
@@ -106,6 +121,9 @@ export default function DocumentUpload({ loadId, onUploadComplete }) {
     }
   };
 
+  /**
+   * Handles the upload of all selected files
+   */
   const handleUpload = async () => {
     if (files.length === 0) return;
 
