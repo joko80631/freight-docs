@@ -10,27 +10,31 @@ export async function middleware(req) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Protected routes that require authentication
-  const protectedRoutes = ['/loads', '/upload']
+  // Define protected routes
+  const protectedRoutes = [
+    '/loads',
+    '/upload',
+    '/documents',
+    '/settings'
+  ]
+
+  // Check if the current path is protected
   const isProtectedRoute = protectedRoutes.some(route => 
     req.nextUrl.pathname.startsWith(route)
   )
 
-  // Auth routes that should redirect to dashboard if already logged in
-  const authRoutes = ['/login', '/signup']
-  const isAuthRoute = authRoutes.some(route => 
-    req.nextUrl.pathname.startsWith(route)
-  )
-
-  // Redirect unauthenticated users to login
+  // If accessing a protected route without a session
   if (isProtectedRoute && !session) {
-    const redirectUrl = new URL('/login', req.url)
-    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
+    // Store the original URL for redirect after login
+    const redirectUrl = req.nextUrl.pathname + req.nextUrl.search
+    const redirectTo = new URL('/login', req.url)
+    redirectTo.searchParams.set('redirectTo', redirectUrl)
+
+    return NextResponse.redirect(redirectTo)
   }
 
-  // Redirect authenticated users away from auth pages
-  if (isAuthRoute && session) {
+  // If accessing auth pages while logged in, redirect to dashboard
+  if (session && (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/signup')) {
     return NextResponse.redirect(new URL('/loads', req.url))
   }
 
