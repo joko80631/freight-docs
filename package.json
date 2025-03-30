@@ -37,5 +37,12 @@
     "setupFiles": ["<rootDir>/jest.setup.js"],
     "setupFilesAfterEnv": ["<rootDir>/jest.afterEnv.js"],
     "testMatch": ["**/*.test.js"]
+  },
+  "vercel": {
+    "version": 2,
+    "buildCommand": "npm run build",
+    "devCommand": "npm run dev",
+    "installCommand": "npm install",
+    "framework": "nextjs"
   }
 }
