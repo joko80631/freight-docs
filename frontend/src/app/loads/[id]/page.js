@@ -1,61 +1,183 @@
-// Mock data
-const load = {
-  id: 1,
-  load_number: 'LOAD-001',
-  carrier_name: 'Example Carrier',
-  delivery_date: '2024-03-29',
-  documents: [
-    { type: 'POD', confidence: 0.95, file_name: 'pod.pdf' },
-    { type: 'BOL', confidence: 0.88, file_name: 'bol.pdf' },
-  ],
-  missing_documents: ['Invoice'],
-  completeness_percentage: 66.67,
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import toast from 'react-hot-toast'
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
+import DocumentList from './components/DocumentList'
+import DocumentUpload from './components/DocumentUpload'
+import LoadInfo from './components/LoadInfo'
+import DocumentStatus from './components/DocumentStatus'
+
+const DOCUMENT_TYPES = {
+  BOL: 'Bill of Lading',
+  POD: 'Proof of Delivery',
+  INVOICE: 'Invoice'
 }
 
-export default function LoadDetailPage({ params }) {
+export default function LoadDetailPage() {
+  const { id } = useParams()
+  const [load, setLoad] = useState(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [documents, setDocuments] = useState([])
+  const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    fetchLoadDetails()
+  }, [id])
+
+  async function fetchLoadDetails() {
+    try {
+      // Fetch load details
+      const { data: loadData, error: loadError } = await supabase
+        .from('loads')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (loadError) throw loadError
+
+      // Fetch documents
+      const { data: docsData, error: docsError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('load_id', id)
+        .order('created_at', { ascending: false })
+
+      if (docsError) throw docsError
+
+      setLoad(loadData)
+      setDocuments(docsData || [])
+    } catch (error) {
+      toast.error('Failed to fetch load details')
+      console.error('Error fetching load details:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDocumentUpload = async (file) => {
+    try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError) throw userError
+
+      // Upload file to user-specific folder
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/${id}/${Date.now()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      // Create document record
+      const { data: docData, error: docError } = await supabase
+        .from('documents')
+        .insert([
+          {
+            load_id: id,
+            type: 'pending', // Will be updated after classification
+            status: 'processing',
+            file_path: fileName,
+            user_id: user.id
+          }
+        ])
+        .select()
+        .single()
+
+      if (docError) throw docError
+
+      // Update local state
+      setDocuments(prev => [docData, ...prev])
+      toast.success('Document uploaded successfully')
+
+      // Trigger classification (this would be handled by your backend)
+      // For now, we'll simulate it
+      setTimeout(() => {
+        const classifiedDoc = {
+          ...docData,
+          type: 'BOL',
+          status: 'completed',
+          classification_confidence: 0.95,
+          is_manual_classification: false
+        }
+        setDocuments(prev => 
+          prev.map(doc => doc.id === docData.id ? classifiedDoc : doc)
+        )
+      }, 2000)
+    } catch (error) {
+      toast.error('Failed to upload document')
+      console.error('Error uploading document:', error)
+    }
+  }
+
+  const handleClassificationUpdate = async (documentId, newType, isManual = true) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .update({
+          type: newType,
+          is_manual_classification: isManual
+        })
+        .eq('id', documentId)
+
+      if (error) throw error
+
+      setDocuments(prev =>
+        prev.map(doc =>
+          doc.id === documentId
+            ? { ...doc, type: newType, is_manual_classification: isManual }
+            : doc
+        )
+      )
+
+      toast.success('Document classification updated')
+    } catch (error) {
+      toast.error('Failed to update classification')
+      console.error('Error updating classification:', error)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+
+  if (!load) {
+    return (
+      <div className="text-center py-12">
+        <h2 className="text-xl font-semibold">Load not found</h2>
+        <p className="text-gray-600 mt-2">The requested load could not be found.</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{load.load_number}</h1>
-        <div className="text-sm">
-          <span className="font-medium">Status:</span>{' '}
-          <span className={load.completeness_percentage === 100 ? 'text-green-600' : 'text-yellow-600'}>
-            {load.completeness_percentage}% Complete
-          </span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="border border-primary p-6">
-          <h2 className="text-lg font-semibold mb-4">Load Details</h2>
-          <dl className="space-y-2">
-            <div>
-              <dt className="text-sm text-gray-600">Carrier</dt>
-              <dd className="font-medium">{load.carrier_name}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-gray-600">Delivery Date</dt>
-              <dd className="font-medium">{load.delivery_date}</dd>
-            </div>
-          </dl>
-        </div>
-
-        <div className="border border-primary p-6">
-          <h2 className="text-lg font-semibold mb-4">Documents</h2>
-          <div className="space-y-4">
-            {load.documents.map((doc) => (
-              <div key={doc.type} className="flex justify-between items-center">
-                <span className="font-medium">{doc.type}</span>
-                <span className="text-sm text-gray-600">{doc.file_name}</span>
-              </div>
-            ))}
-            {load.missing_documents.map((doc) => (
-              <div key={doc} className="flex justify-between items-center text-gray-400">
-                <span>{doc}</span>
-                <span className="text-sm">Missing</span>
-              </div>
-            ))}
+      <LoadInfo load={load} />
+      
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <DocumentStatus 
+            documents={documents}
+            onClassificationUpdate={handleClassificationUpdate}
+          />
+          
+          <div className="mt-8">
+            <DocumentUpload onUpload={handleDocumentUpload} />
           </div>
+        </div>
+
+        <div>
+          <DocumentList 
+            documents={documents}
+            onClassificationUpdate={handleClassificationUpdate}
+          />
         </div>
       </div>
     </div>

@@ -1,12 +1,84 @@
-import Link from 'next/link'
+'use client'
 
-// Mock data
-const loads = [
-  { id: 1, load_number: 'LOAD-001', carrier_name: 'Example Carrier', delivery_date: '2024-03-29' },
-  { id: 2, load_number: 'LOAD-002', carrier_name: 'Another Carrier', delivery_date: '2024-03-30' },
-]
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import toast from 'react-hot-toast'
+
+const DOCUMENT_TYPES = {
+  BOL: 'Bill of Lading',
+  POD: 'Proof of Delivery',
+  INVOICE: 'Invoice'
+}
+
+const LOAD_STATUSES = {
+  PENDING: 'Pending',
+  IN_TRANSIT: 'In Transit',
+  DELIVERED: 'Delivered',
+  COMPLETED: 'Completed'
+}
 
 export default function Dashboard() {
+  const [loads, setLoads] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [sortBy, setSortBy] = useState('created_at')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    fetchLoads()
+  }, [])
+
+  async function fetchLoads() {
+    try {
+      const { data: loadsData, error: loadsError } = await supabase
+        .from('loads')
+        .select(`
+          *,
+          documents (
+            id,
+            type,
+            status
+          )
+        `)
+        .order(sortBy, { ascending: false })
+
+      if (loadsError) throw loadsError
+
+      setLoads(loadsData || [])
+    } catch (error) {
+      toast.error('Failed to fetch loads')
+      console.error('Error fetching loads:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const getDocumentCompletion = (load) => {
+    const requiredDocs = Object.keys(DOCUMENT_TYPES)
+    const completedDocs = load.documents?.filter(doc => doc.status === 'completed') || []
+    return (completedDocs.length / requiredDocs.length) * 100
+  }
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case LOAD_STATUSES.PENDING:
+        return 'bg-yellow-100 text-yellow-800'
+      case LOAD_STATUSES.IN_TRANSIT:
+        return 'bg-blue-100 text-blue-800'
+      case LOAD_STATUSES.DELIVERED:
+        return 'bg-green-100 text-green-800'
+      case LOAD_STATUSES.COMPLETED:
+        return 'bg-purple-100 text-purple-800'
+      default:
+        return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const filteredLoads = loads.filter(load => 
+    filterStatus === 'all' || load.status === filterStatus
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -19,26 +91,100 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      <div className="border border-primary divide-y divide-primary">
-        {loads.map((load) => (
-          <Link 
-            key={load.id} 
-            href={`/loads/${load.id}`}
-            className="block p-4 hover:bg-gray-50 transition-colors"
-          >
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="font-semibold">{load.load_number}</h2>
-                <p className="text-sm text-gray-600">{load.carrier_name}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm">{load.delivery_date}</p>
-                <p className="text-sm text-gray-600">View Details →</p>
-              </div>
-            </div>
-          </Link>
-        ))}
+      <div className="flex space-x-4">
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="border border-primary rounded-md p-2"
+        >
+          <option value="created_at">Sort by Date</option>
+          <option value="load_number">Sort by Load Number</option>
+          <option value="status">Sort by Status</option>
+        </select>
+
+        <select
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          className="border border-primary rounded-md p-2"
+        >
+          <option value="all">All Statuses</option>
+          {Object.values(LOAD_STATUSES).map(status => (
+            <option key={status} value={status}>{status}</option>
+          ))}
+        </select>
       </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      ) : filteredLoads.length === 0 ? (
+        <div className="text-center py-12 border border-primary rounded-lg">
+          <p className="text-gray-600">No loads found</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredLoads.map((load) => (
+            <Link 
+              key={load.id} 
+              href={`/loads/${load.id}`}
+              className="block border border-primary rounded-lg p-4 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="font-semibold">{load.load_number}</h2>
+                  <p className="text-sm text-gray-600">{load.carrier_name}</p>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(load.status)}`}>
+                  {load.status}
+                </span>
+              </div>
+
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Document Completion</span>
+                  <span>{Math.round(getDocumentCompletion(load))}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full"
+                    style={{ width: `${getDocumentCompletion(load)}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              <div className="mt-4 flex space-x-4 text-sm text-gray-600">
+                <div>
+                  <span className="font-medium">Created:</span>{' '}
+                  {new Date(load.created_at).toLocaleDateString()}
+                </div>
+                <div>
+                  <span className="font-medium">Delivery:</span>{' '}
+                  {new Date(load.delivery_date).toLocaleDateString()}
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {Object.entries(DOCUMENT_TYPES).map(([type, label]) => {
+                  const doc = load.documents?.find(d => d.type === type)
+                  return (
+                    <span
+                      key={type}
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        doc?.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {label}
+                    </span>
+                  )
+                })}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 } 
