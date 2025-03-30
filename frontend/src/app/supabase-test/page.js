@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabase'
 
 export default function SupabaseTest() {
   const [status, setStatus] = useState('Testing...')
@@ -10,7 +10,6 @@ export default function SupabaseTest() {
   useEffect(() => {
     const test = async () => {
       try {
-        const supabase = createClientComponentClient()
         const { data, error } = await supabase.from('loads').select('*').limit(1)
         if (error) {
           setStatus('Error')
