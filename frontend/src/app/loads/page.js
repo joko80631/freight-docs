@@ -29,42 +29,39 @@ export default function LoadsPage() {
       setIsLoading(true);
       setError(null);
       
-      const response = await fetch(API_ENDPOINTS.loads.list, {
-        headers: getApiHeaders()
-      });
+      // Log environment variables (redacted for security)
+      console.log('Supabase URL configured:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Yes' : 'No');
+      console.log('Supabase Key configured:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Yes' : 'No');
+      
+      // Log authentication status
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('User authenticated:', user ? 'Yes' : 'No');
+      
+      console.log('Attempting to fetch loads from Supabase...');
+      
+      const { data: loadsData, error: loadsError } = await supabase
+        .from('loads')
+        .select(`
+          *,
+          documents (
+            id,
+            type,
+            status
+          )
+        `)
+        .order(sortBy, { ascending: false });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch loads');
+      if (loadsError) {
+        console.error('Supabase error details:', loadsError);
+        throw new Error(`Failed to fetch loads: ${loadsError.message}`);
       }
-
-      const loadsData = await response.json();
       
-      // Fetch documents for all loads
-      const docsResponse = await fetch(API_ENDPOINTS.documents.list, {
-        headers: getApiHeaders()
-      });
-
-      if (!docsResponse.ok) {
-        throw new Error('Failed to fetch documents');
-      }
-
-      const documentsData = await docsResponse.json();
-      
-      // Group documents by load_id
-      const documentsMap = {};
-      documentsData?.forEach(doc => {
-        if (!documentsMap[doc.load_id]) {
-          documentsMap[doc.load_id] = [];
-        }
-        documentsMap[doc.load_id].push(doc);
-      });
-      
-      setDocuments(documentsMap);
+      console.log('Loads fetched successfully:', loadsData);
       setLoads(loadsData || []);
-    } catch (err) {
-      console.error('Error fetching data:', err);
-      setError('Failed to fetch loads');
-      toast.error('Failed to fetch loads');
+    } catch (error) {
+      console.error('Error fetching loads:', error);
+      setError(error.message);
+      toast.error(`Failed to fetch loads: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
