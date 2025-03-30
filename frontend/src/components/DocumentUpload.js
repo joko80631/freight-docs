@@ -9,7 +9,6 @@ import { API_ENDPOINTS, getApiHeaders } from '@/config/api';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
 
 /**
  * DocumentUpload component for handling file uploads in the freight management system.
@@ -111,8 +110,9 @@ export default function DocumentUpload({ loadId, onUploadComplete }) {
       return { success: true, filePath };
     } catch (error) {
       console.error('Upload error:', error);
-      if (retryCount < 3) {
+      if (retryCount < MAX_RETRIES) {
         // Retry after exponential backoff
+        // eslint-disable-next-line no-undef
         await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
         return uploadFile(file, retryCount + 1);
       }
@@ -129,28 +129,33 @@ export default function DocumentUpload({ loadId, onUploadComplete }) {
     setUploading(true);
     const results = [];
 
-    // Upload files sequentially for better control
-    for (const file of files) {
-      const result = await uploadFile(file);
-      results.push(result);
-    }
+    try {
+      // Upload files sequentially for better control
+      for (const file of files) {
+        const result = await uploadFile(file);
+        results.push(result);
+      }
 
-    const successful = results.filter(r => r.success).length;
-    const failed = results.filter(r => !r.success).length;
+      const successful = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
 
-    if (successful > 0) {
-      toast.success(`Successfully uploaded ${successful} document${successful > 1 ? 's' : ''}`);
-    }
-    if (failed > 0) {
-      toast.error(`Failed to upload ${failed} document${failed > 1 ? 's' : ''}`);
-    }
+      if (successful > 0) {
+        toast.success(`Successfully uploaded ${successful} document${successful > 1 ? 's' : ''}`);
+      }
+      if (failed > 0) {
+        toast.error(`Failed to upload ${failed} document${failed > 1 ? 's' : ''}`);
+      }
 
-    if (onUploadComplete) {
-      onUploadComplete();
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
+    } catch (error) {
+      toast.error('Failed to upload documents');
+      console.error('Upload error:', error);
+    } finally {
+      setFiles([]);
+      setUploading(false);
     }
-
-    setFiles([]);
-    setUploading(false);
   };
 
   return (
