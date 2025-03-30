@@ -18,8 +18,22 @@ export async function middleware(req) {
     '/settings'
   ]
 
+  // Define public routes that don't require authentication
+  const publicRoutes = [
+    '/login',
+    '/signup',
+    '/verify-email',
+    '/forgot-password',
+    '/test-auth'
+  ]
+
   // Check if the current path is protected
   const isProtectedRoute = protectedRoutes.some(route => 
+    req.nextUrl.pathname.startsWith(route)
+  )
+
+  // Check if the current path is public
+  const isPublicRoute = publicRoutes.some(route => 
     req.nextUrl.pathname.startsWith(route)
   )
 
@@ -36,6 +50,16 @@ export async function middleware(req) {
   // If accessing auth pages while logged in, redirect to dashboard
   if (session && (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/signup')) {
     return NextResponse.redirect(new URL('/loads', req.url))
+  }
+
+  // Handle email verification
+  if (req.nextUrl.pathname === '/verify-email') {
+    const token = req.nextUrl.searchParams.get('token')
+    const type = req.nextUrl.searchParams.get('type')
+
+    if (!token || type !== 'email_verification') {
+      return NextResponse.redirect(new URL('/login', req.url))
+    }
   }
 
   return res
