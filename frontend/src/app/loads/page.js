@@ -6,6 +6,19 @@ import { API_ENDPOINTS, getApiHeaders } from '@/config/api';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Loader2, Plus } from 'lucide-react';
+import SupabaseTest from '@/components/SupabaseTest';
+
+// Get environment variables and log them for debugging
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+console.log('Supabase URL configured as:', supabaseUrl);
+console.log('Supabase Key available:', !!supabaseKey);
+
+// Initialize Supabase with explicit values
+const supabase = createClientComponentClient({
+  supabaseUrl,
+  supabaseKey,
+});
 
 // Required document types constant
 const REQUIRED_DOCUMENTS = ['POD', 'BOL', 'Invoice'];
@@ -18,7 +31,6 @@ export default function LoadsPage() {
   const [sortBy, setSortBy] = useState('created_at');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDocuments, setFilterDocuments] = useState('all');
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     fetchLoads();
@@ -127,7 +139,9 @@ export default function LoadsPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 space-y-6">
+      <SupabaseTest />
+      
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Loads</h1>
         <Link 
