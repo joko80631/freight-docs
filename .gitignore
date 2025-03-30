@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+.env.test
 
 # Dependencies
 node_modules/
@@ -36,7 +37,21 @@ logs
 dist/
 build/
 coverage/
+.next/
+out/
 
 # Temporary files
 tmp/
-temp/ 
+temp/
+*.bak
+*.tmp
+*~
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Cache
+.cache/
+.npm/
+.eslintcache 
