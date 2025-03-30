@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { API_ENDPOINTS, getApiHeaders } from '@/config/api'
 import toast from 'react-hot-toast'
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd'
 import DocumentList from './components/DocumentList'
@@ -33,30 +34,31 @@ export default function LoadDetailPage() {
   const fetchLoadDetails = async () => {
     try {
       setIsLoading(true)
-      const { data, error } = await supabase
-        .from('loads')
-        .select(`
-          *,
-          customer:customers(name)
-        `)
-        .eq('id', id)
-        .single()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
 
-      if (error) throw error
-      if (!data) throw new Error('Load not found')
-      
+      const response = await fetch(API_ENDPOINTS.loads.get(id), {
+        headers: getApiHeaders()
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch load details')
+      }
+
+      const data = await response.json()
       setLoad(data)
 
       // Fetch documents
-      const { data: docsData, error: docsError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('load_id', id)
-        .order('created_at', { ascending: false })
+      const docsResponse = await fetch(API_ENDPOINTS.documents.list, {
+        headers: getApiHeaders()
+      })
 
-      if (docsError) throw docsError
+      if (!docsResponse.ok) {
+        throw new Error('Failed to fetch documents')
+      }
 
-      setDocuments(docsData || [])
+      const docsData = await docsResponse.json()
+      setDocuments(docsData.filter(doc => doc.load_id === id))
     } catch (err) {
       console.error('Error fetching load:', err)
       setError(err.message === 'Load not found' ? 'Load not found' : 'Failed to load details')
@@ -69,8 +71,8 @@ export default function LoadDetailPage() {
   const handleDocumentUpload = async (file) => {
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError) throw userError
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
 
       // Upload file to user-specific folder
       const fileExt = file.name.split('.').pop()
@@ -82,40 +84,42 @@ export default function LoadDetailPage() {
       if (uploadError) throw uploadError
 
       // Create document record
-      const { data: docData, error: docError } = await supabase
-        .from('documents')
-        .insert([
-          {
-            load_id: id,
-            type: 'pending', // Will be updated after classification
-            status: 'processing',
-            file_path: fileName,
-            user_id: user.id
-          }
-        ])
-        .select()
-        .single()
+      const response = await fetch(API_ENDPOINTS.documents.upload, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify({
+          load_id: id,
+          file_path: fileName,
+          user_id: user.id
+        })
+      })
 
-      if (docError) throw docError
+      if (!response.ok) {
+        throw new Error('Failed to create document record')
+      }
 
-      // Update local state
+      const docData = await response.json()
       setDocuments(prev => [docData, ...prev])
       toast.success('Document uploaded successfully')
 
-      // Trigger classification (this would be handled by your backend)
-      // For now, we'll simulate it
-      setTimeout(() => {
-        const classifiedDoc = {
-          ...docData,
-          type: 'BOL',
-          status: 'completed',
-          classification_confidence: 0.95,
-          is_manual_classification: false
-        }
-        setDocuments(prev => 
-          prev.map(doc => doc.id === docData.id ? classifiedDoc : doc)
-        )
-      }, 2000)
+      // Trigger classification
+      const classifyResponse = await fetch(API_ENDPOINTS.documents.classify, {
+        method: 'POST',
+        headers: getApiHeaders(),
+        body: JSON.stringify({
+          documentPath: fileName,
+          loadId: id
+        })
+      })
+
+      if (!classifyResponse.ok) {
+        throw new Error('Failed to classify document')
+      }
+
+      const classifiedDoc = await classifyResponse.json()
+      setDocuments(prev => 
+        prev.map(doc => doc.id === docData.id ? classifiedDoc : doc)
+      )
     } catch (error) {
       toast.error('Failed to upload document')
       console.error('Error uploading document:', error)

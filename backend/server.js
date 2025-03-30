@@ -15,9 +15,24 @@ const port = process.env.PORT || 3000;
 
 // Security middleware
 app.use(helmet());
+
+// CORS configuration
 app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*'
+    origin: [
+        'http://localhost:3000',
+        'https://freight-docs-ten.vercel.app'
+    ],
+    credentials: true
 }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ 
+        status: 'ok', 
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV 
+    });
+});
 
 // Rate limiting
 const limiter = rateLimit({
@@ -274,11 +289,6 @@ app.post('/upload', upload.single('file'), async (req, res) => {
             details: error.message 
         });
     }
-});
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok' });
 });
 
 app.listen(port, () => {

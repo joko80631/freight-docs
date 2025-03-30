@@ -5,6 +5,7 @@ import { useDropzone } from 'react-dropzone';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
+import { API_ENDPOINTS, getApiHeaders } from '@/config/api';
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_RETRIES = 3;
@@ -94,11 +95,9 @@ export default function DocumentUpload({ loadId, onUploadComplete }) {
       if (dbError) throw dbError;
 
       // Trigger classification
-      const response = await fetch('/api/documents/classify', {
+      const response = await fetch(API_ENDPOINTS.documents.classify, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           documentPath: filePath,
           loadId: loadId
@@ -106,18 +105,18 @@ export default function DocumentUpload({ loadId, onUploadComplete }) {
       });
 
       if (!response.ok) {
-        throw new Error(`Classification failed with status ${response.status}`);
+        throw new Error('Failed to classify document');
       }
 
-      return { success: true, fileName: file.name };
+      return { success: true, filePath };
     } catch (error) {
-      // Retry logic
-      if (retryCount < MAX_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (retryCount + 1)));
+      console.error('Upload error:', error);
+      if (retryCount < 3) {
+        // Retry after exponential backoff
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
         return uploadFile(file, retryCount + 1);
       }
-      
-      return { success: false, fileName: file.name, error: error.message };
+      throw error;
     }
   };
 

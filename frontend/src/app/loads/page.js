@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { API_ENDPOINTS, getApiHeaders } from '@/config/api';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Loader2, Plus } from 'lucide-react';
@@ -28,25 +29,26 @@ export default function LoadsPage() {
       setIsLoading(true);
       setError(null);
       
-      // Fetch loads
-      const { data: loadsData, error: loadsError } = await supabase
-        .from('loads')
-        .select(`
-          *,
-          customer:customers(name)
-        `)
-        .order(sortBy, { ascending: false });
+      const response = await fetch(API_ENDPOINTS.loads.list, {
+        headers: getApiHeaders()
+      });
 
-      if (loadsError) throw loadsError;
+      if (!response.ok) {
+        throw new Error('Failed to fetch loads');
+      }
+
+      const loadsData = await response.json();
       
       // Fetch documents for all loads
-      const loadIds = loadsData.map(load => load.id);
-      const { data: documentsData, error: documentsError } = await supabase
-        .from('documents')
-        .select('*')
-        .in('load_id', loadIds);
-        
-      if (documentsError) throw documentsError;
+      const docsResponse = await fetch(API_ENDPOINTS.documents.list, {
+        headers: getApiHeaders()
+      });
+
+      if (!docsResponse.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+
+      const documentsData = await docsResponse.json();
       
       // Group documents by load_id
       const documentsMap = {};

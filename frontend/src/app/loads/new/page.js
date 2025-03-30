@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { API_ENDPOINTS, getApiHeaders } from '@/config/api'
 import toast from 'react-hot-toast'
 
 export default function NewLoadPage() {
@@ -20,11 +21,9 @@ export default function NewLoadPage() {
     }
 
     try {
-      const response = await fetch('/api/loads', {
+      const response = await fetch(API_ENDPOINTS.loads.create, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: getApiHeaders(),
         body: JSON.stringify(data),
       })
 
