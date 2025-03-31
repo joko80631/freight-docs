@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { API_ENDPOINTS } from '@/config/api'
-import { getApiHeaders } from '@/utils/api'
+import { getApiHeaders, handleApiResponse } from '@/utils/api'
 import { toast } from 'react-hot-toast'
 
 export default function DocumentUpload({ loadId, onUploadComplete }) {
@@ -28,8 +28,7 @@ export default function DocumentUpload({ loadId, onUploadComplete }) {
         body: formData
       })
 
-      if (!response.ok) throw new Error('Failed to upload document')
-      const document = await response.json()
+      const document = await handleApiResponse(response)
       
       if (onUploadComplete) {
         onUploadComplete(document)

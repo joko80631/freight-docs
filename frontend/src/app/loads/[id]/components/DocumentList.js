@@ -5,7 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Download, Trash2, Loader2, Calendar, CheckCircle2, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { API_ENDPOINTS } from '@/config/api'
-import { getApiHeaders } from '@/utils/api'
+import { getApiHeaders, handleApiResponse } from '@/utils/api'
 import { format } from 'date-fns'
 
 const REQUIRED_DOCUMENTS = ['POD', 'BOL', 'Invoice']
@@ -46,8 +46,7 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
       const response = await fetch(API_ENDPOINTS.documents.list, {
         headers: getApiHeaders()
       })
-      if (!response.ok) throw new Error('Failed to fetch documents')
-      const data = await response.json()
+      const data = await handleApiResponse(response)
       setDocuments(data.filter(doc => doc.load_id === loadId))
     } catch (error) {
       toast.error('Failed to fetch documents')
@@ -75,8 +74,7 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
       const response = await fetch(API_ENDPOINTS.documents.download(docId), {
         headers: getApiHeaders()
       })
-      if (!response.ok) throw new Error('Failed to get download URL')
-      const { url } = await response.json()
+      const { url } = await handleApiResponse(response)
       window.open(url, '_blank')
     } catch (error) {
       toast.error('Failed to download document')
@@ -92,7 +90,7 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
         method: 'DELETE',
         headers: getApiHeaders()
       })
-      if (!response.ok) throw new Error('Failed to delete document')
+      await handleApiResponse(response)
       setDocuments(prev => prev.filter(doc => doc.id !== docId))
       if (onDocumentUpdate) onDocumentUpdate(null, docId)
       toast.success('Document deleted')
@@ -109,8 +107,7 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
         headers: getApiHeaders(),
         body: JSON.stringify({ status: newStatus })
       })
-      if (!response.ok) throw new Error('Failed to update document status')
-      const updatedDoc = await response.json()
+      const updatedDoc = await handleApiResponse(response)
       setDocuments(prev => prev.map(doc => doc.id === docId ? updatedDoc : doc))
       if (onDocumentUpdate) onDocumentUpdate(updatedDoc)
       toast.success('Document status updated')
@@ -127,8 +124,7 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
         headers: getApiHeaders(),
         body: JSON.stringify({ dueDate })
       })
-      if (!response.ok) throw new Error('Failed to update document due date')
-      const updatedDoc = await response.json()
+      const updatedDoc = await handleApiResponse(response)
       setDocuments(prev => prev.map(doc => doc.id === docId ? updatedDoc : doc))
       if (onDocumentUpdate) onDocumentUpdate(updatedDoc)
       setEditingDocId(null)
@@ -140,16 +136,14 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
     }
   }
 
-  const isDueDatePassed = (date) => {
-    if (!date) return false
-    const dueDate = new Date(date)
-    const today = new Date()
-    return dueDate < today
-  }
-
-  const formatDueDate = (date) => {
-    if (!date) return 'Not set'
-    return new Date(date).toLocaleDateString()
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not set'
+    try {
+      return format(new Date(dateString), 'MMM d, yyyy')
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return 'Invalid date'
+    }
   }
 
   if (loading) {
@@ -227,7 +221,7 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
                           {document.confidence ? `${Math.round(document.confidence * 100)}% confidence` : 'Processing...'}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {format(new Date(document.inserted_at), 'MMM d, yyyy h:mm a')}
+                          {formatDate(document.inserted_at)}
                         </span>
                       </div>
                     </div>
@@ -274,7 +268,7 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
                         ) : (
                           <div className="flex items-center space-x-2">
                             <span className="text-sm text-gray-500">
-                              Due: {document.due_date ? format(new Date(document.due_date), 'MMM d, yyyy') : 'Not set'}
+                              Due: {formatDate(document.due_date)}
                             </span>
                             <button
                               onClick={() => {
