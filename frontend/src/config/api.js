@@ -9,6 +9,9 @@ export const API_ENDPOINTS = {
     list: `${API_BASE_URL}/api/documents`,
     delete: (id) => `${API_BASE_URL}/api/documents/${id}`,
     update: (id) => `${API_BASE_URL}/api/documents/${id}`,
+    updateStatus: (id) => `${API_BASE_URL}/documents/${id}/status`,
+    updateDueDate: (id) => `${API_BASE_URL}/documents/${id}/due-date`,
+    getStatusHistory: (id) => `${API_BASE_URL}/documents/${id}/status-history`
   },
   loads: {
     list: `${API_BASE_URL}/api/loads`,

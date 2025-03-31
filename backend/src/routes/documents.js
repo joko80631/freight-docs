@@ -5,8 +5,15 @@ import { requireAuth } from '../middleware/auth.js';
 import { validateFile } from '../middleware/fileValidation.js';
 import { DocumentService } from '../services/documentService.js';
 import { LoadService } from '../services/loadService.js';
+import { createClient } from '@supabase/supabase-js';
+import { validateDocumentStatus } from '../middleware/validateDocument.js';
+import { authenticateUser } from '../middleware/auth.js';
 
 const router = express.Router();
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 // Multer configuration with file size limit
 const upload = multer({ 
@@ -96,6 +103,107 @@ router.patch('/:id', requireAuth, async (req, res, next) => {
     res.json(document);
   } catch (error) {
     next(error);
+  }
+});
+
+// Update document status
+router.post('/:id/status', authenticateUser, validateDocumentStatus, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, comment, updated_by } = req.body;
+
+    // Start a transaction
+    const { data: document, error: docError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (docError) throw docError;
+
+    // Update document status
+    const { error: updateError } = await supabase
+      .from('documents')
+      .update({ status })
+      .eq('id', id);
+
+    if (updateError) throw updateError;
+
+    // Create status history entry
+    const { error: historyError } = await supabase
+      .from('document_status_history')
+      .insert({
+        document_id: id,
+        status,
+        comment,
+        updated_by,
+        previous_status: document.status
+      });
+
+    if (historyError) throw historyError;
+
+    // Fetch updated document
+    const { data: updatedDoc, error: fetchError } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
+    res.json(updatedDoc);
+  } catch (error) {
+    console.error('Error updating document status:', error);
+    res.status(500).json({ error: 'Failed to update document status' });
+  }
+});
+
+// Update document due date
+router.post('/:id/due-date', authenticateUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { due_date } = req.body;
+
+    if (!due_date) {
+      return res.status(400).json({ error: 'Due date is required' });
+    }
+
+    const { data, error } = await supabase
+      .from('documents')
+      .update({ due_date })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error updating document due date:', error);
+    res.status(500).json({ error: 'Failed to update document due date' });
+  }
+});
+
+// Get document status history
+router.get('/:id/status-history', authenticateUser, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await supabase
+      .from('document_status_history')
+      .select(`
+        *,
+        updated_by:profiles(name)
+      `)
+      .eq('document_id', id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json(data);
+  } catch (error) {
+    console.error('Error fetching document status history:', error);
+    res.status(500).json({ error: 'Failed to fetch document status history' });
   }
 });
 
