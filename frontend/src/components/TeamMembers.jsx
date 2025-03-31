@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
@@ -59,13 +59,25 @@ export function TeamMembers() {
 
   const api = createTeamScopedApi();
 
+  useEffect(() => {
+    if (teamId) {
+      fetchMembers();
+    }
+  }, [teamId]);
+
   const fetchMembers = async () => {
     try {
+      setIsLoading(true);
       const data = await api.get('/');
-      setMembers(data.members);
+      if (data?.members) {
+        setMembers(data.members);
+      } else {
+        setMembers([]);
+      }
     } catch (error) {
       console.error('Failed to fetch team members:', error);
       setError('Failed to load team members');
+      setMembers([]);
     } finally {
       setIsLoading(false);
     }
@@ -91,9 +103,11 @@ export function TeamMembers() {
       }
 
       const newMember = await response.json();
-      setMembers([...members, newMember]);
-      setInviteEmail('');
-      setIsInviteDialogOpen(false);
+      if (newMember) {
+        setMembers(prev => [...prev, newMember]);
+        setInviteEmail('');
+        setIsInviteDialogOpen(false);
+      }
     } catch (error) {
       setError(error.message);
     }
@@ -102,7 +116,7 @@ export function TeamMembers() {
   const handleRoleChange = async (userId, newRole) => {
     try {
       await api.patch(`/members/${userId}`, { role: newRole });
-      setMembers(members.map(member => 
+      setMembers(prev => prev.map(member => 
         member.user_id === userId ? { ...member, role: newRole } : member
       ));
     } catch (error) {
@@ -114,15 +128,19 @@ export function TeamMembers() {
   const handleRemoveMember = async (userId) => {
     try {
       await api.delete(`/members/${userId}`);
-      setMembers(members.filter(member => member.user_id !== userId));
+      setMembers(prev => prev.filter(member => member.user_id !== userId));
     } catch (error) {
       console.error('Failed to remove member:', error);
       setError('Failed to remove member');
     }
   };
 
+  if (!teamId) {
+    return <div className="text-muted-foreground">Please select a team first.</div>;
+  }
+
   if (isLoading) {
-    return <div>Loading members...</div>;
+    return <div className="text-muted-foreground">Loading members...</div>;
   }
 
   if (error) {
@@ -179,71 +197,75 @@ export function TeamMembers() {
         )}
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            {role === 'ADMIN' && <TableHead>Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.map((member) => (
-            <TableRow key={member.user_id}>
-              <TableCell>{member.email}</TableCell>
-              <TableCell>
-                <Badge className={ROLE_BADGE_COLORS[member.role]}>
-                  {member.role}
-                </Badge>
-              </TableCell>
-              {role === 'ADMIN' && (
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={member.role}
-                      onValueChange={(value) => handleRoleChange(member.user_id, value)}
-                    >
-                      <SelectTrigger className="w-[120px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ADMIN">Admin</SelectItem>
-                        <SelectItem value="MANAGER">Manager</SelectItem>
-                        <SelectItem value="USER">User</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remove Member</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to remove this member from the team?
-                            This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleRemoveMember(member.user_id)}
-                            className="bg-red-600 hover:bg-red-700"
-                          >
-                            Remove
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </TableCell>
-              )}
+      {members.length === 0 ? (
+        <div className="text-muted-foreground">No team members found.</div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              {role === 'ADMIN' && <TableHead>Actions</TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {members.map((member) => (
+              <TableRow key={member.user_id}>
+                <TableCell>{member.email}</TableCell>
+                <TableCell>
+                  <Badge className={ROLE_BADGE_COLORS[member.role]}>
+                    {member.role}
+                  </Badge>
+                </TableCell>
+                {role === 'ADMIN' && (
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={member.role}
+                        onValueChange={(value) => handleRoleChange(member.user_id, value)}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ADMIN">Admin</SelectItem>
+                          <SelectItem value="MANAGER">Manager</SelectItem>
+                          <SelectItem value="USER">User</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove Member</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to remove this member from the team?
+                              This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleRemoveMember(member.user_id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 } 
