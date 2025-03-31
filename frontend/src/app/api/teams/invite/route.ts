@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       user_id: newMember.user_id,
-      email: newMember.users.email,
+      email: newMember.users[0]?.email,
       role: newMember.role
     });
   } catch (error) {
