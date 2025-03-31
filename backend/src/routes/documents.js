@@ -18,7 +18,9 @@ const upload = multer({
 
 // Validation schemas
 const uploadSchema = z.object({
-  loadId: z.string().uuid("Invalid load ID").optional()
+  loadId: z.string().uuid("Invalid load ID").optional(),
+  dueDate: z.string().datetime("Invalid due date").optional(),
+  status: z.enum(['pending', 'approved', 'rejected']).default('pending')
 });
 
 // Routes

@@ -68,7 +68,7 @@ export default function LoadDetailPage() {
     }
   }
 
-  const handleDocumentUpload = async (file) => {
+  const handleDocumentUpload = async (file, dueDate) => {
     try {
       // Get current user
       const { data: { user } } = await supabase.auth.getUser()
@@ -90,7 +90,9 @@ export default function LoadDetailPage() {
         body: JSON.stringify({
           load_id: id,
           file_path: fileName,
-          user_id: user.id
+          user_id: user.id,
+          due_date: dueDate || null,
+          status: 'pending'
         })
       })
 
@@ -242,6 +244,52 @@ export default function LoadDetailPage() {
                     {new Date(load.pickup_date).toLocaleDateString()} - {new Date(load.delivery_date).toLocaleDateString()}
                   </p>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Carrier and Driver Information */}
+          <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Carrier & Driver Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Carrier Details</h4>
+                <dl className="mt-2 space-y-2">
+                  <div>
+                    <dt className="text-sm text-gray-500">Carrier Name</dt>
+                    <dd className="text-sm text-gray-900">{load.carrier_name || 'Not specified'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">MC Number</dt>
+                    <dd className="text-sm text-gray-900">{load.mc_number || 'Not specified'}</dd>
+                  </div>
+                </dl>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Driver Details</h4>
+                <dl className="mt-2 space-y-2">
+                  <div>
+                    <dt className="text-sm text-gray-500">Driver Name</dt>
+                    <dd className="text-sm text-gray-900">{load.driver_name || 'Not specified'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Driver Phone</dt>
+                    <dd className="text-sm text-gray-900">{load.driver_phone || 'Not specified'}</dd>
+                  </div>
+                </dl>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-gray-500">Equipment</h4>
+                <dl className="mt-2 space-y-2">
+                  <div>
+                    <dt className="text-sm text-gray-500">Truck Number</dt>
+                    <dd className="text-sm text-gray-900">{load.truck_number || 'Not specified'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Trailer Number</dt>
+                    <dd className="text-sm text-gray-900">{load.trailer_number || 'Not specified'}</dd>
+                  </div>
+                </dl>
               </div>
             </div>
           </div>

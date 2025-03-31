@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { Download, Trash2, Loader2 } from 'lucide-react'
+import { Download, Trash2, Loader2, Calendar, CheckCircle2, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const REQUIRED_DOCUMENTS = ['POD', 'BOL', 'Invoice']
@@ -14,10 +14,18 @@ const DOCUMENT_TYPE_COLORS = {
   default: 'bg-gray-100 text-gray-800'
 }
 
+const STATUS_COLORS = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-800'
+}
+
 export default function DocumentList({ loadId }) {
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [editingDocId, setEditingDocId] = useState(null)
+  const [dueDate, setDueDate] = useState('')
   const supabase = createClientComponentClient()
 
   useEffect(() => {
@@ -46,6 +54,10 @@ export default function DocumentList({ loadId }) {
 
   const getDocumentTypeColor = (type) => {
     return DOCUMENT_TYPE_COLORS[type] || DOCUMENT_TYPE_COLORS.default
+  }
+
+  const getStatusColor = (status) => {
+    return STATUS_COLORS[status] || 'bg-gray-100 text-gray-800'
   }
 
   const getMissingDocuments = () => {
@@ -98,6 +110,81 @@ export default function DocumentList({ loadId }) {
       console.error('Error deleting document:', err)
       toast.error('Failed to delete document')
     }
+  }
+
+  const handleStatusChange = async (documentId, newStatus) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('User not authenticated')
+
+      const { error } = await supabase
+        .from('documents')
+        .update({
+          status: newStatus,
+          status_updated_by: user.id,
+          status_updated_at: new Date().toISOString()
+        })
+        .eq('id', documentId)
+
+      if (error) throw error
+
+      // Update local state
+      setDocuments(prev =>
+        prev.map(doc =>
+          doc.id === documentId
+            ? { ...doc, status: newStatus, status_updated_by: user.id, status_updated_at: new Date().toISOString() }
+            : doc
+        )
+      )
+
+      toast.success(`Document status updated to ${newStatus}`)
+    } catch (err) {
+      console.error('Error updating document status:', err)
+      toast.error('Failed to update document status')
+    }
+  }
+
+  const handleDueDateChange = (documentId, date) => {
+    setEditingDocId(documentId)
+    setDueDate(date || '')
+  }
+
+  const saveDueDate = async (documentId) => {
+    try {
+      const { error } = await supabase
+        .from('documents')
+        .update({ due_date: dueDate || null })
+        .eq('id', documentId)
+
+      if (error) throw error
+
+      // Update local state
+      setDocuments(prev =>
+        prev.map(doc =>
+          doc.id === documentId
+            ? { ...doc, due_date: dueDate || null }
+            : doc
+        )
+      )
+
+      setEditingDocId(null)
+      toast.success('Document due date updated')
+    } catch (err) {
+      console.error('Error updating document due date:', err)
+      toast.error('Failed to update document due date')
+    }
+  }
+
+  const isDueDatePassed = (date) => {
+    if (!date) return false
+    const dueDate = new Date(date)
+    const today = new Date()
+    return dueDate < today
+  }
+
+  const formatDueDate = (date) => {
+    if (!date) return 'Not set'
+    return new Date(date).toLocaleDateString()
   }
 
   if (loading) {
@@ -168,6 +255,9 @@ export default function DocumentList({ loadId }) {
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getDocumentTypeColor(document.document_type)}`}>
                           {document.document_type || 'Unclassified'}
                         </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(document.status)}`}>
+                          {document.status || 'pending'}
+                        </span>
                         <span className="text-xs text-gray-500">
                           {document.confidence ? `${Math.round(document.confidence * 100)}% confidence` : 'Processing...'}
                         </span>
@@ -176,21 +266,79 @@ export default function DocumentList({ loadId }) {
                         </span>
                       </div>
                     </div>
-                    <div className="ml-4 flex-shrink-0 flex space-x-2">
-                      <button
-                        onClick={() => handleDownload(document)}
-                        className="text-gray-400 hover:text-gray-500"
-                        title="Download"
-                      >
-                        <Download className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(document)}
-                        className="text-gray-400 hover:text-red-500"
-                        title="Delete"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
+                    <div className="ml-4 flex-shrink-0 flex items-center space-x-4">
+                      {/* Status Controls */}
+                      <div className="flex items-center space-x-2">
+                        <select
+                          className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                          value={document.status || 'pending'}
+                          onChange={(e) => handleStatusChange(document.id, e.target.value)}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                      </div>
+
+                      {/* Due Date Controls */}
+                      <div className="flex items-center space-x-2">
+                        {editingDocId === document.id ? (
+                          <>
+                            <input
+                              type="date"
+                              className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                              value={dueDate}
+                              onChange={(e) => setDueDate(e.target.value)}
+                            />
+                            <button
+                              type="button"
+                              className="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                              onClick={() => saveDueDate(document.id)}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                              onClick={() => setEditingDocId(null)}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className={`inline-flex items-center space-x-1 text-sm ${
+                              isDueDatePassed(document.due_date) ? 'text-red-600' : 'text-gray-500'
+                            }`}
+                            onClick={() => handleDueDateChange(document.id, document.due_date)}
+                          >
+                            <Calendar className="h-4 w-4" />
+                            <span>{formatDueDate(document.due_date)}</span>
+                            {isDueDatePassed(document.due_date) && (
+                              <span className="text-red-600">(Overdue)</span>
+                            )}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Document Actions */}
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleDownload(document)}
+                          className="text-gray-400 hover:text-gray-500"
+                          title="Download"
+                        >
+                          <Download className="h-5 w-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(document)}
+                          className="text-gray-400 hover:text-red-500"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-5 w-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </li>

@@ -17,6 +17,11 @@ export default function NewLoadPage() {
     const data = {
       load_number: formData.get('load_number'),
       carrier_name: formData.get('carrier_name'),
+      mc_number: formData.get('mc_number'),
+      driver_name: formData.get('driver_name'),
+      driver_phone: formData.get('driver_phone'),
+      truck_number: formData.get('truck_number'),
+      trailer_number: formData.get('trailer_number'),
       delivery_date: formData.get('delivery_date'),
     }
 
@@ -63,7 +68,7 @@ export default function NewLoadPage() {
 
         <div>
           <label htmlFor="carrier_name" className="block text-sm font-medium mb-2">
-            Carrier Name
+            Carrier Name *
           </label>
           <input
             type="text"
@@ -74,6 +79,78 @@ export default function NewLoadPage() {
             placeholder="Enter carrier name"
             disabled={isSubmitting}
           />
+        </div>
+
+        <div>
+          <label htmlFor="mc_number" className="block text-sm font-medium mb-2">
+            MC Number
+          </label>
+          <input
+            type="text"
+            id="mc_number"
+            name="mc_number"
+            className="w-full border border-primary p-2"
+            placeholder="Enter MC number"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="driver_name" className="block text-sm font-medium mb-2">
+            Driver Name
+          </label>
+          <input
+            type="text"
+            id="driver_name"
+            name="driver_name"
+            className="w-full border border-primary p-2"
+            placeholder="Enter driver name"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="driver_phone" className="block text-sm font-medium mb-2">
+            Driver Phone
+          </label>
+          <input
+            type="tel"
+            id="driver_phone"
+            name="driver_phone"
+            className="w-full border border-primary p-2"
+            placeholder="Enter driver phone number"
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="truck_number" className="block text-sm font-medium mb-2">
+              Truck Number
+            </label>
+            <input
+              type="text"
+              id="truck_number"
+              name="truck_number"
+              className="w-full border border-primary p-2"
+              placeholder="Enter truck number"
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="trailer_number" className="block text-sm font-medium mb-2">
+              Trailer Number
+            </label>
+            <input
+              type="text"
+              id="trailer_number"
+              name="trailer_number"
+              className="w-full border border-primary p-2"
+              placeholder="Enter trailer number"
+              disabled={isSubmitting}
+            />
+          </div>
         </div>
 
         <div>

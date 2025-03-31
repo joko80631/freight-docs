@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 
 export default function DocumentUpload({ onUpload }) {
   const [isUploading, setIsUploading] = useState(false)
+  const [dueDate, setDueDate] = useState('')
 
   const onDrop = useCallback(async (acceptedFiles) => {
     setIsUploading(true)
@@ -22,15 +23,17 @@ export default function DocumentUpload({ onUpload }) {
           continue
         }
 
-        await onUpload(file)
+        await onUpload(file, dueDate)
       }
+      // Clear the due date after successful upload
+      setDueDate('')
     } catch (error) {
       console.error('Error uploading files:', error)
       toast.error('Failed to upload one or more files')
     } finally {
       setIsUploading(false)
     }
-  }, [onUpload])
+  }, [onUpload, dueDate])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -46,6 +49,21 @@ export default function DocumentUpload({ onUpload }) {
   return (
     <div className="bg-white border border-primary rounded-lg p-6">
       <h2 className="text-lg font-semibold mb-4">Upload Documents</h2>
+      
+      {/* Due Date Field */}
+      <div className="mb-4">
+        <label htmlFor="dueDate" className="block text-sm font-medium text-gray-700 mb-1">
+          Due Date (Optional)
+        </label>
+        <input
+          type="date"
+          id="dueDate"
+          value={dueDate}
+          onChange={(e) => setDueDate(e.target.value)}
+          className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+          disabled={isUploading}
+        />
+      </div>
       
       <div
         {...getRootProps()}

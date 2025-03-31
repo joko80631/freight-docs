@@ -11,6 +11,11 @@ const router = express.Router();
 const createLoadSchema = z.object({
   load_number: z.string().min(1, "Load number is required"),
   carrier_name: z.string().min(1, "Carrier name is required"),
+  mc_number: z.string().optional(),
+  driver_name: z.string().optional(),
+  driver_phone: z.string().optional(),
+  truck_number: z.string().optional(),
+  trailer_number: z.string().optional(),
   delivery_date: z.string().datetime("Invalid delivery date")
 });
 
@@ -31,7 +36,17 @@ async function validateLoad(loadId) {
 // Routes
 router.post('/', requireAuth, validateLoadCreation, async (req, res, next) => {
   try {
-    const { load_number, carrier_name, delivery_date, broker_id } = req.body;
+    const { 
+      load_number, 
+      carrier_name, 
+      mc_number,
+      driver_name,
+      driver_phone,
+      truck_number,
+      trailer_number,
+      delivery_date, 
+      broker_id 
+    } = req.body;
 
     // Check for duplicate load number
     const { data: existingLoad, error: checkError } = await supabase
@@ -52,6 +67,11 @@ router.post('/', requireAuth, validateLoadCreation, async (req, res, next) => {
             {
                 load_number,
                 carrier_name,
+                mc_number,
+                driver_name,
+                driver_phone,
+                truck_number,
+                trailer_number,
                 delivery_date,
                 broker_id
             }
