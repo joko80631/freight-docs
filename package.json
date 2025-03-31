@@ -38,5 +38,9 @@
     "devCommand": "npm run dev",
     "installCommand": "npm install",
     "framework": "nextjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "openai": "^4.90.0"
   }
 }
