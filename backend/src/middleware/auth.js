@@ -1,41 +1,38 @@
-import { createClient } from '@supabase/supabase-js';
+const jwt = require('jsonwebtoken');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const requireAuth = (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({
+                error: 'No token provided'
+            });
+        }
 
-export const requireAuth = async (req, res, next) => {
-  try {
-    // Get token from Authorization header
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'No token provided'
-      });
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        
+        req.user = decoded;
+        next();
+    } catch (error) {
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({
+                error: 'Invalid token'
+            });
+        }
+        
+        if (error.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                error: 'Token expired'
+            });
+        }
+
+        res.status(500).json({
+            error: 'Authentication error',
+            details: error.message
+        });
     }
+};
 
-    const token = authHeader.split(' ')[1];
-
-    // Verify token with Supabase
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return res.status(401).json({
-        error: 'Unauthorized',
-        message: 'Invalid token'
-      });
-    }
-
-    // Add user to request object
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error('Auth middleware error:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: 'Error validating authentication'
-    });
-  }
-}; 
+module.exports = requireAuth; 

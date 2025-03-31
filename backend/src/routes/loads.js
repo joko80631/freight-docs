@@ -2,6 +2,8 @@ import express from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { LoadService } from '../services/loadService.js';
+import supabase from '../config/supabase';
+import validateLoadCreation from '../middleware/validateLoad';
 
 const router = express.Router();
 
@@ -12,14 +14,63 @@ const createLoadSchema = z.object({
   delivery_date: z.string().datetime("Invalid delivery date")
 });
 
+// Helper function to validate load exists
+async function validateLoad(loadId) {
+    const { data, error } = await supabase
+        .from('loads')
+        .select('id')
+        .eq('id', loadId)
+        .single();
+
+    if (error || !data) {
+        throw new Error('Load not found');
+    }
+    return data;
+}
+
 // Routes
-router.post('/', requireAuth, async (req, res, next) => {
+router.post('/', requireAuth, validateLoadCreation, async (req, res, next) => {
   try {
-    const validatedData = createLoadSchema.parse(req.body);
-    const load = await LoadService.createLoad(req.user.id, validatedData);
-    res.status(201).json(load);
+    const { load_number, carrier_name, delivery_date, broker_id } = req.body;
+
+    // Check for duplicate load number
+    const { data: existingLoad, error: checkError } = await supabase
+        .from('loads')
+        .select('id')
+        .eq('load_number', load_number)
+        .single();
+
+    if (existingLoad) {
+        return res.status(409).json({
+            error: 'Load number already exists'
+        });
+    }
+
+    const { data, error } = await supabase
+        .from('loads')
+        .insert([
+            {
+                load_number,
+                carrier_name,
+                delivery_date,
+                broker_id
+            }
+        ])
+        .select()
+        .single();
+
+    if (error) throw error;
+
+    res.status(201).json({
+        message: 'Load created successfully',
+        load: data
+    });
   } catch (error) {
-    next(error);
+    console.error('Error creating load:', error);
+    res.status(500).json({ 
+        error: 'Error creating load',
+        details: error.message 
+    });
   }
 });
 
@@ -39,6 +90,49 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+// Get load status and missing documents
+router.get('/:id/status', async (req, res) => {
+    try {
+        const loadId = req.params.id;
+        
+        // Validate load exists
+        await validateLoad(loadId);
+
+        // Get all documents for this load
+        const { data: documents, error: docsError } = await supabase
+            .from('documents')
+            .select('classification_type, confidence')
+            .eq('load_id', loadId);
+
+        if (docsError) throw docsError;
+
+        // Define required document types
+        const requiredDocs = ['POD', 'BOL', 'Invoice'];
+        
+        // Track which documents we have
+        const foundDocs = new Set(documents.map(doc => doc.classification_type));
+        
+        // Calculate missing documents
+        const missingDocs = requiredDocs.filter(doc => !foundDocs.has(doc));
+
+        // Calculate completeness percentage
+        const completeness = (foundDocs.size / requiredDocs.length) * 100;
+
+        res.json({
+            load_id: loadId,
+            completeness_percentage: completeness,
+            missing_documents: missingDocs,
+            documents: documents
+        });
+    } catch (error) {
+        console.error('Error getting load status:', error);
+        res.status(500).json({ 
+            error: 'Error getting load status',
+            details: error.message 
+        });
+    }
 });
 
 export default router; 

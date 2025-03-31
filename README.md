@@ -36,6 +36,45 @@ freight/
 └── README.md
 ```
 
+## Environment Setup
+
+### Frontend Environment Variables
+
+1. Copy `frontend/.env.example` to `frontend/.env.local`:
+   ```bash
+   cp frontend/.env.example frontend/.env.local
+   ```
+
+2. Update the following variables in `frontend/.env.local`:
+   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+   - `NEXT_PUBLIC_API_URL`: Your backend API URL
+   - `NEXT_PUBLIC_SITE_URL`: Your frontend URL
+   - `NEXT_PUBLIC_SITE_NAME`: Your site name
+   - Feature flags as needed
+
+### Backend Environment Variables
+
+1. Copy `backend/.env.example` to `backend/.env`:
+   ```bash
+   cp backend/.env.example backend/.env
+   ```
+
+2. Update the following variables in `backend/.env`:
+   - `SUPABASE_URL`: Your Supabase project URL
+   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
+   - `OPENAI_API_KEY`: Your OpenAI API key
+   - `PORT`: Backend server port (default: 3001)
+   - `ALLOWED_ORIGINS`: Comma-separated list of allowed origins
+   - `MAX_FILE_SIZE`: Maximum file upload size in bytes
+   - `UPLOAD_DIR`: Directory for file uploads
+
+### Development vs Production
+
+- For local development, use the `.env.local` and `.env` files
+- For testing, use `.env.test` in the frontend
+- For production, set environment variables in your hosting platform (Vercel/Render)
+
 ## Setup Instructions
 
 1. Clone the repository:
@@ -44,9 +83,7 @@ freight/
    cd freight
    ```
 
-2. Set up environment variables:
-   - Copy `.env.example` to `.env` in both frontend and backend directories
-   - Update the variables with your values
+2. Set up environment variables as described above
 
 3. Install dependencies:
    ```bash
