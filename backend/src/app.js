@@ -1,38 +1,30 @@
-const express = require('express');
-const cors = require('cors');
-const morgan = require('morgan');
-require('dotenv').config();
-
-const loadRoutes = require('./routes/loads');
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import { errorHandler } from './middleware/errorHandler.js';
+import { notFoundHandler } from './middleware/notFoundHandler.js';
+import authRoutes from './routes/auth.js';
+import loadRoutes from './routes/loads.js';
+import documentRoutes from './routes/documents.js';
+import teamRoutes from './routes/teams.js';
 
 const app = express();
 
 // Middleware
+app.use(helmet());
 app.use(cors());
+app.use(compression());
 app.use(express.json());
-app.use(morgan('dev'));
 
 // Routes
-app.use('/api/loads', loadRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/teams', teamRoutes);
+app.use('/api', loadRoutes);
+app.use('/api', documentRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).json({
-        error: 'Internal Server Error',
-        message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
-    });
-});
+// Error handling
+app.use(notFoundHandler);
+app.use(errorHandler);
 
-// 404 handler
-app.use((req, res) => {
-    res.status(404).json({
-        error: 'Not Found',
-        message: 'The requested resource was not found'
-    });
-});
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-}); 
+export default app; 

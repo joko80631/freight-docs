@@ -2,6 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
+import { requireTeamMember, requireTeamResourceAccess } from '../middleware/teamAuth.js';
 import { validateFile } from '../middleware/fileValidation.js';
 import { DocumentService } from '../services/documentService.js';
 import { LoadService } from '../services/loadService.js';
@@ -26,12 +27,13 @@ const upload = multer({
 // Validation schemas
 const uploadSchema = z.object({
   loadId: z.string().uuid("Invalid load ID").optional(),
+  teamId: z.string().uuid("Invalid team ID"),
   dueDate: z.string().datetime("Invalid due date").optional(),
-  status: z.enum(['pending', 'approved', 'rejected']).default('pending')
+  status: z.enum(['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'NEEDS_CLARIFICATION', 'EXPIRED']).default('PENDING_REVIEW')
 });
 
 const updateSchema = z.object({
-  status: z.enum(['pending', 'approved', 'rejected']).optional(),
+  status: z.enum(['PENDING_REVIEW', 'APPROVED', 'REJECTED', 'NEEDS_CLARIFICATION', 'EXPIRED']).optional(),
   dueDate: z.string().datetime("Invalid due date").optional()
 });
 
@@ -204,6 +206,90 @@ router.get('/:id/status-history', authenticateUser, async (req, res) => {
   } catch (error) {
     console.error('Error fetching document status history:', error);
     res.status(500).json({ error: 'Failed to fetch document status history' });
+  }
+});
+
+// Get all documents for a team
+router.get('/teams/:teamId', requireAuth, requireTeamMember, async (req, res, next) => {
+  try {
+    const documents = await DocumentService.getTeamDocuments(req.params.teamId);
+    res.json(documents);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get a specific document
+router.get('/teams/:teamId/documents/:docId', requireAuth, requireTeamMember, async (req, res, next) => {
+  try {
+    const document = await DocumentService.getDocumentById(req.params.teamId, req.params.docId);
+    res.json(document);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Upload a document
+router.post('/teams/:teamId/upload', requireAuth, requireTeamMember, upload.single('file'), validateFile, async (req, res, next) => {
+  try {
+    const validatedData = uploadSchema.parse({
+      ...req.body,
+      teamId: req.params.teamId
+    });
+    
+    // Verify load ownership if loadId is provided
+    if (validatedData.loadId) {
+      const hasAccess = await LoadService.verifyLoadAccess(req.user.id, req.params.teamId, validatedData.loadId);
+      if (!hasAccess) {
+        return res.status(403).json({ error: 'Access denied to this load' });
+      }
+    }
+
+    const document = await DocumentService.uploadAndClassifyDocument(
+      req.user,
+      req.file,
+      validatedData
+    );
+    
+    res.status(201).json(document);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update document status
+router.patch('/teams/:teamId/documents/:docId', requireAuth, requireTeamMember, validateDocumentStatus, async (req, res, next) => {
+  try {
+    const validatedData = updateSchema.parse(req.body);
+    const document = await DocumentService.updateDocument(
+      req.params.teamId,
+      req.params.docId,
+      validatedData
+    );
+    res.json(document);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Delete a document
+router.delete('/teams/:teamId/documents/:docId', requireAuth, requireTeamMember, async (req, res, next) => {
+  try {
+    await DocumentService.deleteDocument(req.params.teamId, req.params.docId);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Get signed URL for document
+router.get('/teams/:teamId/documents/:docId/url', requireAuth, requireTeamMember, async (req, res, next) => {
+  try {
+    const document = await DocumentService.getDocumentById(req.params.teamId, req.params.docId);
+    const signedUrl = await DocumentService.generateSignedUrl(document.file_url);
+    res.json({ url: signedUrl });
+  } catch (error) {
+    next(error);
   }
 });
 
