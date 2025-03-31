@@ -5,7 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { API_ENDPOINTS, getApiHeaders } from '@/config/api';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Truck, User } from 'lucide-react';
 import SupabaseTest from '@/components/SupabaseTest';
 
 // Temporarily hardcode Supabase credentials instead of using environment variables
@@ -222,7 +222,19 @@ export default function LoadsPage() {
                 <div className="flex justify-between">
                   <div>
                     <h2 className="font-semibold text-lg">{load.reference_number}</h2>
-                    <p className="text-sm text-gray-600">{load.customer?.name || 'No Customer'}</p>
+                    <div className="mt-1 flex items-center text-sm text-gray-600">
+                      <Truck className="h-4 w-4 mr-1" />
+                      {load.carrier_name}
+                      {load.mc_number && (
+                        <span className="ml-1 text-gray-500">({load.mc_number})</span>
+                      )}
+                    </div>
+                    {load.driver_name && (
+                      <div className="mt-1 flex items-center text-sm text-gray-600">
+                        <User className="h-4 w-4 mr-1" />
+                        {load.driver_name}
+                      </div>
+                    )}
                     <div className="mt-2">
                       <p className="text-sm">
                         <span className="font-medium">Route:</span> {load.origin} → {load.destination}
