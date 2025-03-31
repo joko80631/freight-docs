@@ -89,7 +89,8 @@ export const DocumentService = {
           mime_type: file.mimetype,
           file_size: file.size,
           type: documentType,
-          status: 'pending'
+          status: metadata.status || 'pending',
+          due_date: metadata.dueDate || null
         }])
         .select()
         .single();
@@ -253,5 +254,30 @@ export const DocumentService = {
 
     if (error) throw error;
     return data;
+  },
+
+  /**
+   * Update document status and due date
+   * @param {string} docId - The ID of the document
+   * @param {Object} data - The update data
+   * @returns {Promise<Object>} The updated document
+   */
+  updateDocument: async (docId, data) => {
+    const { data: document, error } = await supabase
+      .from('documents')
+      .update({
+        status: data.status,
+        due_date: data.dueDate
+      })
+      .eq('id', docId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!document) {
+      throw new Error('Document not found');
+    }
+
+    return document;
   }
 }; 

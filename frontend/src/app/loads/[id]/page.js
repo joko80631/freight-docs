@@ -128,6 +128,14 @@ export default function LoadDetailPage() {
     }
   }
 
+  const handleDocumentUpdate = (updatedDoc, deletedDocId) => {
+    if (deletedDocId) {
+      setDocuments(prev => prev.filter(doc => doc.id !== deletedDocId))
+    } else if (updatedDoc) {
+      setDocuments(prev => prev.map(doc => doc.id === updatedDoc.id ? updatedDoc : doc))
+    }
+  }
+
   const handleClassificationUpdate = async (documentId, newType, isManual = true) => {
     try {
       const { error } = await supabase
@@ -306,7 +314,7 @@ export default function LoadDetailPage() {
           <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
             <DocumentUpload
               loadId={id}
-              onUploadComplete={fetchLoadDetails}
+              onUploadComplete={handleDocumentUpdate}
             />
           </div>
         </div>
@@ -316,6 +324,7 @@ export default function LoadDetailPage() {
           <DocumentList 
             documents={documents}
             onClassificationUpdate={handleClassificationUpdate}
+            onDocumentUpdate={handleDocumentUpdate}
           />
         </div>
       </div>

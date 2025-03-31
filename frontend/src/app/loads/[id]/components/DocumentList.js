@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Download, Trash2, Loader2, Calendar, CheckCircle2, XCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { API_ENDPOINTS } from '@/config/api'
+import { getApiHeaders } from '@/utils/api'
+import { format } from 'date-fns'
 
 const REQUIRED_DOCUMENTS = ['POD', 'BOL', 'Invoice']
 
@@ -20,7 +23,13 @@ const STATUS_COLORS = {
   rejected: 'bg-red-100 text-red-800'
 }
 
-export default function DocumentList({ loadId }) {
+const STATUS_LABELS = {
+  pending: 'Pending',
+  approved: 'Approved',
+  rejected: 'Rejected'
+}
+
+export default function DocumentList({ loadId, onDocumentUpdate }) {
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -34,19 +43,15 @@ export default function DocumentList({ loadId }) {
 
   const fetchDocuments = async () => {
     try {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('load_id', loadId)
-        .order('inserted_at', { ascending: false })
-
-      if (error) throw error
-      setDocuments(data)
-    } catch (err) {
-      console.error('Error fetching documents:', err)
-      setError('Failed to load documents')
-      toast.error('Failed to load documents')
+      const response = await fetch(API_ENDPOINTS.documents.list, {
+        headers: getApiHeaders()
+      })
+      if (!response.ok) throw new Error('Failed to fetch documents')
+      const data = await response.json()
+      setDocuments(data.filter(doc => doc.load_id === loadId))
+    } catch (error) {
+      toast.error('Failed to fetch documents')
+      console.error('Error fetching documents:', error)
     } finally {
       setLoading(false)
     }
@@ -65,113 +70,73 @@ export default function DocumentList({ loadId }) {
     return REQUIRED_DOCUMENTS.filter(type => !uploadedTypes.includes(type))
   }
 
-  const handleDownload = async (document) => {
+  const handleDownload = async (docId) => {
     try {
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .createSignedUrl(document.path, 60)
-
-      if (error) throw error
-
-      // Create a temporary link and trigger download
-      const link = document.createElement('a')
-      link.href = data.signedUrl
-      link.download = document.original_name
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    } catch (err) {
-      console.error('Error downloading document:', err)
+      const response = await fetch(API_ENDPOINTS.documents.download(docId), {
+        headers: getApiHeaders()
+      })
+      if (!response.ok) throw new Error('Failed to get download URL')
+      const { url } = await response.json()
+      window.open(url, '_blank')
+    } catch (error) {
       toast.error('Failed to download document')
+      console.error('Error downloading document:', error)
     }
   }
 
-  const handleDelete = async (document) => {
+  const handleDelete = async (docId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return
+    
     try {
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('documents')
-        .remove([document.path])
-
-      if (storageError) throw storageError
-
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', document.id)
-
-      if (dbError) throw dbError
-
-      // Update local state
-      setDocuments(prev => prev.filter(doc => doc.id !== document.id))
-      toast.success('Document deleted successfully')
-    } catch (err) {
-      console.error('Error deleting document:', err)
+      const response = await fetch(API_ENDPOINTS.documents.delete(docId), {
+        method: 'DELETE',
+        headers: getApiHeaders()
+      })
+      if (!response.ok) throw new Error('Failed to delete document')
+      setDocuments(prev => prev.filter(doc => doc.id !== docId))
+      if (onDocumentUpdate) onDocumentUpdate(null, docId)
+      toast.success('Document deleted')
+    } catch (error) {
       toast.error('Failed to delete document')
+      console.error('Error deleting document:', error)
     }
   }
 
-  const handleStatusChange = async (documentId, newStatus) => {
+  const handleStatusChange = async (docId, newStatus) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('User not authenticated')
-
-      const { error } = await supabase
-        .from('documents')
-        .update({
-          status: newStatus,
-          status_updated_by: user.id,
-          status_updated_at: new Date().toISOString()
-        })
-        .eq('id', documentId)
-
-      if (error) throw error
-
-      // Update local state
-      setDocuments(prev =>
-        prev.map(doc =>
-          doc.id === documentId
-            ? { ...doc, status: newStatus, status_updated_by: user.id, status_updated_at: new Date().toISOString() }
-            : doc
-        )
-      )
-
-      toast.success(`Document status updated to ${newStatus}`)
-    } catch (err) {
-      console.error('Error updating document status:', err)
+      const response = await fetch(API_ENDPOINTS.documents.update(docId), {
+        method: 'PATCH',
+        headers: getApiHeaders(),
+        body: JSON.stringify({ status: newStatus })
+      })
+      if (!response.ok) throw new Error('Failed to update document status')
+      const updatedDoc = await response.json()
+      setDocuments(prev => prev.map(doc => doc.id === docId ? updatedDoc : doc))
+      if (onDocumentUpdate) onDocumentUpdate(updatedDoc)
+      toast.success('Document status updated')
+    } catch (error) {
       toast.error('Failed to update document status')
+      console.error('Error updating document status:', error)
     }
   }
 
-  const handleDueDateChange = (documentId, date) => {
-    setEditingDocId(documentId)
-    setDueDate(date || '')
-  }
-
-  const saveDueDate = async (documentId) => {
+  const handleDueDateChange = async (docId) => {
     try {
-      const { error } = await supabase
-        .from('documents')
-        .update({ due_date: dueDate || null })
-        .eq('id', documentId)
-
-      if (error) throw error
-
-      // Update local state
-      setDocuments(prev =>
-        prev.map(doc =>
-          doc.id === documentId
-            ? { ...doc, due_date: dueDate || null }
-            : doc
-        )
-      )
-
+      const response = await fetch(API_ENDPOINTS.documents.update(docId), {
+        method: 'PATCH',
+        headers: getApiHeaders(),
+        body: JSON.stringify({ dueDate })
+      })
+      if (!response.ok) throw new Error('Failed to update document due date')
+      const updatedDoc = await response.json()
+      setDocuments(prev => prev.map(doc => doc.id === docId ? updatedDoc : doc))
+      if (onDocumentUpdate) onDocumentUpdate(updatedDoc)
       setEditingDocId(null)
+      setDueDate('')
       toast.success('Document due date updated')
-    } catch (err) {
-      console.error('Error updating document due date:', err)
+    } catch (error) {
       toast.error('Failed to update document due date')
+      console.error('Error updating document due date:', error)
     }
   }
 
@@ -256,13 +221,13 @@ export default function DocumentList({ loadId }) {
                           {document.document_type || 'Unclassified'}
                         </span>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(document.status)}`}>
-                          {document.status || 'pending'}
+                          {STATUS_LABELS[document.status]}
                         </span>
                         <span className="text-xs text-gray-500">
                           {document.confidence ? `${Math.round(document.confidence * 100)}% confidence` : 'Processing...'}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {new Date(document.inserted_at).toLocaleDateString()}
+                          {format(new Date(document.inserted_at), 'MMM d, yyyy h:mm a')}
                         </span>
                       </div>
                     </div>
@@ -271,68 +236,70 @@ export default function DocumentList({ loadId }) {
                       <div className="flex items-center space-x-2">
                         <select
                           className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                          value={document.status || 'pending'}
+                          value={document.status}
                           onChange={(e) => handleStatusChange(document.id, e.target.value)}
                         >
-                          <option value="pending">Pending</option>
-                          <option value="approved">Approved</option>
-                          <option value="rejected">Rejected</option>
+                          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                            <option key={value} value={value}>{label}</option>
+                          ))}
                         </select>
                       </div>
 
                       {/* Due Date Controls */}
                       <div className="flex items-center space-x-2">
                         {editingDocId === document.id ? (
-                          <>
+                          <div className="flex items-center space-x-2">
                             <input
-                              type="date"
-                              className="block w-full pl-3 pr-10 py-1 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                              type="datetime-local"
+                              className="text-sm border rounded px-2 py-1"
                               value={dueDate}
                               onChange={(e) => setDueDate(e.target.value)}
                             />
                             <button
-                              type="button"
-                              className="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                              onClick={() => saveDueDate(document.id)}
+                              onClick={() => handleDueDateChange(document.id)}
+                              className="text-sm text-blue-600 hover:text-blue-800"
                             >
-                              <CheckCircle2 className="h-4 w-4" />
+                              Save
                             </button>
                             <button
-                              type="button"
-                              className="inline-flex items-center p-1 border border-transparent rounded-full shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                              onClick={() => setEditingDocId(null)}
+                              onClick={() => {
+                                setEditingDocId(null)
+                                setDueDate('')
+                              }}
+                              className="text-sm text-gray-600 hover:text-gray-800"
                             >
-                              <XCircle className="h-4 w-4" />
+                              Cancel
                             </button>
-                          </>
+                          </div>
                         ) : (
-                          <button
-                            type="button"
-                            className={`inline-flex items-center space-x-1 text-sm ${
-                              isDueDatePassed(document.due_date) ? 'text-red-600' : 'text-gray-500'
-                            }`}
-                            onClick={() => handleDueDateChange(document.id, document.due_date)}
-                          >
-                            <Calendar className="h-4 w-4" />
-                            <span>{formatDueDate(document.due_date)}</span>
-                            {isDueDatePassed(document.due_date) && (
-                              <span className="text-red-600">(Overdue)</span>
-                            )}
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-gray-500">
+                              Due: {document.due_date ? format(new Date(document.due_date), 'MMM d, yyyy') : 'Not set'}
+                            </span>
+                            <button
+                              onClick={() => {
+                                setEditingDocId(document.id)
+                                setDueDate(document.due_date || '')
+                              }}
+                              className="text-sm text-blue-600 hover:text-blue-800"
+                            >
+                              Edit
+                            </button>
+                          </div>
                         )}
                       </div>
 
                       {/* Document Actions */}
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => handleDownload(document)}
+                          onClick={() => handleDownload(document.id)}
                           className="text-gray-400 hover:text-gray-500"
                           title="Download"
                         >
                           <Download className="h-5 w-5" />
                         </button>
                         <button
-                          onClick={() => handleDelete(document)}
+                          onClick={() => handleDelete(document.id)}
                           className="text-gray-400 hover:text-red-500"
                           title="Delete"
                         >

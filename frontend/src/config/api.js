@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
     upload: `${API_BASE_URL}/api/documents/upload`,
     list: `${API_BASE_URL}/api/documents`,
     delete: (id) => `${API_BASE_URL}/api/documents/${id}`,
+    update: (id) => `${API_BASE_URL}/api/documents/${id}`,
   },
   loads: {
     list: `${API_BASE_URL}/api/loads`,

@@ -23,6 +23,11 @@ const uploadSchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected']).default('pending')
 });
 
+const updateSchema = z.object({
+  status: z.enum(['pending', 'approved', 'rejected']).optional(),
+  dueDate: z.string().datetime("Invalid due date").optional()
+});
+
 // Routes
 router.get('/', requireAuth, async (req, res, next) => {
   try {
@@ -71,6 +76,24 @@ router.get('/:id/download', requireAuth, async (req, res, next) => {
     const document = await DocumentService.getDocumentById(req.user.id, req.params.id);
     const signedUrl = await DocumentService.generateSignedUrl(document.file_url);
     res.json({ url: signedUrl });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update document status and due date
+router.patch('/:id', requireAuth, async (req, res, next) => {
+  try {
+    const validatedData = updateSchema.parse(req.body);
+    
+    // Verify document ownership
+    const isOwner = await DocumentService.verifyDocumentOwnership(req.user.id, req.params.id);
+    if (!isOwner) {
+      return res.status(403).json({ error: 'Access denied to this document' });
+    }
+
+    const document = await DocumentService.updateDocument(req.params.id, validatedData);
+    res.json(document);
   } catch (error) {
     next(error);
   }
