@@ -3,38 +3,63 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import useTeamStore from '../store/teamStore';
-import { useTeams } from '../hooks/useTeams';
 
 export function RequireTeam({ children }) {
   const router = useRouter();
-  const { teamId, setTeam } = useTeamStore();
-  const { teams, fetchTeams, isLoading } = useTeams();
+  const { teamId, teams, setTeams } = useTeamStore();
 
   useEffect(() => {
-    if (!teams.length) {
+    const fetchTeams = async () => {
+      try {
+        const response = await fetch('/api/teams');
+        if (!response.ok) {
+          throw new Error('Failed to fetch teams');
+        }
+        const data = await response.json();
+        if (data.teams) {
+          setTeams(data.teams);
+        } else {
+          setTeams([]);
+        }
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+        setTeams([]);
+      }
+    };
+
+    if (!teams || teams.length === 0) {
       fetchTeams();
     }
-  }, [teams.length, fetchTeams]);
+  }, [teams, setTeams]);
 
-  useEffect(() => {
-    if (!isLoading && !teams.length) {
-      // If no teams exist, redirect to create team page or show create team dialog
-      router.push('/create-team');
-    }
-  }, [isLoading, teams.length, router]);
+  if (!teams) {
+    return <div className="text-muted-foreground">Loading...</div>;
+  }
 
-  if (isLoading) {
+  if (teams.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Loading...</div>
+      <div className="text-center space-y-4">
+        <h2 className="text-lg font-semibold">No Teams Found</h2>
+        <p className="text-muted-foreground">
+          You need to be a member of a team to access this page.
+        </p>
+        <button
+          onClick={() => router.push('/')}
+          className="text-sm text-primary hover:underline"
+        >
+          Return to Dashboard
+        </button>
       </div>
     );
   }
 
   if (!teamId) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-lg">Please select a team to continue</div>
+      <div className="text-center space-y-4">
+        <h2 className="text-lg font-semibold">Select a Team</h2>
+        <p className="text-muted-foreground">
+          Please select a team to continue.
+        </p>
       </div>
     );
   }

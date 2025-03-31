@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Select,
   SelectContent,
@@ -10,39 +10,111 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import useTeamStore from '../store/teamStore';
-import { useTeams } from '../hooks/useTeams';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import useTeamStore from '../store/teamStore';
 
 export function TeamSelector() {
-  const { teamId, teamName, role, setTeam } = useTeamStore();
-  const { teams, createTeam, isLoading } = useTeams();
+  const { teams, setTeams, teamId, setTeamId, role, setRole } = useTeamStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const handleTeamChange = (teamId) => {
-    const selectedTeam = teams.find(team => team.id === teamId);
-    if (selectedTeam) {
-      setTeam(selectedTeam.id, selectedTeam.name, selectedTeam.role);
+  useEffect(() => {
+    fetchTeams();
+  }, []);
+
+  const fetchTeams = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/teams');
+      if (!response.ok) {
+        throw new Error('Failed to fetch teams');
+      }
+      const data = await response.json();
+      if (data.teams) {
+        setTeams(data.teams);
+        // If no team is selected and teams exist, select the first one
+        if (!teamId && data.teams.length > 0) {
+          setTeamId(data.teams[0].id);
+          setRole(data.teams[0].role);
+        }
+      } else {
+        setTeams([]);
+      }
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      setError('Failed to load teams');
+      setTeams([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleCreateTeam = async (e) => {
     e.preventDefault();
     try {
-      const newTeam = await createTeam(newTeamName);
-      setTeam(newTeam.id, newTeam.name, newTeam.role);
-      setNewTeamName('');
-      setIsDialogOpen(false);
+      const response = await fetch('/api/teams', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newTeamName }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+
+      const { team } = await response.json();
+      if (team) {
+        setTeams(prev => [...prev, { ...team, role: 'ADMIN' }]);
+        setTeamId(team.id);
+        setRole('ADMIN');
+        setNewTeamName('');
+        setIsCreateDialogOpen(false);
+      }
     } catch (error) {
-      console.error('Failed to create team:', error);
+      setError(error.message);
+    }
+  };
+
+  const handleTeamChange = (value) => {
+    const selectedTeam = teams.find(team => team.id === value);
+    if (selectedTeam) {
+      setTeamId(value);
+      setRole(selectedTeam.role);
     }
   };
 
   if (isLoading) {
-    return <div className="text-sm text-gray-500">Loading teams...</div>;
+    return (
+      <Select disabled>
+        <SelectTrigger className="w-[200px]">
+          <SelectValue placeholder="Loading teams..." />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="loading">Loading...</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-red-500 text-sm">
+        {error}
+      </div>
+    );
   }
 
   return (
@@ -59,8 +131,7 @@ export function TeamSelector() {
           ))}
         </SelectContent>
       </Select>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogTrigger asChild>
           <Button variant="outline" size="icon">
             <Plus className="h-4 w-4" />
@@ -72,9 +143,9 @@ export function TeamSelector() {
           </DialogHeader>
           <form onSubmit={handleCreateTeam} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="teamName">Team Name</Label>
+              <Label htmlFor="name">Team Name</Label>
               <Input
-                id="teamName"
+                id="name"
                 value={newTeamName}
                 onChange={(e) => setNewTeamName(e.target.value)}
                 placeholder="Enter team name"
@@ -87,12 +158,6 @@ export function TeamSelector() {
           </form>
         </DialogContent>
       </Dialog>
-
-      {role && (
-        <div className="text-sm text-gray-500">
-          Role: {role}
-        </div>
-      )}
     </div>
   );
 } 

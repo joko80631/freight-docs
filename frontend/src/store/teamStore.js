@@ -4,16 +4,12 @@ import { persist } from 'zustand/middleware';
 const useTeamStore = create(
   persist(
     (set, get) => ({
-      teamId: null,
-      teamName: null,
-      role: null,
       teams: [],
+      teamId: null,
+      role: null,
+      teamName: null,
       isLoading: false,
       error: null,
-
-      setTeam: (teamId, teamName, role) => {
-        set({ teamId, teamName, role });
-      },
 
       setTeams: (teams) => {
         set({ teams });
@@ -28,15 +24,21 @@ const useTeamStore = create(
         }
       },
 
+      setTeamId: (teamId) => set({ teamId }),
+      setRole: (role) => set({ role }),
+      setTeam: (teamId, teamName, role) => {
+        set({ teamId, teamName, role });
+      },
+
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
 
-      clearTeamState: () => {
+      reset: () => {
         set({ 
-          teamId: null, 
-          teamName: null, 
-          role: null, 
           teams: [], 
+          teamId: null, 
+          role: null, 
+          teamName: null, 
           error: null 
         });
       }
