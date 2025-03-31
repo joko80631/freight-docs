@@ -34,10 +34,10 @@ export async function GET() {
 
     // Transform the data to match the expected format
     const transformedTeams = teams.map(team => ({
-      id: team.teams.id,
-      name: team.teams.name,
+      id: team.teams[0]?.id,
+      name: team.teams[0]?.name,
       role: team.role,
-      created_at: team.teams.created_at
+      created_at: team.teams[0]?.created_at
     }));
 
     return NextResponse.json({ teams: transformedTeams });
