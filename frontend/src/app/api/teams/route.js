@@ -2,25 +2,6 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
-interface Team {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
-interface TeamMember {
-  team_id: string;
-  role: string;
-  teams: Team;
-}
-
-interface TransformedTeam {
-  id: string;
-  name: string;
-  role: string;
-  created_at: string;
-}
-
 export async function GET() {
   try {
     const cookieStore = cookies();
@@ -94,8 +75,7 @@ export async function GET() {
           created_at
         )
       `)
-      .eq('user_id', session.user.id)
-      .returns<TeamMember[]>();
+      .eq('user_id', session.user.id);
 
     console.log('Teams query result:', {
       teamsFound: teams?.length,
@@ -112,7 +92,7 @@ export async function GET() {
     }
 
     // Transform the data to match the expected format
-    const transformedTeams: TransformedTeam[] = teams
+    const transformedTeams = teams
       .filter(team => team.teams)
       .map(team => ({
         id: team.teams.id,
@@ -140,7 +120,7 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req) {
   try {
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });

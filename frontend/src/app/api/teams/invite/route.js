@@ -8,7 +8,7 @@ const inviteSchema = z.object({
   role: z.enum(['ADMIN', 'MANAGER', 'USER']),
 });
 
-export async function POST(req: Request) {
+export async function POST(req) {
   try {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
