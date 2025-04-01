@@ -12,10 +12,12 @@ export async function middleware(req) {
 
   // Define protected routes
   const protectedRoutes = [
+    '/dashboard',
     '/loads',
     '/upload',
     '/documents',
-    '/settings'
+    '/settings',
+    '/teams'
   ]
 
   // Define public routes that don't require authentication

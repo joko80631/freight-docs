@@ -1,12 +1,13 @@
 'use client';
 
+import { Toaster } from 'react-hot-toast';
 import AppHeader from './AppHeader';
 import AppFooter from './AppFooter';
 import Breadcrumbs from './Breadcrumbs';
 
 export default function ClientLayout({ children }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <AppHeader />
       <div className="flex-grow flex flex-col">
         <Breadcrumbs />
@@ -15,6 +16,7 @@ export default function ClientLayout({ children }) {
         </main>
       </div>
       <AppFooter />
+      <Toaster position="top-right" />
     </div>
   );
 } 
