@@ -4,8 +4,9 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import useTeamStore from '../store/teamStore';
 import { Button } from './ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/verify-email'];
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/verify-email', '/teams/new'];
 
 export function RequireTeam({ children }) {
   const router = useRouter();
@@ -58,33 +59,59 @@ export function RequireTeam({ children }) {
     );
   }
 
-  if (!teams || teams.length === 0) {
+  // If no teams, show create team prompt
+  if (teams.length === 0) {
     return (
-      <div className="text-center space-y-4">
-        <h2 className="text-lg font-semibold">No Teams Found</h2>
-        <p className="text-muted-foreground">
-          You need to be a member of a team to access this page.
-        </p>
-        <Button
-          variant="ghost"
-          onClick={() => {
-            router.push('/');
-            router.refresh();
-          }}
-        >
-          Return to Dashboard
-        </Button>
+      <div className="container max-w-lg mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Welcome to Freight Management</CardTitle>
+            <CardDescription>
+              To get started, you need to create or join a team.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button 
+              className="w-full" 
+              onClick={() => router.push('/teams/new')}
+            >
+              Create Your First Team
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  if (!teamId && teams.length > 0) {
+  // If teams exist but none selected, show team selector
+  if (!teamId) {
     return (
-      <div className="text-center space-y-4">
-        <h2 className="text-lg font-semibold">Select a Team</h2>
-        <p className="text-muted-foreground">
-          Please select a team to continue.
-        </p>
+      <div className="container max-w-lg mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Select a Team</CardTitle>
+            <CardDescription>
+              Choose a team to continue.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {teams.map((team) => (
+                <Button
+                  key={team.id}
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => {
+                    useTeamStore.getState().setTeam(team.id, team.name, team.role);
+                    router.push('/loads');
+                  }}
+                >
+                  {team.name}
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

@@ -54,7 +54,6 @@ const useTeamStore = create(
         });
       },
 
-      // Updated loadTeams to accept a custom fetch function
       loadTeams: async (customFetch) => {
         const state = get();
         if (state.isLoading) {
