@@ -1,38 +1,78 @@
 import React from 'react';
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const DateRangePicker = ({ value, onChange, className }) => {
-  const handleStartChange = (e) => {
-    onChange({
-      start: e.target.value,
-      end: value?.end || ''
-    });
-  };
+const DateRangePicker = ({ className, value, onChange }) => {
+  const [date, setDate] = React.useState({
+    from: value?.start ? new Date(value.start) : undefined,
+    to: value?.end ? new Date(value.end) : undefined,
+  });
 
-  const handleEndChange = (e) => {
-    onChange({
-      start: value?.start || '',
-      end: e.target.value
-    });
-  };
+  // Update internal state when external value changes
+  React.useEffect(() => {
+    if (value?.start || value?.end) {
+      setDate({
+        from: value?.start ? new Date(value.start) : undefined,
+        to: value?.end ? new Date(value.end) : undefined,
+      });
+    }
+  }, [value]);
 
   return (
-    <div className={`flex items-center space-x-2 ${className}`}>
-      <Input
-        type="date"
-        value={value?.start || ''}
-        onChange={handleStartChange}
-        className="w-full"
-      />
-      <span className="text-muted-foreground">to</span>
-      <Input
-        type="date"
-        value={value?.end || ''}
-        onChange={handleEndChange}
-        className="w-full"
-      />
+    <div className={cn("grid gap-2", className)}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id="date"
+            variant={"outline"}
+            className={cn(
+              "w-full justify-start text-left font-normal",
+              !date && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4" />
+            {date?.from ? (
+              date.to ? (
+                <>
+                  {format(date.from, "LLL dd, y")} -{" "}
+                  {format(date.to, "LLL dd, y")}
+                </>
+              ) : (
+                format(date.from, "LLL dd, y")
+              )
+            ) : (
+              <span>Pick a date range</span>
+            )}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={date?.from}
+            selected={date}
+            onSelect={(newDate) => {
+              setDate(newDate);
+              if (newDate?.from && newDate?.to) {
+                onChange({
+                  start: format(newDate.from, "yyyy-MM-dd"),
+                  end: format(newDate.to, "yyyy-MM-dd"),
+                });
+              }
+            }}
+          />
+        </PopoverContent>
+      </Popover>
     </div>
   );
 };
 
-export default DateRangePicker; 
+export { DateRangePicker }; 

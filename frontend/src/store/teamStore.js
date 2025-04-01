@@ -1,105 +1,84 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-const useTeamStore = create(
+export const useTeamStore = create(
   persist(
     (set, get) => ({
       teams: [],
-      teamId: null,
-      role: null,
-      teamName: null,
+      currentTeam: null,
       isLoading: false,
       error: null,
-      hasAttemptedLoad: false,
 
-      setTeams: (teams) => {
-        set({ 
-          teams,
-          hasAttemptedLoad: true,
-          error: null,
-          isLoading: false
-        });
-        // If no team is selected and teams exist, select the first one
-        if (!get().teamId && teams.length > 0) {
-          const firstTeam = teams[0];
-          set({ 
-            teamId: firstTeam.id, 
-            teamName: firstTeam.name, 
-            role: firstTeam.role 
-          });
-        }
-      },
-
-      setTeamId: (teamId) => set({ teamId }),
-      setRole: (role) => set({ role }),
-      setTeam: (teamId, teamName, role) => {
-        set({ teamId, teamName, role });
-      },
-
-      setLoading: (isLoading) => set({ isLoading }),
-      setError: (error) => set({ 
-        error,
-        isLoading: false,
-        hasAttemptedLoad: true
-      }),
-
-      reset: () => {
-        set({ 
-          teams: [], 
-          teamId: null, 
-          role: null, 
-          teamName: null, 
-          error: null,
-          hasAttemptedLoad: false
-        });
-      },
-
-      loadTeams: async (customFetch) => {
-        const state = get();
-        if (state.isLoading) {
-          console.log('TeamStore: Already loading teams, skipping');
-          return;
-        }
-
+      fetchTeams: async () => {
+        const supabase = createClientComponentClient();
         set({ isLoading: true, error: null });
+        
         try {
-          if (typeof customFetch === 'function') {
-            console.log('TeamStore: Using custom fetch function');
-            await customFetch();
-          } else {
-            console.log('TeamStore: Using default fetch');
-            const response = await fetch('/api/teams');
-            const data = await response.json();
-            
-            if (!response.ok) {
-              throw new Error(data.details || data.error || 'Failed to fetch teams');
-            }
-
-            if (data.status === 'empty') {
-              state.setTeams([]);
-            } else {
-              state.setTeams(data.teams);
-            }
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (!session) {
+            set({ teams: [], isLoading: false });
+            return;
+          }
+          
+          const { data, error } = await supabase
+            .from('teams')
+            .select('*')
+            .order('created_at', { ascending: false });
+          
+          if (error) throw error;
+          
+          set({ teams: data, isLoading: false });
+          
+          // Set current team if not already set
+          const { currentTeam } = get();
+          if (!currentTeam && data.length > 0) {
+            set({ currentTeam: data[0] });
           }
         } catch (error) {
-          console.error('TeamStore: Error loading teams:', error);
-          set({ 
-            error: error.message,
-            isLoading: false,
-            hasAttemptedLoad: true
-          });
+          set({ error: error.message, isLoading: false });
         }
+      },
+
+      setCurrentTeam: (team) => {
+        set({ currentTeam: team });
+        localStorage.setItem('currentTeam', JSON.stringify(team));
+      },
+
+      createTeam: async (teamData) => {
+        const supabase = createClientComponentClient();
+        set({ isLoading: true, error: null });
+        
+        try {
+          const { data, error } = await supabase
+            .from('teams')
+            .insert([teamData])
+            .select()
+            .single();
+          
+          if (error) throw error;
+          
+          set(state => ({
+            teams: [data, ...state.teams],
+            currentTeam: data,
+            isLoading: false
+          }));
+          
+          return data;
+        } catch (error) {
+          set({ error: error.message, isLoading: false });
+          throw error;
+        }
+      },
+
+      clearTeams: () => {
+        set({ teams: [], currentTeam: null });
       }
     }),
     {
       name: 'team-storage',
-      partialize: (state) => ({ 
-        teamId: state.teamId,
-        teamName: state.teamName,
-        role: state.role
-      })
+      storage: createJSONStorage(() => localStorage),
     }
   )
-);
-
-export default useTeamStore; 
+); 
