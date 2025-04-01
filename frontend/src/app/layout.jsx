@@ -3,6 +3,7 @@ import "./globals.css";
 import { TeamSelector } from "@/components/TeamSelector";
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,6 +35,7 @@ export default async function RootLayout({ children }) {
             {children}
           </main>
         </div>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/utils/supabase/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
 interface Team {
@@ -24,7 +24,7 @@ interface TransformedTeam {
 export async function GET() {
   try {
     const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
     // Get the current user's session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
@@ -33,7 +33,10 @@ export async function GET() {
     console.log('Session check:', {
       hasSession: !!session,
       userId: session?.user?.id,
-      error: sessionError?.message
+      email: session?.user?.email,
+      aud: session?.user?.aud,
+      error: sessionError?.message,
+      cookiesPresent: cookieStore.getAll().length > 0
     });
 
     if (sessionError) {
@@ -140,12 +143,24 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const cookieStore = cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
 
     // Get the current user's session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      return NextResponse.json({ 
+        error: 'Authentication failed', 
+        details: sessionError.message 
+      }, { status: 401 });
+    }
+
+    if (!session) {
+      return NextResponse.json({ 
+        error: 'No active session', 
+        details: 'Please log in to access teams' 
+      }, { status: 401 });
     }
 
     // Parse the request body
@@ -153,7 +168,10 @@ export async function POST(req: Request) {
     const { name } = body;
 
     if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+      return NextResponse.json({ 
+        error: 'Name is required',
+        details: 'Team name cannot be empty'
+      }, { status: 400 });
     }
 
     // Create the team
@@ -165,7 +183,10 @@ export async function POST(req: Request) {
 
     if (teamError) {
       console.error('Error creating team:', teamError);
-      return NextResponse.json({ error: 'Failed to create team' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to create team',
+        details: teamError.message
+      }, { status: 500 });
     }
 
     // Add the creator as an admin
@@ -179,12 +200,18 @@ export async function POST(req: Request) {
 
     if (memberError) {
       console.error('Error adding team member:', memberError);
-      return NextResponse.json({ error: 'Failed to add team member' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to add team member',
+        details: memberError.message
+      }, { status: 500 });
     }
 
     return NextResponse.json({ team });
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error occurred'
+    }, { status: 500 });
   }
 } 
