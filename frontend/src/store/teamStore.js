@@ -16,7 +16,8 @@ const useTeamStore = create(
         set({ 
           teams,
           hasAttemptedLoad: true,
-          error: null
+          error: null,
+          isLoading: false
         });
         // If no team is selected and teams exist, select the first one
         if (!get().teamId && teams.length > 0) {
@@ -53,23 +54,36 @@ const useTeamStore = create(
         });
       },
 
-      // New method to handle team loading
-      loadTeams: async () => {
-        if (get().isLoading || (get().hasAttemptedLoad && !get().error)) return;
-        
+      // Updated loadTeams to accept a custom fetch function
+      loadTeams: async (customFetch) => {
+        const state = get();
+        if (state.isLoading) {
+          console.log('TeamStore: Already loading teams, skipping');
+          return;
+        }
+
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch('/api/teams');
-          if (!response.ok) {
-            throw new Error('Failed to fetch teams');
-          }
-          const data = await response.json();
-          if (data.teams) {
-            get().setTeams(data.teams);
+          if (typeof customFetch === 'function') {
+            console.log('TeamStore: Using custom fetch function');
+            await customFetch();
           } else {
-            get().setTeams([]);
+            console.log('TeamStore: Using default fetch');
+            const response = await fetch('/api/teams');
+            const data = await response.json();
+            
+            if (!response.ok) {
+              throw new Error(data.details || data.error || 'Failed to fetch teams');
+            }
+
+            if (data.status === 'empty') {
+              state.setTeams([]);
+            } else {
+              state.setTeams(data.teams);
+            }
           }
         } catch (error) {
+          console.error('TeamStore: Error loading teams:', error);
           set({ 
             error: error.message,
             isLoading: false,

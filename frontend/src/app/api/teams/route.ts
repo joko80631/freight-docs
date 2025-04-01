@@ -28,6 +28,14 @@ export async function GET() {
 
     // Get the current user's session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    // Debug logging for session
+    console.log('Session check:', {
+      hasSession: !!session,
+      userId: session?.user?.id,
+      error: sessionError?.message
+    });
+
     if (sessionError) {
       console.error('Session error:', sessionError);
       return NextResponse.json({ 
@@ -41,6 +49,34 @@ export async function GET() {
         error: 'No active session', 
         details: 'Please log in to access teams' 
       }, { status: 401 });
+    }
+
+    // First check if user has any teams
+    const { data: userTeams, error: userTeamsError } = await supabase
+      .from('team_members')
+      .select('team_id')
+      .eq('user_id', session.user.id);
+
+    console.log('User teams check:', {
+      userId: session.user.id,
+      teamsCount: userTeams?.length,
+      error: userTeamsError?.message
+    });
+
+    if (userTeamsError) {
+      console.error('Error checking user teams:', userTeamsError);
+      return NextResponse.json({ 
+        error: 'Failed to check user teams', 
+        details: userTeamsError.message 
+      }, { status: 500 });
+    }
+
+    // If user has no teams, return empty array instead of error
+    if (!userTeams || userTeams.length === 0) {
+      return NextResponse.json({ 
+        teams: [],
+        status: 'empty'
+      });
     }
 
     // Get teams for the current user
@@ -57,6 +93,12 @@ export async function GET() {
       `)
       .eq('user_id', session.user.id)
       .returns<TeamMember[]>();
+
+    console.log('Teams query result:', {
+      teamsFound: teams?.length,
+      hasError: !!teamsError,
+      errorMessage: teamsError?.message
+    });
 
     if (teamsError) {
       console.error('Error fetching teams:', teamsError);
@@ -76,7 +118,16 @@ export async function GET() {
         created_at: team.teams.created_at
       }));
 
-    return NextResponse.json({ teams: transformedTeams });
+    console.log('Transformed teams:', {
+      originalCount: teams.length,
+      transformedCount: transformedTeams.length,
+      hasTeams: transformedTeams.length > 0
+    });
+
+    return NextResponse.json({ 
+      teams: transformedTeams,
+      status: transformedTeams.length === 0 ? 'empty' : 'success'
+    });
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json({ 

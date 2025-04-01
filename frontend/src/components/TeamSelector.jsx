@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,14 +36,47 @@ export function TeamSelector() {
   } = useTeamStore();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
+  const [createError, setCreateError] = useState(null);
 
   useEffect(() => {
-    loadTeams();
+    const fetchTeams = async () => {
+      try {
+        console.log('TeamSelector: Starting team fetch');
+        const response = await fetch('/api/teams');
+        const data = await response.json();
+        
+        console.log('TeamSelector: API Response', {
+          status: response.status,
+          ok: response.ok,
+          data
+        });
+
+        if (!response.ok) {
+          throw new Error(data.details || data.error || 'Failed to fetch teams');
+        }
+
+        if (data.status === 'empty') {
+          console.log('TeamSelector: No teams found, showing create prompt');
+          setTeams([]);
+          setIsCreateDialogOpen(true);
+        } else {
+          setTeams(data.teams);
+        }
+      } catch (error) {
+        console.error('TeamSelector: Error fetching teams:', error);
+        throw error;
+      }
+    };
+
+    loadTeams(fetchTeams);
   }, []);
 
   const handleCreateTeam = async (e) => {
     e.preventDefault();
+    setCreateError(null);
+    
     try {
+      console.log('TeamSelector: Creating team:', newTeamName);
       const response = await fetch('/api/teams', {
         method: 'POST',
         headers: {
@@ -51,12 +85,18 @@ export function TeamSelector() {
         body: JSON.stringify({ name: newTeamName }),
       });
 
+      const data = await response.json();
+      console.log('TeamSelector: Create team response:', {
+        status: response.status,
+        ok: response.ok,
+        data
+      });
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message);
+        throw new Error(data.details || data.error || 'Failed to create team');
       }
 
-      const { team } = await response.json();
+      const { team } = data;
       if (team) {
         setTeams([...teams, { ...team, role: 'ADMIN' }]);
         setTeamId(team.id);
@@ -65,7 +105,8 @@ export function TeamSelector() {
         setIsCreateDialogOpen(false);
       }
     } catch (error) {
-      console.error('Error creating team:', error);
+      console.error('TeamSelector: Error creating team:', error);
+      setCreateError(error.message);
     }
   };
 
@@ -109,6 +150,52 @@ export function TeamSelector() {
     );
   }
 
+  if (teams.length === 0) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="text-sm text-muted-foreground">
+          No teams found
+        </div>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button variant="default" size="sm">
+              <Plus className="h-4 w-4 mr-1" />
+              Create Team
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Your First Team</DialogTitle>
+              <DialogDescription>
+                Create a team to start collaborating with others.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateTeam} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Team Name</Label>
+                <Input
+                  id="name"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  placeholder="Enter team name"
+                  required
+                />
+              </div>
+              {createError && (
+                <div className="text-sm text-red-500">
+                  {createError}
+                </div>
+              )}
+              <Button type="submit" className="w-full">
+                Create Team
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2">
       <Select value={teamId} onValueChange={handleTeamChange}>
@@ -144,6 +231,11 @@ export function TeamSelector() {
                 required
               />
             </div>
+            {createError && (
+              <div className="text-sm text-red-500">
+                {createError}
+              </div>
+            )}
             <Button type="submit" className="w-full">
               Create Team
             </Button>
