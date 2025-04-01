@@ -10,9 +10,14 @@ const useTeamStore = create(
       teamName: null,
       isLoading: false,
       error: null,
+      hasAttemptedLoad: false,
 
       setTeams: (teams) => {
-        set({ teams });
+        set({ 
+          teams,
+          hasAttemptedLoad: true,
+          error: null
+        });
         // If no team is selected and teams exist, select the first one
         if (!get().teamId && teams.length > 0) {
           const firstTeam = teams[0];
@@ -31,7 +36,11 @@ const useTeamStore = create(
       },
 
       setLoading: (isLoading) => set({ isLoading }),
-      setError: (error) => set({ error }),
+      setError: (error) => set({ 
+        error,
+        isLoading: false,
+        hasAttemptedLoad: true
+      }),
 
       reset: () => {
         set({ 
@@ -39,8 +48,34 @@ const useTeamStore = create(
           teamId: null, 
           role: null, 
           teamName: null, 
-          error: null 
+          error: null,
+          hasAttemptedLoad: false
         });
+      },
+
+      // New method to handle team loading
+      loadTeams: async () => {
+        if (get().isLoading || (get().hasAttemptedLoad && !get().error)) return;
+        
+        set({ isLoading: true, error: null });
+        try {
+          const response = await fetch('/api/teams');
+          if (!response.ok) {
+            throw new Error('Failed to fetch teams');
+          }
+          const data = await response.json();
+          if (data.teams) {
+            get().setTeams(data.teams);
+          } else {
+            get().setTeams([]);
+          }
+        } catch (error) {
+          set({ 
+            error: error.message,
+            isLoading: false,
+            hasAttemptedLoad: true
+          });
+        }
       }
     }),
     {

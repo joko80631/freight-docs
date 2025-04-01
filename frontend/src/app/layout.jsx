@@ -1,7 +1,8 @@
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { TeamSelector } from "@/components/TeamSelector";
-import { RequireTeam } from "@/components/RequireTeam";
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,7 +11,10 @@ export const metadata = {
   description: "Manage your freight operations efficiently",
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const supabase = createServerComponentClient({ cookies });
+  const { data: { session } } = await supabase.auth.getSession();
+
   return (
     <html lang="en">
       <body className={inter.className}>
@@ -21,15 +25,13 @@ export default function RootLayout({ children }) {
                 <h1 className="text-2xl font-semibold text-gray-900">
                   Freight Management
                 </h1>
-                <TeamSelector />
+                {session && <TeamSelector />}
               </div>
             </div>
           </header>
 
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <RequireTeam>
-              {children}
-            </RequireTeam>
+            {children}
           </main>
         </div>
       </body>
