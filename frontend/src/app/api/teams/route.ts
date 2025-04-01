@@ -2,6 +2,25 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 
+interface Team {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+interface TeamMember {
+  team_id: string;
+  role: string;
+  teams: Team;
+}
+
+interface TransformedTeam {
+  id: string;
+  name: string;
+  role: string;
+  created_at: string;
+}
+
 export async function GET() {
   try {
     const cookieStore = cookies();
@@ -9,8 +28,19 @@ export async function GET() {
 
     // Get the current user's session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (sessionError) {
+      console.error('Session error:', sessionError);
+      return NextResponse.json({ 
+        error: 'Authentication failed', 
+        details: sessionError.message 
+      }, { status: 401 });
+    }
+    
+    if (!session) {
+      return NextResponse.json({ 
+        error: 'No active session', 
+        details: 'Please log in to access teams' 
+      }, { status: 401 });
     }
 
     // Get teams for the current user
@@ -25,25 +55,34 @@ export async function GET() {
           created_at
         )
       `)
-      .eq('user_id', session.user.id);
+      .eq('user_id', session.user.id)
+      .returns<TeamMember[]>();
 
     if (teamsError) {
       console.error('Error fetching teams:', teamsError);
-      return NextResponse.json({ error: 'Failed to fetch teams' }, { status: 500 });
+      return NextResponse.json({ 
+        error: 'Failed to fetch teams', 
+        details: teamsError.message 
+      }, { status: 500 });
     }
 
     // Transform the data to match the expected format
-    const transformedTeams = teams.map(team => ({
-      id: team.teams[0]?.id,
-      name: team.teams[0]?.name,
-      role: team.role,
-      created_at: team.teams[0]?.created_at
-    }));
+    const transformedTeams: TransformedTeam[] = teams
+      .filter(team => team.teams)
+      .map(team => ({
+        id: team.teams.id,
+        name: team.teams.name,
+        role: team.role,
+        created_at: team.teams.created_at
+      }));
 
     return NextResponse.json({ teams: transformedTeams });
   } catch (error) {
     console.error('Unexpected error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error occurred'
+    }, { status: 500 });
   }
 }
 

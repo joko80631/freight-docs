@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -22,42 +22,23 @@ import { Label } from "@/components/ui/label";
 import useTeamStore from '../store/teamStore';
 
 export function TeamSelector() {
-  const { teams, setTeams, teamId, setTeamId, role, setRole } = useTeamStore();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { 
+    teams, 
+    teamId, 
+    role, 
+    isLoading, 
+    error,
+    loadTeams, 
+    setTeamId, 
+    setRole, 
+    setTeams 
+  } = useTeamStore();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
 
   useEffect(() => {
-    fetchTeams();
+    loadTeams();
   }, []);
-
-  const fetchTeams = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch('/api/teams');
-      if (!response.ok) {
-        throw new Error('Failed to fetch teams');
-      }
-      const data = await response.json();
-      if (data.teams) {
-        setTeams(data.teams);
-        // If no team is selected and teams exist, select the first one
-        if (!teamId && data.teams.length > 0) {
-          setTeamId(data.teams[0].id);
-          setRole(data.teams[0].role);
-        }
-      } else {
-        setTeams([]);
-      }
-    } catch (error) {
-      console.error('Error fetching teams:', error);
-      setError('Failed to load teams');
-      setTeams([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleCreateTeam = async (e) => {
     e.preventDefault();
@@ -77,14 +58,14 @@ export function TeamSelector() {
 
       const { team } = await response.json();
       if (team) {
-        setTeams(prev => [...prev, { ...team, role: 'ADMIN' }]);
+        setTeams([...teams, { ...team, role: 'ADMIN' }]);
         setTeamId(team.id);
         setRole('ADMIN');
         setNewTeamName('');
         setIsCreateDialogOpen(false);
       }
     } catch (error) {
-      setError(error.message);
+      console.error('Error creating team:', error);
     }
   };
 
@@ -111,8 +92,19 @@ export function TeamSelector() {
 
   if (error) {
     return (
-      <div className="text-red-500 text-sm">
-        {error}
+      <div className="flex items-center gap-2">
+        <div className="text-red-500 text-sm">
+          {error}
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => loadTeams()}
+          className="h-8 px-2"
+        >
+          <RefreshCw className="h-4 w-4 mr-1" />
+          Retry
+        </Button>
       </div>
     );
   }
