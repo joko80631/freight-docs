@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useTeam } from '@/hooks/useTeam';
 import {
   DropdownMenu,
@@ -16,6 +16,17 @@ import Link from 'next/link';
 export default function TeamSelector() {
   const { currentTeam, teams, switchTeam, isAdmin, isLoading, error } = useTeam();
   const [open, setOpen] = useState(false);
+
+  // Memoize the team switch handler
+  const handleTeamSwitch = useCallback((teamId) => {
+    switchTeam(teamId);
+    setOpen(false);
+  }, [switchTeam]);
+
+  // Memoize the dropdown toggle
+  const handleDropdownChange = useCallback((isOpen) => {
+    setOpen(isOpen);
+  }, []);
 
   if (isLoading) {
     return (
@@ -54,7 +65,7 @@ export default function TeamSelector() {
   }
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleDropdownChange}>
       <DropdownMenuTrigger asChild>
         <button 
           className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-gray-900 focus:outline-none"
@@ -76,10 +87,7 @@ export default function TeamSelector() {
         {teams.map((team) => (
           <DropdownMenuItem
             key={team.id}
-            onClick={() => {
-              switchTeam(team.id);
-              setOpen(false);
-            }}
+            onClick={() => handleTeamSwitch(team.id)}
             className={`flex items-center ${
               currentTeam.id === team.id ? 'bg-blue-50' : ''
             }`}

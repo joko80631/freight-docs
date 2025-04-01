@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
@@ -21,6 +21,16 @@ export default function AppHeader() {
   const pathname = usePathname();
   const { user, loading: authLoading } = useAuth();
   const { isLoading: teamLoading } = useTeam();
+
+  // Memoize the mobile menu toggle
+  const toggleMobileMenu = useCallback(() => {
+    setMobileMenuOpen(prev => !prev);
+  }, []);
+
+  // Memoize the mobile menu close
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -84,7 +94,7 @@ export default function AppHeader() {
             <button
               type="button"
               className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={toggleMobileMenu}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
             >
@@ -115,7 +125,7 @@ export default function AppHeader() {
                     ? 'bg-blue-50 text-blue-600'
                     : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                 }`}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={closeMobileMenu}
               >
                 {item.name}
               </Link>
