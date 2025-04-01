@@ -6,7 +6,7 @@ import { Download, Trash2, Loader2, Calendar, CheckCircle2, XCircle } from 'luci
 import toast from 'react-hot-toast'
 import { API_ENDPOINTS } from '@/config/api'
 import { getApiHeaders, handleApiResponse } from '@/utils/api'
-import { format } from 'date-fns'
+import { formatDate } from './test-date'
 
 const REQUIRED_DOCUMENTS = ['POD', 'BOL', 'Invoice']
 
@@ -139,7 +139,7 @@ export default function DocumentList({ loadId, onDocumentUpdate }) {
   const formatDate = (dateString) => {
     if (!dateString) return 'Not set'
     try {
-      return format(new Date(dateString), 'MMM d, yyyy')
+      return formatDate(new Date(dateString))
     } catch (error) {
       console.error('Error formatting date:', error)
       return 'Invalid date'
