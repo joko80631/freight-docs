@@ -21,7 +21,7 @@ export const handleApiResponse = async (response) => {
   return response.json();
 };
 
-import useTeamStore from '../store/teamStore';
+import { useTeamStore } from '../store/teamStore';
 
 export const createTeamScopedApi = () => {
   const { teamId } = useTeamStore.getState();

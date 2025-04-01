@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import useTeamStore from '@/store/teamStore';
+import { useTeamStore } from '@/store/teamStore';
 
 interface UserProfile {
   id: string;

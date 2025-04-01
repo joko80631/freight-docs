@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import useTeamStore from '../store/teamStore';
+import { useTeamStore } from '../store/teamStore';
 import { RequireTeam } from './RequireTeam';
 
 export function withTeamProtection(Component) {

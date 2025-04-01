@@ -39,7 +39,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
-import useTeamStore from '../store/teamStore';
+import { useTeamStore } from '../store/teamStore';
 import { createTeamScopedApi } from '../utils/api';
 
 const ROLE_BADGE_COLORS = {

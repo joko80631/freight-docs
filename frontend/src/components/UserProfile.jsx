@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { User, Settings, LogOut } from 'lucide-react';
-import useTeamStore from '@/store/teamStore';
+import { useTeamStore } from '@/store/teamStore';
 
 export function UserProfile() {
   const [user, setUser] = useState(null);

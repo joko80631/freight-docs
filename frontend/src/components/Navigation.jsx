@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Users } from 'lucide-react';
-import useTeamStore from '@/store/teamStore';
+import { useTeamStore } from '@/store/teamStore';
 
 export function Navigation() {
   const pathname = usePathname();
