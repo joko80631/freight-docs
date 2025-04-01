@@ -6,27 +6,8 @@ import { API_ENDPOINTS, getApiHeaders } from '@/config/api';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { Loader2, Plus, Truck, User } from 'lucide-react';
-import SupabaseTest from '@/components/SupabaseTest';
-
-// Temporarily hardcode Supabase credentials instead of using environment variables
-// This is just for testing - we'll revert to environment variables after confirming it works
-const supabase = createClientComponentClient({
-  supabaseUrl: "https://wjgnnjnbnifprcnlazis.supabase.co",
-  supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndqZ25uam5ibmlmcHJjbmxhemlzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDMyNDc5NTEsImV4cCI6MjA1ODgyMzk1MX0.rcCor1RadYKfbwBxuioZyHwmQT-5x57bvJOkv_5R2zE",
-  options: {
-    global: {
-      autoRefreshToken: true,
-      persistSession: true,
-      detectSessionInUrl: false
-    },
-    realtime: {
-      eventsPerSecond: 10,
-      headers: {
-        'X-Client-Info': 'freight-docs-client',
-      }
-    }
-  }
-});
+import { DevPanel } from '@/components/DevPanel';
+import useTeamStore from '@/store/teamStore';
 
 // Required document types constant
 const REQUIRED_DOCUMENTS = ['POD', 'BOL', 'Invoice'];
@@ -39,25 +20,24 @@ export default function LoadsPage() {
   const [sortBy, setSortBy] = useState('created_at');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterDocuments, setFilterDocuments] = useState('all');
+  const { teamId, teamName } = useTeamStore();
+  const supabase = createClientComponentClient();
 
   useEffect(() => {
+    if (!teamId) {
+      setError('Please select a team to view loads');
+      setIsLoading(false);
+      return;
+    }
     fetchLoads();
-  }, [sortBy, filterStatus, filterDocuments]);
+  }, [sortBy, filterStatus, filterDocuments, teamId]);
 
   const fetchLoads = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      // Log environment variables (redacted for security)
-      console.log('Supabase URL configured:', process.env.NEXT_PUBLIC_SUPABASE_URL ? 'Yes' : 'No');
-      console.log('Supabase Key configured:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'Yes' : 'No');
-      
-      // Log authentication status
-      const { data: { user } } = await supabase.auth.getUser();
-      console.log('User authenticated:', user ? 'Yes' : 'No');
-      
-      console.log('Attempting to fetch loads from Supabase...');
+      console.log('Fetching loads for team:', teamId);
       
       const { data: loadsData, error: loadsError } = await supabase
         .from('loads')
@@ -69,6 +49,7 @@ export default function LoadsPage() {
             status
           )
         `)
+        .eq('team_id', teamId)
         .order(sortBy, { ascending: false });
 
       if (loadsError) {
@@ -78,6 +59,11 @@ export default function LoadsPage() {
       
       console.log('Loads fetched successfully:', loadsData);
       setLoads(loadsData || []);
+
+      // Log if no loads found
+      if (!loadsData || loadsData.length === 0) {
+        console.warn('No loads found for team:', teamId);
+      }
     } catch (error) {
       console.error('Error fetching loads:', error);
       setError(error.message);
@@ -126,6 +112,17 @@ export default function LoadsPage() {
     return statusMatch && documentMatch;
   });
 
+  if (!teamId) {
+    return (
+      <div className="container mx-auto p-4">
+        <div className="bg-yellow-50 p-4 rounded-md text-yellow-800">
+          <h2 className="text-lg font-semibold">No Team Selected</h2>
+          <p>Please select a team to view and manage loads.</p>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-4">
@@ -148,15 +145,11 @@ export default function LoadsPage() {
 
   return (
     <div className="container mx-auto p-4 space-y-6">
-      <div className="p-4 m-4 bg-red-50 rounded-lg">
-        <h3 className="font-bold text-lg">Debug Info</h3>
-        <p>Using hardcoded Supabase credentials for testing</p>
-      </div>
-      
-      <SupabaseTest />
-      
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Loads</h1>
+        <div>
+          <h1 className="text-2xl font-bold">Loads</h1>
+          <p className="text-sm text-gray-600">Team: {teamName}</p>
+        </div>
         <Link 
           href="/loads/new" 
           className="flex items-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
@@ -203,7 +196,7 @@ export default function LoadsPage() {
       
       {filteredLoads.length === 0 ? (
         <div className="border border-gray-200 rounded-lg p-8 text-center text-gray-500">
-          No loads found
+          No loads found for this team
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
@@ -214,61 +207,38 @@ export default function LoadsPage() {
             const missingTypes = REQUIRED_DOCUMENTS.filter(type => !documentTypes.includes(type));
             
             return (
-              <Link 
-                key={load.id} 
-                href={`/loads/${load.id}`}
-                className="block border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex justify-between">
+              <div key={load.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="font-semibold text-lg">{load.reference_number}</h2>
-                    <div className="mt-1 flex items-center text-sm text-gray-600">
-                      <Truck className="h-4 w-4 mr-1" />
-                      {load.carrier_name}
-                      {load.mc_number && (
-                        <span className="ml-1 text-gray-500">({load.mc_number})</span>
-                      )}
-                    </div>
-                    {load.driver_name && (
-                      <div className="mt-1 flex items-center text-sm text-gray-600">
-                        <User className="h-4 w-4 mr-1" />
-                        {load.driver_name}
-                      </div>
-                    )}
-                    <div className="mt-2">
-                      <p className="text-sm">
-                        <span className="font-medium">Route:</span> {load.origin} → {load.destination}
-                      </p>
-                      <p className="text-sm">
-                        <span className="font-medium">Created:</span> {new Date(load.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
+                    <h2 className="font-semibold">{load.load_number}</h2>
+                    <p className="text-sm text-gray-600">{load.carrier_name}</p>
                   </div>
-                  
-                  <div className="flex flex-col items-end">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 mb-2">
-                      {load.status}
-                    </span>
-                    
-                    <div className="flex items-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(documentStatus)}`}>
-                        <span className="mr-1">{getStatusIcon(documentStatus)}</span>
-                        {loadDocuments.length}/{REQUIRED_DOCUMENTS.length} Documents
-                      </span>
-                    </div>
-                    
-                    {missingTypes.length > 0 && (
-                      <div className="mt-1 text-xs text-gray-500">
-                        Missing: {missingTypes.join(', ')}
-                      </div>
-                    )}
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(documentStatus)}`}>
+                    {getStatusIcon(documentStatus)}
+                  </span>
+                </div>
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600">
+                    Missing documents: {missingTypes.join(', ')}
+                  </p>
+                </div>
+                <div className="mt-4 flex space-x-4 text-sm text-gray-600">
+                  <div>
+                    <span className="font-medium">Created:</span>{' '}
+                    {new Date(load.created_at).toLocaleDateString()}
+                  </div>
+                  <div>
+                    <span className="font-medium">Delivery:</span>{' '}
+                    {new Date(load.delivery_date).toLocaleDateString()}
                   </div>
                 </div>
-              </Link>
+              </div>
             );
           })}
         </div>
       )}
+
+      <DevPanel />
     </div>
   );
 } 

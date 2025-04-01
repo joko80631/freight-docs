@@ -45,6 +45,7 @@
     "@radix-ui/react-dropdown-menu": "^2.1.6",
     "@radix-ui/react-toast": "^1.2.6",
     "@supabase/supabase-js": "^2.49.4",
+    "node-fetch": "^3.3.2",
     "openai": "^4.90.0"
   }
 }
