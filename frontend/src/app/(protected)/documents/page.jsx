@@ -8,10 +8,10 @@ import DocumentView from '@/components/documents/DocumentView';
 import DocumentUpload from '@/components/documents/DocumentUpload';
 import DocumentFilter from '@/components/documents/DocumentFilter';
 import { Button } from "@/components/ui/button";
-import { Upload } from 'lucide-react';
+import { Upload, FileText } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import Skeleton from '@/components/ui/skeleton';
 import EmptyState from '@/components/ui/empty-state';
 
 const DocumentsPage = () => {

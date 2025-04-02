@@ -7,10 +7,10 @@ import LoadDataTable from '@/components/loads/LoadDataTable';
 import SearchFilterPanel from '@/components/loads/SearchFilterPanel';
 import LoadForm from '@/components/loads/LoadForm';
 import { Button } from "@/components/ui/button";
-import { Plus } from 'lucide-react';
+import { Plus, Truck } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import Skeleton from '@/components/ui/skeleton';
 import EmptyState from '@/components/ui/empty-state';
 
 const LoadsPage = () => {
