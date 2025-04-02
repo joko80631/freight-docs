@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
-import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
-import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
-import { QuickActions } from "@/components/dashboard/QuickActions";
+import {
+  OnboardingChecklist,
+  MetricsGrid,
+  ActivityFeed,
+  QuickActions,
+} from "@/components/dashboard";
 import { LoadingSkeleton } from "@/components/shared";
 
 const ONBOARDING_STORAGE_KEY = "freightdocs_onboarding_status";

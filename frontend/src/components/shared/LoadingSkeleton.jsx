@@ -1,4 +1,6 @@
-import { Skeleton } from "@/components/ui/skeleton";
+'use client';
+
+import { cn } from "@/lib/utils";
 
 export function LoadingSkeleton({
   variant = "default",
@@ -16,9 +18,9 @@ export function LoadingSkeleton({
   };
 
   return (
-    <div className={className}>
+    <div className={cn("animate-pulse rounded-md bg-muted", className)}>
       {Array.from({ length: count }).map((_, i) => (
-        <Skeleton
+        <div
           key={i}
           className={variants[variant]}
           {...props}
