@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Alert,
   AlertDescription,
-  AlertFooter,
 } from "@/components/ui/alert";
 
 export function FallbackError({ error, resetErrorBoundary }) {
@@ -19,16 +18,15 @@ export function FallbackError({ error, resetErrorBoundary }) {
             {error?.message || "An unexpected error occurred"}
           </p>
         </AlertDescription>
-        <AlertFooter>
+        <div className="mt-4">
           <Button
             variant="outline"
             size="sm"
-            className="mt-4"
             onClick={resetErrorBoundary}
           >
             Try again
           </Button>
-        </AlertFooter>
+        </div>
       </Alert>
     </div>
   );

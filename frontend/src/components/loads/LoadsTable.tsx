@@ -31,12 +31,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip } from "@/components/ui/tooltip";
 import { useToastNotification } from "@/components/shared";
 import { Load, formatDate, getRelativeTime, getDocumentCompletionStatus, getMissingDocuments } from "@/lib/mock/loads";
 
@@ -58,7 +53,14 @@ const STATUS_COLORS = {
   Completed: "bg-green-100 text-green-800",
   "On Hold": "bg-yellow-100 text-yellow-800",
   Cancelled: "bg-gray-100 text-gray-800",
-};
+} as const;
+
+const STATUS_VARIANTS = {
+  Active: "default",
+  Completed: "secondary",
+  "On Hold": "outline",
+  Cancelled: "destructive",
+} as const;
 
 const STATUS_RANK = {
   Active: 1,
@@ -253,52 +255,47 @@ export function LoadsTable({ loads, isLoading = false }: LoadsTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger className="cursor-help">
-                        {formatDate(load.dateCreated)}
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {getRelativeTime(load.dateCreated)}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <Tooltip
+                    content={getRelativeTime(load.dateCreated)}
+                  >
+                    {formatDate(load.dateCreated)}
+                  </Tooltip>
                 </TableCell>
                 <TableCell>
-                  <Badge className={STATUS_COLORS[load.status]}>
+                  <Badge
+                    variant={STATUS_VARIANTS[load.status]}
+                    className={STATUS_COLORS[load.status]}
+                  >
                     {load.status}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger className="cursor-help">
-                        <div className="flex items-center gap-2">
-                          <Progress
-                            value={docStatus.percentage}
-                            className="h-2 w-20"
-                          />
-                          <span className="text-sm">
-                            {docStatus.complete}/{docStatus.total}
-                          </span>
+                  <Tooltip
+                    content={
+                      missingDocs.length > 0 ? (
+                        <div className="space-y-1">
+                          <p className="font-medium">Missing Documents:</p>
+                          <ul className="list-inside list-disc text-sm">
+                            {missingDocs.map((doc) => (
+                              <li key={doc}>{doc}</li>
+                            ))}
+                          </ul>
                         </div>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {missingDocs.length > 0 ? (
-                          <div className="space-y-1">
-                            <p className="font-medium">Missing Documents:</p>
-                            <ul className="list-inside list-disc text-sm">
-                              {missingDocs.map((doc) => (
-                                <li key={doc}>{doc}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : (
-                          <p>All documents complete</p>
-                        )}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                      ) : (
+                        <p>All documents complete</p>
+                      )
+                    }
+                  >
+                    <div className="flex items-center gap-2">
+                      <Progress
+                        value={docStatus.percentage}
+                        className="h-2 w-20"
+                      />
+                      <span className="text-sm">
+                        {docStatus.complete}/{docStatus.total}
+                      </span>
+                    </div>
+                  </Tooltip>
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
