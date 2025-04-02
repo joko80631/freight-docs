@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function SignupPage() {
   const router = useRouter();
   const { showSuccess, showError } = useToastNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const supabase = createClientComponentClient();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -33,17 +35,15 @@ export default function SignupPage() {
     }
 
     try {
-      // TODO: Implement signup with Supabase
-      // const { data, error } = await supabase.auth.signUp({
-      //   email: formData.email,
-      //   password: formData.password,
-      //   options: {
-      //     emailRedirectTo: `${window.location.origin}/verify-email`,
-      //   },
-      // });
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/verify-email`,
+        },
+      });
       
-      // Simulated signup for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (error) throw error;
       
       showSuccess(
         "Check your email",
@@ -51,7 +51,7 @@ export default function SignupPage() {
       );
       router.push("/login");
     } catch (error) {
-      showError("Error", "Something went wrong. Please try again.");
+      showError("Error", error.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }

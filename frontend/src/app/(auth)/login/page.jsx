@@ -12,12 +12,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function LoginPage() {
   const router = useRouter();
   const { showSuccess, showError } = useToastNotification();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const supabase = createClientComponentClient();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -29,22 +31,20 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // TODO: Wire up remember me functionality with Supabase auth.signIn
-      // const { data, error } = await supabase.auth.signInWithPassword({
-      //   email: formData.email,
-      //   password: formData.password,
-      //   options: {
-      //     remember: formData.rememberMe
-      //   }
-      // });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          remember: formData.rememberMe
+        }
+      });
       
-      // Simulated login for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (error) throw error;
       
       showSuccess("Success", "Logged in successfully");
       router.push("/dashboard");
     } catch (error) {
-      showError("Error", "Invalid email or password");
+      showError("Error", error.message || "Invalid email or password");
     } finally {
       setIsLoading(false);
     }

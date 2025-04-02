@@ -7,25 +7,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToastNotification } from "@/components/shared";
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { showSuccess, showError } = useToastNotification();
+  const supabase = createClientComponentClient();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // TODO: Implement password reset flow with Supabase
-      // const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      //   redirectTo: `${window.location.origin}/update-password`,
-      // });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
       
-      // Simulated delay for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (error) throw error;
       
       showSuccess(
         "Check your email",
@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
       );
       router.push("/login");
     } catch (error) {
-      showError("Error", "Something went wrong. Please try again.");
+      showError("Error", error.message || "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
