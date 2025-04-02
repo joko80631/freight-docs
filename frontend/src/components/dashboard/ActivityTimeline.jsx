@@ -5,8 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatDistanceToNow } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileText, Upload, Truck, UserPlus, AlertCircle } from 'lucide-react';
+import { FileText, Upload, Truck, UserPlus, AlertCircle, Activity } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import EmptyState from '@/components/ui/empty-state';
 
 const ActivityItem = ({ activity }) => {
   if (!activity || !activity.type || !activity.description || !activity.timestamp) {
@@ -40,16 +41,6 @@ const ActivityItem = ({ activity }) => {
     </div>
   );
 };
-
-const EmptyState = () => (
-  <div className="flex flex-col items-center justify-center py-8 text-center">
-    <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-    <h3 className="text-lg font-medium">No activity yet</h3>
-    <p className="text-sm text-muted-foreground mt-2">
-      Start by creating a load or uploading a document
-    </p>
-  </div>
-);
 
 export default function ActivityTimeline({ teamId }) {
   const [activities, setActivities] = useState(null);
@@ -133,7 +124,12 @@ export default function ActivityTimeline({ teamId }) {
       <CardContent>
         <ScrollArea className="h-[400px] pr-4">
           {!activities || activities.length === 0 ? (
-            <EmptyState />
+            <EmptyState
+              icon={Activity}
+              title="No recent activity"
+              description="Team activity will appear here once members start working."
+              variant="inline"
+            />
           ) : (
             <div className="space-y-4">
               {activities

@@ -10,6 +10,9 @@ import DocumentFilter from '@/components/documents/DocumentFilter';
 import { Button } from "@/components/ui/button";
 import { Upload } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import EmptyState from '@/components/ui/empty-state';
 
 const DocumentsPage = () => {
   const { currentTeam } = useTeamStore();
@@ -30,13 +33,29 @@ const DocumentsPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/teams/${currentTeam.id}/documents`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setDocuments(data);
+      } catch (error) {
+        console.error('Failed to fetch documents:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (currentTeam?.id) {
-      fetchDocuments(currentTeam.id, filters);
-      fetchLoads(currentTeam.id);
+      fetchDocuments();
     }
-  }, [currentTeam?.id, filters, fetchDocuments, fetchLoads]);
+  }, [currentTeam?.id]);
 
   const handleUpload = async (files) => {
     if (!currentTeam?.id) return;
@@ -123,60 +142,77 @@ const DocumentsPage = () => {
 
   if (!currentTeam) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">No Team Selected</h2>
-          <p className="text-muted-foreground">
-            Please select or create a team to view documents
-          </p>
+      <div className="container mx-auto p-6">
+        <EmptyState
+          icon={FileText}
+          title="No team selected"
+          description="Please select or create a team to view documents."
+          cta={{
+            label: 'Select Team',
+            href: '/teams'
+          }}
+          variant="centered"
+        />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-4 w-3/4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Documents</h1>
-        <Button onClick={() => setIsUploading(true)}>
-          <Upload className="mr-2 h-4 w-4" />
-          Upload Documents
-        </Button>
-      </div>
-
-      <DocumentFilter
-        filters={filters}
-        onSearchChange={(search) => setFilters({ ...filters, search })}
-        onTypeChange={(type) => setFilters({ ...filters, type })}
-        onStatusChange={(status) => setFilters({ ...filters, status })}
-        onLoadChange={(loadId) => setFilters({ ...filters, loadId: loadId || null })}
-        loads={loads}
-      />
-
-      {isLoading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
-        </div>
-      ) : error ? (
-        <div className="text-center text-red-500">
-          Error loading documents: {error}
-        </div>
-      ) : (
-        <DocumentView
-          documents={documents}
-          onView={handleView}
-          onDownload={handleDownload}
-          onDelete={handleDelete}
+  if (!documents || documents.length === 0) {
+    return (
+      <div className="container mx-auto p-6">
+        <EmptyState
+          icon={FileText}
+          title="No documents found"
+          description="You haven't uploaded any documents for this team yet."
+          cta={{
+            label: 'Upload Document',
+            onClick: () => setIsUploading(true)
+          }}
+          variant="centered"
         />
-      )}
+      </div>
+    );
+  }
 
-      <DocumentUpload
-        isOpen={isUploading}
-        onClose={() => setIsUploading(false)}
-        onUpload={handleUpload}
-        isUploading={isUploading}
-        progress={uploadProgress}
-      />
+  return (
+    <div className="container mx-auto p-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {documents.map((document) => (
+          <Card key={document.id}>
+            <CardHeader>
+              <CardTitle className="text-lg">{document.name}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                {document.description}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Uploaded {new Date(document.createdAt).toLocaleDateString()}
+              </p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };

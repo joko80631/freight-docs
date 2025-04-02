@@ -9,6 +9,9 @@ import LoadForm from '@/components/loads/LoadForm';
 import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import EmptyState from '@/components/ui/empty-state';
 
 const LoadsPage = () => {
   const { currentTeam } = useTeamStore();
@@ -28,12 +31,29 @@ const LoadsPage = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedLoad, setSelectedLoad] = useState(null);
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const fetchLoads = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`/api/teams/${currentTeam.id}/loads`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setLoads(data);
+      } catch (error) {
+        console.error('Failed to fetch loads:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (currentTeam?.id) {
-      fetchLoads(currentTeam.id, filters);
+      fetchLoads();
     }
-  }, [currentTeam?.id, filters, fetchLoads]);
+  }, [currentTeam?.id]);
 
   const handleCreateLoad = async (data) => {
     try {
@@ -99,13 +119,58 @@ const LoadsPage = () => {
 
   if (!currentTeam) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">No Team Selected</h2>
-          <p className="text-muted-foreground">
-            Please select or create a team to view loads
-          </p>
+      <div className="container mx-auto p-6">
+        <EmptyState
+          icon={Truck}
+          title="No team selected"
+          description="Please select or create a team to view loads."
+          cta={{
+            label: 'Select Team',
+            href: '/teams'
+          }}
+          variant="centered"
+        />
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader>
+                <Skeleton className="h-4 w-3/4" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3 mt-2" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
+      </div>
+    );
+  }
+
+  if (!loads || loads.length === 0) {
+    return (
+      <div className="container mx-auto p-6">
+        <EmptyState
+          icon={Truck}
+          title="No loads yet"
+          description="You haven't created any loads. Start by adding one."
+          cta={{
+            label: 'Create Load',
+            onClick: () => setIsFormOpen(true)
+          }}
+          secondaryCta={{
+            label: 'View Documentation',
+            href: '/help/loads'
+          }}
+          variant="centered"
+        />
       </div>
     );
   }
