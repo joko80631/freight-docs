@@ -1,88 +1,64 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useTeamStore } from '@/store/teamStore';
-import useDashboardStore from '@/store/dashboardStore';
-import MetricCard from '@/components/dashboard/MetricCard';
-import ActivityFeed from '@/components/dashboard/ActivityFeed';
-import LoadTimeline from '@/components/dashboard/LoadTimeline';
-import QuickActions from '@/components/dashboard/QuickActions';
-import { Loader2, Package, FileText, Users, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { OnboardingChecklist } from "@/components/dashboard/OnboardingChecklist";
+import { MetricsGrid } from "@/components/dashboard/MetricsGrid";
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { QuickActions } from "@/components/dashboard/QuickActions";
+import { LoadingSkeleton } from "@/components/shared";
 
-const DashboardPage = () => {
-  const { currentTeam } = useTeamStore();
-  const { metrics, recentActivity, isLoading, error, fetchDashboardData } = useDashboardStore();
+const ONBOARDING_STORAGE_KEY = "freightdocs_onboarding_status";
+
+export default function DashboardPage() {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
-    if (currentTeam?.id) {
-      fetchDashboardData(currentTeam.id);
-      // Set up polling every 60 seconds
-      const interval = setInterval(() => {
-        fetchDashboardData(currentTeam.id);
-      }, 60000);
-
-      return () => clearInterval(interval);
+    // Check onboarding status from localStorage
+    const savedStatus = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    if (savedStatus) {
+      const { dismissed } = JSON.parse(savedStatus);
+      setIsNewUser(!dismissed);
+    } else {
+      // If no status is saved, user is new
+      setIsNewUser(true);
     }
-  }, [currentTeam?.id, fetchDashboardData]);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
+    // Simulate loading data
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-red-500">Error loading dashboard: {error}</div>
-      </div>
-    );
-  }
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      
-      {/* Metrics Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <MetricCard
-          title="Total Loads"
-          value={metrics.totalLoads}
-          icon={<Package className="h-4 w-4 text-muted-foreground" />}
-          description={`${metrics.activeLoads} active, ${metrics.completedLoads} completed`}
-        />
-        <MetricCard
-          title="Document Status"
-          value={metrics.documentStatus.pending}
-          icon={<FileText className="h-4 w-4 text-muted-foreground" />}
-          description={`${metrics.documentStatus.classified} classified, ${metrics.documentStatus.rejected} rejected`}
-        />
-        <MetricCard
-          title="Team Activity"
-          value={metrics.teamActivity.uploadsThisWeek}
-          icon={<Users className="h-4 w-4 text-muted-foreground" />}
-          description="Uploads this week"
-        />
-        <MetricCard
-          title="Classification Accuracy"
-          value={`${metrics.classificationAccuracy}%`}
-          icon={<CheckCircle className="h-4 w-4 text-muted-foreground" />}
-          description="AI classification success rate"
-        />
+    <div className="space-y-6">
+      {/* Welcome Section */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-3xl font-bold tracking-tight">
+          Welcome back, {isLoading ? <LoadingSkeleton className="h-8 w-32" /> : "John"}
+        </h1>
+        <p className="text-muted-foreground">
+          {format(new Date(), "EEEE, MMMM d, yyyy")}
+        </p>
       </div>
+
+      {/* Onboarding Checklist for New Users */}
+      {isNewUser && <OnboardingChecklist />}
+
+      {/* Metrics Grid */}
+      <MetricsGrid isLoading={isLoading} />
 
       {/* Main Content Grid */}
       <div className="grid gap-6 md:grid-cols-2">
-        <LoadTimeline data={[]} /> {/* TODO: Add timeline data */}
-        <ActivityFeed activities={recentActivity} />
-      </div>
+        {/* Quick Actions */}
+        <QuickActions />
 
-      {/* Quick Actions */}
-      <QuickActions />
+        {/* Recent Activity */}
+        <ActivityFeed isLoading={isLoading} />
+      </div>
     </div>
   );
-};
-
-export default DashboardPage; 
+} 
