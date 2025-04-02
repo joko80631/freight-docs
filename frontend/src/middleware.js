@@ -10,48 +10,21 @@ export async function middleware(req) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  // Define protected routes
-  const protectedRoutes = [
-    '/dashboard',
-    '/loads',
-    '/upload',
-    '/documents',
-    '/settings',
-    '/teams'
-  ]
+  // Auth routes are in the (auth) group
+  const isAuthRoute = req.nextUrl.pathname.startsWith("/(auth)")
+  // Protected routes are in the (protected) group
+  const isProtectedRoute = req.nextUrl.pathname.startsWith("/(protected)")
 
-  // Define public routes that don't require authentication
-  const publicRoutes = [
-    '/login',
-    '/signup',
-    '/verify-email',
-    '/forgot-password',
-    '/test-auth'
-  ]
-
-  // Check if the current path is protected
-  const isProtectedRoute = protectedRoutes.some(route => 
-    req.nextUrl.pathname.startsWith(route)
-  )
-
-  // Check if the current path is public
-  const isPublicRoute = publicRoutes.some(route => 
-    req.nextUrl.pathname.startsWith(route)
-  )
-
-  // If accessing a protected route without a session
-  if (isProtectedRoute && !session) {
-    // Store the original URL for redirect after login
-    const redirectUrl = req.nextUrl.pathname + req.nextUrl.search
-    const redirectTo = new URL('/login', req.url)
-    redirectTo.searchParams.set('redirectTo', redirectUrl)
-
-    return NextResponse.redirect(redirectTo)
+  // Redirect authenticated users away from auth routes
+  if (session && isAuthRoute) {
+    return NextResponse.redirect(new URL('/dashboard', req.url))
   }
 
-  // If accessing auth pages while logged in, redirect to dashboard
-  if (session && (req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/signup')) {
-    return NextResponse.redirect(new URL('/loads', req.url))
+  // Redirect unauthenticated users to login
+  if (!session && isProtectedRoute) {
+    const redirectUrl = new URL('/login', req.url)
+    redirectUrl.searchParams.set('redirectedFrom', req.nextUrl.pathname)
+    return NextResponse.redirect(redirectUrl)
   }
 
   // Handle email verification
