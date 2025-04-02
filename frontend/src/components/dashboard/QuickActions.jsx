@@ -1,60 +1,30 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useRouter } from 'next/navigation';
-import { Plus, Upload, Users } from 'lucide-react';
+'use client';
 
-const QuickActions = () => {
-  const router = useRouter();
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Plus, Upload, UserPlus } from 'lucide-react';
 
-  const actions = [
-    {
-      title: 'Create New Load',
-      description: 'Start a new freight load',
-      icon: <Plus className="h-4 w-4" />,
-      onClick: () => router.push('/loads/new')
-    },
-    {
-      title: 'Upload Document',
-      description: 'Upload a new document',
-      icon: <Upload className="h-4 w-4" />,
-      onClick: () => router.push('/upload')
-    },
-    {
-      title: 'Manage Team',
-      description: 'Update team members and settings',
-      icon: <Users className="h-4 w-4" />,
-      onClick: () => router.push('/team')
-    }
-  ];
-
+export default function QuickActions() {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4">
-          {actions.map((action) => (
-            <Button
-              key={action.title}
-              variant="outline"
-              className="w-full justify-start"
-              onClick={action.onClick}
-            >
-              {action.icon}
-              <div className="ml-2 text-left">
-                <div className="font-medium">{action.title}</div>
-                <div className="text-xs text-muted-foreground">
-                  {action.description}
-                </div>
-              </div>
-            </Button>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex flex-wrap gap-4">
+      <Button asChild size="lg" className="flex items-center gap-2">
+        <Link href="/loads/new">
+          <Plus className="h-4 w-4" />
+          Create Load
+        </Link>
+      </Button>
+      <Button asChild size="lg" variant="outline" className="flex items-center gap-2">
+        <Link href="/documents/upload">
+          <Upload className="h-4 w-4" />
+          Upload Document
+        </Link>
+      </Button>
+      <Button asChild size="lg" variant="outline" className="flex items-center gap-2">
+        <Link href="/teams/invite">
+          <UserPlus className="h-4 w-4" />
+          Invite Teammate
+        </Link>
+      </Button>
+    </div>
   );
-};
-
-export default QuickActions; 
+} 
