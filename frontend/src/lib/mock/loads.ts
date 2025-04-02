@@ -1,7 +1,23 @@
 import { addDays, subDays, format } from "date-fns";
 
 export type LoadStatus = "Active" | "Completed" | "On Hold" | "Cancelled";
-export type DocumentType = "BOL" | "POD" | "Invoice";
+
+export type DocumentType = 
+  | "Bill of Lading"
+  | "Proof of Delivery"
+  | "Invoice"
+  | "Weight Ticket"
+  | "Rate Confirmation";
+
+export type DocumentStatus = "complete" | "missing" | "pending";
+
+export interface Document {
+  type: DocumentType;
+  status: DocumentStatus;
+  url?: string;
+  uploadedAt?: Date;
+  uploadedBy?: string;
+}
 
 export interface Load {
   id: string;
@@ -10,40 +26,53 @@ export interface Load {
   origin: string;
   destination: string;
   dateCreated: Date;
+  dateUpdated: Date;
   status: LoadStatus;
-  documents: {
-    type: DocumentType;
-    status: "complete" | "missing";
-  }[];
+  documents: Document[];
+  carrier?: string;
+  referenceNumbers?: {
+    bol?: string;
+    pod?: string;
+  };
+  pickupDate?: Date;
+  deliveryDate?: Date;
+  weight?: number;
+  dimensions?: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  specialInstructions?: string;
+  createdBy: string;
 }
 
 const CITIES = [
-  { city: "Seattle", state: "WA" },
-  { city: "Los Angeles", state: "CA" },
-  { city: "San Francisco", state: "CA" },
-  { city: "Portland", state: "OR" },
-  { city: "Denver", state: "CO" },
-  { city: "Chicago", state: "IL" },
-  { city: "New York", state: "NY" },
-  { city: "Miami", state: "FL" },
-  { city: "Houston", state: "TX" },
-  { city: "Dallas", state: "TX" },
+  "Seattle, WA",
+  "Miami, FL",
+  "Los Angeles, CA",
+  "New York, NY",
+  "Chicago, IL",
+  "Houston, TX",
+  "Phoenix, AZ",
+  "Philadelphia, PA",
+  "San Antonio, TX",
+  "San Diego, CA",
 ];
 
 const CLIENT_NAMES = [
-  "Acme Shipping",
-  "Global Logistics",
-  "Swift Transport",
-  "Reliable Freight",
-  "Elite Logistics",
-  "Premier Transport",
-  "United Cargo",
-  "Express Delivery",
-  "Secure Shipping",
-  "Fast Freight",
+  "Acme Corporation",
+  "Global Logistics Inc.",
+  "Tech Solutions Ltd.",
+  "Industrial Supplies Co.",
+  "Retail Distribution LLC",
+  "Manufacturing Pro",
+  "Supply Chain Experts",
+  "Transport Solutions",
+  "Freight Forwarders Co.",
+  "Shipping Partners Inc.",
 ];
 
-const DOCUMENT_TYPES: DocumentType[] = ["BOL", "POD", "Invoice"];
+const DOCUMENT_TYPES: DocumentType[] = ["Bill of Lading", "Proof of Delivery", "Invoice", "Weight Ticket", "Rate Confirmation"];
 
 function generateLoadReference(date: Date, index: number): string {
   const year = date.getFullYear();
@@ -51,7 +80,7 @@ function generateLoadReference(date: Date, index: number): string {
   return `LOAD-${year}-${paddedIndex}`;
 }
 
-function generateRandomDocuments(): { type: DocumentType; status: "complete" | "missing" }[] {
+function generateRandomDocuments(): Document[] {
   const random = Math.random();
   if (random < 0.2) {
     // 20% chance of all documents complete
@@ -99,11 +128,27 @@ export function generateMockLoads(count: number = 20): Load[] {
       id: `load-${i + 1}`,
       reference: generateLoadReference(dateCreated, i + 1),
       clientName: CLIENT_NAMES[Math.floor(Math.random() * CLIENT_NAMES.length)],
-      origin: `${origin.city}, ${origin.state}`,
-      destination: `${destination.city}, ${destination.state}`,
+      origin: origin,
+      destination: destination,
       dateCreated,
+      dateUpdated: new Date(dateCreated),
       status: getRandomStatus(),
       documents: generateRandomDocuments(),
+      carrier: "ABC Transport Co.",
+      referenceNumbers: {
+        bol: `BOL-${Math.floor(Math.random() * 10000)}`,
+        pod: `POD-${Math.floor(Math.random() * 10000)}`,
+      },
+      pickupDate: new Date(dateCreated),
+      deliveryDate: new Date(dateCreated.getTime() + 24 * 60 * 60 * 1000),
+      weight: Math.floor(Math.random() * 5000) + 1000,
+      dimensions: {
+        length: 48,
+        width: 40,
+        height: 48,
+      },
+      specialInstructions: "Handle with care, temperature controlled",
+      createdBy: "John Doe",
     });
   }
 
@@ -125,7 +170,7 @@ export function getRelativeTime(date: Date): string {
   return formatDate(date);
 }
 
-export function getDocumentCompletionStatus(documents: Load["documents"]) {
+export function getDocumentCompletionStatus(documents: Document[]): { complete: number; total: number; percentage: number } {
   const total = documents.length;
   const complete = documents.filter((doc) => doc.status === "complete").length;
   const missing = total - complete;
@@ -133,12 +178,11 @@ export function getDocumentCompletionStatus(documents: Load["documents"]) {
   return {
     complete,
     total,
-    missing,
     percentage: (complete / total) * 100,
   };
 }
 
-export function getMissingDocuments(documents: Load["documents"]): DocumentType[] {
+export function getMissingDocuments(documents: Document[]): DocumentType[] {
   return documents
     .filter((doc) => doc.status === "missing")
     .map((doc) => doc.type);
