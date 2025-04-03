@@ -1,14 +1,21 @@
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs').promises;
-const pdfParse = require('pdf-parse');
-const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const supabase = require('./supabase');
-const { classifyDocument } = require('./openai');
-require('dotenv').config();
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import { promises as fs } from 'fs';
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import supabase from './supabase/index.js';
+import { classifyDocument } from './openai.js';
+import testRoutes from './routes/test.js';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -43,6 +50,9 @@ app.use(limiter);
 
 // Middleware for JSON parsing
 app.use(express.json());
+
+// Register test routes
+app.use('/api', testRoutes);
 
 // Create uploads directory if it doesn't exist
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -291,6 +301,9 @@ app.post('/upload', upload.single('file'), async (req, res) => {
     }
 });
 
+// Start the server
 app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+    console.log(`Server is running on port ${port}`);
+    console.log(`Health check endpoint: http://localhost:${port}/health`);
+    console.log(`Supabase test endpoint: http://localhost:${port}/api/test-supabase`);
 }); 
