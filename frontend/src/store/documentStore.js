@@ -1,203 +1,425 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { useTeamStore } from './teamStore';
 
 const useDocumentStore = create((set, get) => ({
   documents: [],
   isLoading: false,
   error: null,
   filters: {
-    type: [],
-    status: [],
-    loadId: null,
-    search: ''
+    documentType: '',
+    confidence: '',
+    loadStatus: '',
+    dateFrom: '',
+    dateTo: '',
+    search: '',
   },
   pagination: {
     page: 1,
-    pageSize: 20,
-    total: 0
+    limit: 10,
+    total: 0,
   },
+  selectedDocuments: [],
 
-  fetchDocuments: async (teamId, filters = {}) => {
-    if (!teamId) return;
-    
+  // Actions
+  setFilters: (filters) => {
+    // Reset to page 1 when filters change
+    set({ 
+      filters,
+      pagination: {
+        ...get().pagination,
+        page: 1
+      }
+    });
+  },
+  setPagination: (pagination) => set({ pagination }),
+  setSelectedDocuments: (documents) => set({ selectedDocuments: documents }),
+
+  fetchDocuments: async (teamId) => {
+    const { filters, pagination } = get();
     set({ isLoading: true, error: null });
+
     try {
-      let query = supabase
-        .from('documents')
-        .select('*', { count: 'exact' })
-        .eq('team_id', teamId);
+      const queryParams = new URLSearchParams({
+        ...filters,
+        page: pagination.page,
+        limit: pagination.limit,
+      });
 
-      // Apply filters
-      if (filters.type?.length) {
-        query = query.in('type', filters.type);
-      }
-      if (filters.status?.length) {
-        query = query.in('status', filters.status);
-      }
-      if (filters.loadId) {
-        query = query.eq('load_id', filters.loadId);
-      }
-      if (filters.search) {
-        query = query.ilike('name', `%${filters.search}%`);
+      const response = await fetch(
+        `/api/teams/${teamId}/documents?${queryParams.toString()}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
       }
 
-      // Apply pagination
-      const { page, pageSize } = get().pagination;
-      const start = (page - 1) * pageSize;
-      const end = start + pageSize - 1;
-      query = query.range(start, end);
-
-      const { data, error, count } = await query;
-
-      if (error) throw error;
-
+      const data = await response.json();
       set({
-        documents: data,
+        documents: data.documents,
         pagination: {
-          ...get().pagination,
-          total: count
+          ...pagination,
+          total: data.total,
         },
-        filters,
-        isLoading: false
       });
     } catch (error) {
-      set({ error: error.message, isLoading: false });
+      set({ error: error.message });
+    } finally {
+      set({ isLoading: false });
     }
   },
 
   uploadDocument: async (file, metadata) => {
-    set({ isLoading: true, error: null });
-    try {
-      // Upload file to storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `${metadata.team_id}/${fileName}`;
+    const { currentTeam } = useTeamStore.getState();
+    if (!currentTeam?.id) throw new Error('No team selected');
 
-      const { error: uploadError } = await supabase.storage
+    try {
+      // 1. Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${currentTeam.id}/${fileName}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      // Create document record
-      const { data, error } = await supabase
+      // 2. Get public URL
+      const { data: { publicUrl } } = supabase.storage
         .from('documents')
-        .insert([{
-          ...metadata,
+        .getPublicUrl(filePath);
+
+      // 3. Create document record
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: currentTeam.id,
+          name: file.name,
           file_path: filePath,
-          file_name: file.name,
+          file_url: publicUrl,
+          file_type: fileExt,
           file_size: file.size,
-          file_type: file.type,
-          status: 'pending'
-        }])
-        .select()
-        .single();
+          ...metadata,
+        }),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to create document record');
+      }
 
-      set(state => ({
-        documents: [data, ...state.documents],
+      const document = await response.json();
+      
+      // Add the new document to the beginning of the list
+      set((state) => ({
+        documents: [document, ...state.documents],
+        // Update total count
         pagination: {
           ...state.pagination,
           total: state.pagination.total + 1
-        },
-        isLoading: false
+        }
       }));
 
-      return data;
+      return document;
     } catch (error) {
-      set({ error: error.message, isLoading: false });
       throw error;
     }
   },
 
   updateDocument: async (documentId, updates) => {
-    set({ isLoading: true, error: null });
     try {
-      const { data, error } = await supabase
-        .from('documents')
-        .update(updates)
-        .eq('id', documentId)
-        .select()
-        .single();
+      const response = await fetch(`/api/documents/${documentId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to update document');
+      }
 
-      set(state => ({
-        documents: state.documents.map(doc => 
-          doc.id === documentId ? data : doc
+      const updatedDocument = await response.json();
+      set((state) => ({
+        documents: state.documents.map((doc) =>
+          doc.id === documentId ? updatedDocument : doc
         ),
-        isLoading: false
       }));
 
-      return data;
+      return updatedDocument;
     } catch (error) {
-      set({ error: error.message, isLoading: false });
       throw error;
     }
   },
 
   deleteDocument: async (documentId) => {
-    set({ isLoading: true, error: null });
+    const { currentTeam } = useTeamStore.getState();
+    if (!currentTeam?.id) throw new Error('No team selected');
+
     try {
-      const document = get().documents.find(doc => doc.id === documentId);
+      // 1. Get document to delete
+      const document = get().documents.find((doc) => doc.id === documentId);
       if (!document) throw new Error('Document not found');
 
-      // Delete file from storage
+      // 2. Delete from Supabase Storage
       const { error: storageError } = await supabase.storage
         .from('documents')
         .remove([document.file_path]);
 
       if (storageError) throw storageError;
 
-      // Delete document record
-      const { error } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', documentId);
+      // 3. Delete document record
+      const response = await fetch(`/api/documents/${documentId}`, {
+        method: 'DELETE',
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to delete document');
+      }
 
-      set(state => ({
-        documents: state.documents.filter(doc => doc.id !== documentId),
+      set((state) => ({
+        documents: state.documents.filter((doc) => doc.id !== documentId),
+        // Update total count
         pagination: {
           ...state.pagination,
           total: state.pagination.total - 1
-        },
-        isLoading: false
+        }
       }));
     } catch (error) {
-      set({ error: error.message, isLoading: false });
       throw error;
     }
   },
 
-  setFilters: (filters) => {
-    set({ filters });
-  },
+  linkToLoad: async (documentId, loadId) => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/link`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ load_id: loadId }),
+      });
 
-  setPagination: (pagination) => {
-    set({ pagination });
-  },
-
-  clearDocuments: () => {
-    set({
-      documents: [],
-      isLoading: false,
-      error: null,
-      filters: {
-        type: [],
-        status: [],
-        loadId: null,
-        search: ''
-      },
-      pagination: {
-        page: 1,
-        pageSize: 20,
-        total: 0
+      if (!response.ok) {
+        throw new Error('Failed to link document to load');
       }
-    });
-  }
+
+      const updatedDocument = await response.json();
+      set((state) => ({
+        documents: state.documents.map((doc) =>
+          doc.id === documentId ? updatedDocument : doc
+        ),
+      }));
+
+      return updatedDocument;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  unlinkFromLoad: async (documentId) => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/unlink`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to unlink document from load');
+      }
+
+      const updatedDocument = await response.json();
+      set((state) => ({
+        documents: state.documents.map((doc) =>
+          doc.id === documentId ? updatedDocument : doc
+        ),
+      }));
+
+      return updatedDocument;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  reclassifyDocument: async (documentId, documentType, reason) => {
+    try {
+      const response = await fetch(`/api/documents/${documentId}/reclassify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ document_type: documentType, reason }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reclassify document');
+      }
+
+      const updatedDocument = await response.json();
+      set((state) => ({
+        documents: state.documents.map((doc) =>
+          doc.id === documentId ? updatedDocument : doc
+        ),
+      }));
+
+      return updatedDocument;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Batch operations
+  batchDelete: async (documentIds) => {
+    try {
+      const response = await fetch('/api/documents/batch-delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ document_ids: documentIds }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete documents');
+      }
+
+      set((state) => ({
+        documents: state.documents.filter(
+          (doc) => !documentIds.includes(doc.id)
+        ),
+        selectedDocuments: [],
+        // Update total count
+        pagination: {
+          ...state.pagination,
+          total: state.pagination.total - documentIds.length
+        }
+      }));
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  batchLinkToLoad: async (documentIds, loadId) => {
+    try {
+      const response = await fetch('/api/documents/batch-link', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ document_ids: documentIds, load_id: loadId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to link documents to load');
+      }
+
+      const updatedDocuments = await response.json();
+      set((state) => ({
+        documents: state.documents.map((doc) => {
+          const updated = updatedDocuments.find((u) => u.id === doc.id);
+          return updated || doc;
+        }),
+        selectedDocuments: [],
+      }));
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Add this new function for batch downloads
+  batchDownload: async (documentIds) => {
+    try {
+      set({ isLoading: true });
+      
+      // Get the documents with their file URLs
+      const documents = get().documents.filter(doc => documentIds.includes(doc.id));
+      
+      // Track documents with missing URLs
+      const missingUrls = [];
+      
+      // Create a delay between downloads to avoid popup blocking
+      const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      // Download each document with a delay between them
+      for (let i = 0; i < documents.length; i++) {
+        const doc = documents[i];
+        if (doc.file_url) {
+          // Open in a new tab to avoid popup blocking
+          window.open(doc.file_url, '_blank');
+          // Wait 300ms between downloads to avoid popup blocking
+          await delay(300);
+        } else {
+          // Log warning for documents missing file_url
+          console.warn(`Document ${doc.id} (${doc.name}) has no file_url and was skipped.`);
+          missingUrls.push(doc.id);
+        }
+      }
+      
+      return { 
+        success: true,
+        skippedDocuments: missingUrls.length > 0 ? missingUrls : null
+      };
+    } catch (error) {
+      console.error('Error downloading documents:', error);
+      set({ error: error.message });
+      return { success: false, error: error.message };
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  // Add this new function for batch reclassification
+  batchReclassify: async (documentIds, documentType, reason) => {
+    try {
+      set({ isLoading: true });
+      
+      const response = await fetch('/api/documents/batch-reclassify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          document_ids: documentIds,
+          document_type: documentType,
+          reason: reason || null,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to reclassify documents');
+      }
+      
+      const data = await response.json();
+      
+      // Update the documents in the store
+      set((state) => {
+        const updatedDocuments = state.documents.map((doc) => {
+          if (documentIds.includes(doc.id)) {
+            return {
+              ...doc,
+              document_type: documentType,
+              reclassification_reason: reason || null,
+            };
+          }
+          return doc;
+        });
+        
+        return { documents: updatedDocuments };
+      });
+      
+      return data;
+    } catch (error) {
+      console.error('Error reclassifying documents:', error);
+      set({ error: error.message });
+      throw error;
+    } finally {
+      set({ isLoading: false });
+    }
+  },
 }));
 
 export default useDocumentStore; 

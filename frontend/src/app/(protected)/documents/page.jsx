@@ -1,20 +1,21 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTeamStore } from '@/store/teamStore';
 import useDocumentStore from '@/store/documentStore';
-import useLoadStore from '@/store/loadStore';
-import DocumentView from '@/components/documents/DocumentView';
-import DocumentUpload from '@/components/documents/DocumentUpload';
-import DocumentFilter from '@/components/documents/DocumentFilter';
 import { Button } from "@/components/ui/button";
-import { Upload, FileText } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Skeleton from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Grid, List, Upload, Filter } from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast";
+import DocumentUpload from '@/components/documents/DocumentUpload';
+import DocumentsGrid from '@/components/documents/DocumentsGrid';
+import DocumentsTable from '@/components/documents/DocumentsTable';
+import DocumentFilters from '@/components/documents/DocumentFilters';
 import EmptyState from '@/components/ui/empty-state';
+import LoadingSkeleton from '@/components/ui/loading-skeleton';
 
-const DocumentsPage = () => {
+export default function DocumentsPage() {
   const { currentTeam } = useTeamStore();
   const { 
     documents, 
@@ -23,198 +24,105 @@ const DocumentsPage = () => {
     filters, 
     pagination,
     fetchDocuments, 
-    uploadDocument, 
-    updateDocument, 
-    deleteDocument,
     setFilters,
     setPagination 
   } = useDocumentStore();
-  const { loads, fetchLoads } = useLoadStore();
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [viewMode, setViewMode] = useState('grid');
+  const [showFilters, setShowFilters] = useState(false);
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchDocuments = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/teams/${currentTeam.id}/documents`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setDocuments(data);
-      } catch (error) {
-        console.error('Failed to fetch documents:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     if (currentTeam?.id) {
-      fetchDocuments();
+      fetchDocuments(currentTeam.id);
     }
-  }, [currentTeam?.id]);
+  }, [currentTeam?.id, filters, pagination]);
 
-  const handleUpload = async (files) => {
-    if (!currentTeam?.id) return;
-
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    try {
-      const totalFiles = files.length;
-      let completedFiles = 0;
-
-      for (const file of files) {
-        await uploadDocument(file, {
-          team_id: currentTeam.id,
-          name: file.name
-        });
-
-        completedFiles++;
-        setUploadProgress((completedFiles / totalFiles) * 100);
-      }
-
-      toast({
-        title: "Success",
-        description: "Documents uploaded successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to upload documents",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-      setUploadProgress(0);
-    }
+  const handleUploadComplete = () => {
+    fetchDocuments(currentTeam.id);
+    toast({
+      title: "Success",
+      description: "Documents uploaded successfully",
+    });
   };
 
-  const handleView = (document) => {
-    // TODO: Implement document viewing functionality
-    console.log('View document:', document);
-  };
-
-  const handleDownload = async (document) => {
-    try {
-      const { data, error } = await supabase.storage
-        .from('documents')
-        .download(document.file_path);
-
-      if (error) throw error;
-
-      // Create a blob URL and trigger download
-      const url = window.URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = document.file_name;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to download document",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDelete = async (document) => {
-    try {
-      await deleteDocument(document.id);
-      toast({
-        title: "Success",
-        description: "Document deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete document",
-        variant: "destructive",
-      });
-    }
-  };
-
-  if (!currentTeam) {
-    return (
-      <div className="container mx-auto p-6">
-        <EmptyState
-          icon={FileText}
-          title="No team selected"
-          description="Please select or create a team to view documents."
-          cta={{
-            label: 'Select Team',
-            href: '/teams'
-          }}
-          variant="centered"
-        />
-      </div>
-    );
+  if (isLoading) {
+    return <LoadingSkeleton className="h-[600px]" />;
   }
 
-  if (loading) {
+  if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <Card key={i}>
-              <CardHeader>
-                <Skeleton className="h-4 w-3/4" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-4 w-2/3 mt-2" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (!documents || documents.length === 0) {
-    return (
-      <div className="container mx-auto p-6">
-        <EmptyState
-          icon={FileText}
-          title="No documents found"
-          description="You haven't uploaded any documents for this team yet."
-          cta={{
-            label: 'Upload Document',
-            onClick: () => setIsUploading(true)
-          }}
-          variant="centered"
-        />
-      </div>
+      <Card className="border-destructive">
+        <CardContent className="pt-6">
+          <div className="text-center text-destructive">
+            <p>Error loading documents: {error}</p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {documents.map((document) => (
-          <Card key={document.id}>
-            <CardHeader>
-              <CardTitle className="text-lg">{document.name}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">
-                {document.description}
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Uploaded {new Date(document.createdAt).toLocaleDateString()}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Documents</h1>
+          <p className="text-muted-foreground">
+            Manage and classify your freight documents
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <Filter className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+          >
+            {viewMode === 'grid' ? (
+              <List className="h-4 w-4" />
+            ) : (
+              <Grid className="h-4 w-4" />
+            )}
+          </Button>
+          <DocumentUpload onUploadComplete={handleUploadComplete} />
+        </div>
       </div>
+
+      {/* Filters */}
+      {showFilters && (
+        <Card>
+          <CardContent className="pt-6">
+            <DocumentFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Documents View */}
+      {documents.length === 0 ? (
+        <EmptyState
+          title="No documents found"
+          description="Upload your first document to get started"
+          icon={Upload}
+        />
+      ) : (
+        <Tabs value={viewMode} onValueChange={setViewMode}>
+          <TabsContent value="grid">
+            <DocumentsGrid documents={documents} />
+          </TabsContent>
+          <TabsContent value="list">
+            <DocumentsTable documents={documents} />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
-};
-
-export default DocumentsPage; 
+} 

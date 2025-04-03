@@ -11,61 +11,118 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get team_id from query params
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('team_id');
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 10;
+    const offset = (page - 1) * limit;
 
-    if (!teamId) {
-      return NextResponse.json({ error: 'Team ID is required' }, { status: 400 });
-    }
-
-    // Verify user is a member of the team
-    const { data: teamMember, error: teamError } = await supabase
-      .from('team_members')
-      .select('role')
-      .eq('team_id', teamId)
-      .eq('user_id', user.id)
-      .single();
-
-    if (teamError || !teamMember) {
-      return NextResponse.json({ error: 'Not a member of this team' }, { status: 403 });
-    }
-
-    const { data: documents, error: docsError } = await supabase
+    // Build query
+    let query = supabase
       .from('documents')
-      .select('*')
-      .eq('team_id', teamId)
-      .order('created_at', { ascending: false });
+      .select('*', { count: 'exact' })
+      .eq('team_id', teamId);
 
-    if (docsError) {
-      console.error('Error fetching documents:', docsError);
-      return NextResponse.json({ error: 'Failed to fetch documents' }, { status: 500 });
+    // Apply filters
+    const documentType = searchParams.get('documentType');
+    const confidence = searchParams.get('confidence');
+    const loadStatus = searchParams.get('loadStatus');
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
+    const search = searchParams.get('search');
+
+    if (documentType) {
+      query = query.eq('document_type', documentType);
     }
 
-    return NextResponse.json(documents || []);
+    if (confidence) {
+      switch (confidence) {
+        case 'high':
+          query = query.gte('classification_confidence', 0.9);
+          break;
+        case 'medium':
+          query = query
+            .gte('classification_confidence', 0.7)
+            .lt('classification_confidence', 0.9);
+          break;
+        case 'low':
+          query = query.lt('classification_confidence', 0.7);
+          break;
+      }
+    }
+
+    if (loadStatus === 'linked') {
+      query = query.not('load_id', 'is', null);
+    } else if (loadStatus === 'unlinked') {
+      query = query.is('load_id', null);
+    }
+
+    if (dateFrom) {
+      query = query.gte('created_at', dateFrom);
+    }
+
+    if (dateTo) {
+      query = query.lte('created_at', dateTo);
+    }
+
+    if (search) {
+      query = query.ilike('name', `%${search}%`);
+    }
+
+    // Apply pagination
+    query = query.range(offset, offset + limit - 1);
+
+    // Execute query
+    const { data: documents, error, count } = await query;
+
+    if (error) {
+      return NextResponse.json(
+        { error: 'Failed to fetch documents' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      documents,
+      total: count,
+      page,
+      limit,
+    });
   } catch (error) {
-    console.error('Error in GET /api/documents:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Document fetch error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(request) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
     }
 
-    const body = await request.json();
-    const { team_id, load_id, ...documentData } = body;
+    const formData = await request.json();
+    const {
+      team_id,
+      name,
+      file_path,
+      file_url,
+      file_type,
+      file_size,
+      load_id,
+    } = formData;
 
-    if (!team_id || !load_id) {
-      return NextResponse.json({ error: 'Team ID and Load ID are required' }, { status: 400 });
-    }
-
-    // Verify user is a member of the team
+    // Verify team membership
     const { data: teamMember, error: teamError } = await supabase
       .from('team_members')
       .select('role')
@@ -74,45 +131,66 @@ export async function POST(request) {
       .single();
 
     if (teamError || !teamMember) {
-      return NextResponse.json({ error: 'Not a member of this team' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Not a member of this team' },
+        { status: 403 }
+      );
     }
 
-    // Verify the load belongs to the team
-    const { data: load, error: loadError } = await supabase
-      .from('loads')
-      .select('id')
-      .eq('id', load_id)
-      .eq('team_id', team_id)
-      .single();
-
-    if (loadError || !load) {
-      return NextResponse.json({ error: 'Load not found or not accessible' }, { status: 404 });
-    }
-
-    const { data: document, error: docError } = await supabase
+    // Create document record
+    const { data: document, error: documentError } = await supabase
       .from('documents')
       .insert([
         {
-          ...documentData,
           team_id,
+          name,
+          file_path,
+          file_url,
+          file_type,
+          file_size,
           load_id,
-          user_id: user.id,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
+          uploaded_by: user.id,
+          status: 'pending',
+        },
       ])
       .select()
       .single();
 
-    if (docError) {
-      console.error('Error creating document:', docError);
-      return NextResponse.json({ error: 'Failed to create document' }, { status: 500 });
+    if (documentError) {
+      return NextResponse.json(
+        { error: 'Failed to create document' },
+        { status: 500 }
+      );
+    }
+
+    // Trigger document classification
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/classify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          document_id: document.id,
+          file_path: document.file_path,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to classify document');
+      }
+    } catch (error) {
+      console.error('Classification error:', error);
+      // Don't fail the request if classification fails
     }
 
     return NextResponse.json(document);
   } catch (error) {
-    console.error('Error in POST /api/documents:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Document creation error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
   }
 }
 

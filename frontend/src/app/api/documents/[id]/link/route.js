@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export async function POST(request) {
+export async function POST(request, { params }) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
     const {
@@ -21,11 +16,12 @@ export async function POST(request) {
       );
     }
 
-    const { document_id, file_path } = await request.json();
+    const { id } = params;
+    const { load_id } = await request.json();
 
-    if (!document_id || !file_path) {
+    if (!load_id) {
       return NextResponse.json(
-        { error: 'Document ID and file path are required' },
+        { error: 'Load ID is required' },
         { status: 400 }
       );
     }
@@ -34,7 +30,7 @@ export async function POST(request) {
     const { data: document, error: docError } = await supabase
       .from('documents')
       .select('*')
-      .eq('id', document_id)
+      .eq('id', id)
       .single();
 
     if (docError || !document) {
@@ -59,47 +55,42 @@ export async function POST(request) {
       );
     }
 
-    // Classify document using OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "You are a document classification assistant. Your task is to classify freight documents into one of the following categories: BOL (Bill of Lading), POD (Proof of Delivery), Invoice, Rate Confirmation, or Other. Respond with a JSON object containing the document_type and confidence score (0-1)."
-        },
-        {
-          role: "user",
-          content: `Please classify this document based on its filename: ${document.name}`
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
+    // Verify load belongs to the same team
+    const { data: load, error: loadError } = await supabase
+      .from('loads')
+      .select('id')
+      .eq('id', load_id)
+      .eq('team_id', document.team_id)
+      .single();
 
-    const classification = JSON.parse(completion.choices[0].message.content);
+    if (loadError || !load) {
+      return NextResponse.json(
+        { error: 'Load not found or not accessible' },
+        { status: 404 }
+      );
+    }
 
-    // Update document with classification results
+    // Update document with load ID
     const { data: updatedDocument, error: updateError } = await supabase
       .from('documents')
       .update({
-        document_type: classification.document_type,
-        classification_confidence: classification.confidence,
-        status: 'classified',
+        load_id,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', document_id)
+      .eq('id', id)
       .select()
       .single();
 
     if (updateError) {
       return NextResponse.json(
-        { error: 'Failed to update document classification' },
+        { error: 'Failed to link document to load' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(updatedDocument);
   } catch (error) {
-    console.error('Document classification error:', error);
+    console.error('Document link error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

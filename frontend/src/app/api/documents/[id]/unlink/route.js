@@ -1,13 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export async function POST(request) {
+export async function POST(request, { params }) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
     const {
@@ -21,20 +16,13 @@ export async function POST(request) {
       );
     }
 
-    const { document_id, file_path } = await request.json();
-
-    if (!document_id || !file_path) {
-      return NextResponse.json(
-        { error: 'Document ID and file path are required' },
-        { status: 400 }
-      );
-    }
+    const { id } = params;
 
     // Get document details
     const { data: document, error: docError } = await supabase
       .from('documents')
       .select('*')
-      .eq('id', document_id)
+      .eq('id', id)
       .single();
 
     if (docError || !document) {
@@ -59,47 +47,27 @@ export async function POST(request) {
       );
     }
 
-    // Classify document using OpenAI
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: "You are a document classification assistant. Your task is to classify freight documents into one of the following categories: BOL (Bill of Lading), POD (Proof of Delivery), Invoice, Rate Confirmation, or Other. Respond with a JSON object containing the document_type and confidence score (0-1)."
-        },
-        {
-          role: "user",
-          content: `Please classify this document based on its filename: ${document.name}`
-        }
-      ],
-      response_format: { type: "json_object" }
-    });
-
-    const classification = JSON.parse(completion.choices[0].message.content);
-
-    // Update document with classification results
+    // Update document to remove load ID
     const { data: updatedDocument, error: updateError } = await supabase
       .from('documents')
       .update({
-        document_type: classification.document_type,
-        classification_confidence: classification.confidence,
-        status: 'classified',
+        load_id: null,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', document_id)
+      .eq('id', id)
       .select()
       .single();
 
     if (updateError) {
       return NextResponse.json(
-        { error: 'Failed to update document classification' },
+        { error: 'Failed to unlink document from load' },
         { status: 500 }
       );
     }
 
     return NextResponse.json(updatedDocument);
   } catch (error) {
-    console.error('Document classification error:', error);
+    console.error('Document unlink error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
