@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
+import { getErrorMessage } from '@/lib/errors';
+
+interface Team {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+interface TeamMember {
+  team_id: string;
+  user_id: string;
+  role: string;
+  teams?: Team;
+}
 
 export async function GET() {
   try {
@@ -24,7 +38,7 @@ export async function GET() {
       console.error('Session error:', sessionError);
       return NextResponse.json({ 
         error: 'Authentication failed', 
-        details: sessionError.message 
+        details: getErrorMessage(sessionError)
       }, { status: 401 });
     }
     
@@ -51,7 +65,7 @@ export async function GET() {
       console.error('Error checking user teams:', userTeamsError);
       return NextResponse.json({ 
         error: 'Failed to check user teams', 
-        details: userTeamsError.message 
+        details: getErrorMessage(userTeamsError)
       }, { status: 500 });
     }
 
@@ -75,7 +89,8 @@ export async function GET() {
           created_at
         )
       `)
-      .eq('user_id', session.user.id);
+      .eq('user_id', session.user.id)
+      .returns<TeamMember[]>();
 
     console.log('Teams query result:', {
       teamsFound: teams?.length,
@@ -87,7 +102,7 @@ export async function GET() {
       console.error('Error fetching teams:', teamsError);
       return NextResponse.json({ 
         error: 'Failed to fetch teams', 
-        details: teamsError.message 
+        details: getErrorMessage(teamsError)
       }, { status: 500 });
     }
 
@@ -95,10 +110,10 @@ export async function GET() {
     const transformedTeams = teams
       .filter(team => team.teams)
       .map(team => ({
-        id: team.teams.id,
-        name: team.teams.name,
+        id: team.teams!.id,
+        name: team.teams!.name,
         role: team.role,
-        created_at: team.teams.created_at
+        created_at: team.teams!.created_at
       }));
 
     console.log('Transformed teams:', {
@@ -115,12 +130,12 @@ export async function GET() {
     console.error('Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error occurred'
+      details: getErrorMessage(error)
     }, { status: 500 });
   }
 }
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const cookieStore = cookies();
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
@@ -132,7 +147,7 @@ export async function POST(req) {
       console.error('Session error:', sessionError);
       return NextResponse.json({ 
         error: 'Authentication failed', 
-        details: sessionError.message 
+        details: getErrorMessage(sessionError)
       }, { status: 401 });
     }
 
@@ -159,13 +174,13 @@ export async function POST(req) {
       .from('teams')
       .insert([{ name }])
       .select()
-      .single();
+      .single<Team>();
 
-    if (teamError) {
+    if (teamError || !team) {
       console.error('Error creating team:', teamError);
       return NextResponse.json({ 
         error: 'Failed to create team',
-        details: teamError.message
+        details: getErrorMessage(teamError)
       }, { status: 500 });
     }
 
@@ -182,7 +197,7 @@ export async function POST(req) {
       console.error('Error adding team member:', memberError);
       return NextResponse.json({ 
         error: 'Failed to add team member',
-        details: memberError.message
+        details: getErrorMessage(memberError)
       }, { status: 500 });
     }
 
@@ -191,7 +206,7 @@ export async function POST(req) {
     console.error('Unexpected error:', error);
     return NextResponse.json({ 
       error: 'Internal server error',
-      details: error instanceof Error ? error.message : 'Unknown error occurred'
+      details: getErrorMessage(error)
     }, { status: 500 });
   }
 } 

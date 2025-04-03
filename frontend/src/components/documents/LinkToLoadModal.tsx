@@ -22,6 +22,7 @@ import { Loader2, Search } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useTeamStore } from '@/store/teamStore';
 import { Document } from '@/types/document';
+import { getErrorMessage } from '@/lib/errors';
 
 interface LinkToLoadModalProps {
   open: boolean;
@@ -85,7 +86,7 @@ export function LinkToLoadModal({
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to fetch loads',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     } finally {
@@ -124,7 +125,7 @@ export function LinkToLoadModal({
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to link document to load',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     } finally {
@@ -155,7 +156,7 @@ export function LinkToLoadModal({
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to unlink document from load',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     } finally {

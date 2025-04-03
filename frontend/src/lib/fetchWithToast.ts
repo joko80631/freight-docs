@@ -1,4 +1,5 @@
 import { toast } from '@/components/ui/use-toast';
+import { getErrorMessage } from '@/lib/errors';
 
 interface FetchWithToastOptions extends RequestInit {
   successMessage?: string;
@@ -30,8 +31,8 @@ export async function fetchWithToast<T>(
     return data as T;
   } catch (error) {
     toast({
-      title: errorMessage || 'An error occurred',
-      description: error instanceof Error ? error.message : 'Unknown error',
+      title: 'Error',
+      description: getErrorMessage(error),
       variant: 'destructive',
     });
     throw error;

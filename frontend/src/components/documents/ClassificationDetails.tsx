@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Document } from '@/types/document';
 import { formatDistanceToNow } from 'date-fns';
+import { getErrorMessage } from '@/lib/errors';
 
 interface ClassificationDetailsProps {
   document: Document;
@@ -64,7 +65,7 @@ export function ClassificationDetails({
     } catch (error) {
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to reclassify document',
+        description: getErrorMessage(error),
         variant: 'destructive',
       });
     } finally {
