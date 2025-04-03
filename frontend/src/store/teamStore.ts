@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database, Team, TeamMember, UserRole } from '@/types/database';
+import { getErrorMessage } from '@/lib/errors';
 
 interface User {
   id: string;
@@ -72,7 +73,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
         set({ currentTeam: transformedTeams[0] });
       }
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'An unexpected error occurred' });
+      set({ error: getErrorMessage(error) });
     } finally {
       set({ isLoading: false });
     }
@@ -90,7 +91,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       .single<Team>();
 
     if (teamError || !team) {
-      throw new Error(teamError?.message || 'Failed to create team');
+      throw new Error(getErrorMessage(teamError));
     }
 
     const { error: memberError } = await supabase
@@ -101,7 +102,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
       }]);
 
     if (memberError) {
-      throw new Error(memberError.message);
+      throw new Error(getErrorMessage(memberError));
     }
 
     // Create the TeamWithRole object

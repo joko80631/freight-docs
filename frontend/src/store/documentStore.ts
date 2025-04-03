@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useTeamStore } from './teamStore';
 import type { Database, Document } from '@/types/database';
+import { getErrorMessage } from '@/lib/errors';
 
 interface DocumentFilters {
   documentType: string;
@@ -68,10 +69,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   setSelectedDocuments: (documents) => set({ selectedDocuments: documents }),
 
   fetchDocuments: async (teamId: string) => {
-    const { filters, pagination } = get();
     set({ isLoading: true, error: null });
-
     try {
+      const { filters, pagination } = get();
+
       const queryParams = new URLSearchParams({
         ...filters,
         page: pagination.page.toString(),
@@ -95,7 +96,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         },
       });
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'An unexpected error occurred' });
+      set({ error: getErrorMessage(error) });
     } finally {
       set({ isLoading: false });
     }
@@ -105,6 +106,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     const { currentTeam } = useTeamStore.getState();
     if (!currentTeam?.id) throw new Error('No team selected');
 
+    set({ isLoading: true, error: null });
     try {
       const supabase = createClientComponentClient<Database>();
 
@@ -158,7 +160,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
 
       return document;
     } catch (error) {
+      set({ error: getErrorMessage(error) });
       throw error;
+    } finally {
+      set({ isLoading: false });
     }
   },
 })); 
