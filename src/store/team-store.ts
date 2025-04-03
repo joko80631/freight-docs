@@ -3,7 +3,7 @@ import { create } from 'zustand';
 interface Team {
   id: string;
   name: string;
-  created_at: string;
+  // Add other team properties as needed
 }
 
 interface TeamStore {

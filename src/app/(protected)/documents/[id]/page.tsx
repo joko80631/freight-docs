@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
 import { Loader2, File, FileText, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { AuditLogViewer } from '@/components/audit/AuditLogViewer';
 
 export default function DocumentDetailPage() {
   const params = useParams();
@@ -288,6 +289,11 @@ export default function DocumentDetailPage() {
                 </div>
               </div>
             )}
+          </div>
+          
+          <div className="mt-8">
+            <h2 className="text-lg font-medium mb-4">Activity Log</h2>
+            <AuditLogViewer documentId={documentId} />
           </div>
         </div>
       </div>
