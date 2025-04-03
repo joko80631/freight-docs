@@ -23,7 +23,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useTeamStore } from '@/store/teamStore';
 import { Document } from '@/types/document';
 import { getErrorMessage } from '@/lib/errors';
-import { safeArray } from '@/lib/utils';
+import { safeArray } from '@/lib/array-utils';
 
 interface LinkToLoadModalProps {
   open: boolean;

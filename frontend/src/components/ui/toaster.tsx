@@ -9,7 +9,7 @@ import {
   ToastViewport,
 } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
-import { safeArray } from "@/lib/utils"
+import { safeArray } from '@/lib/array-utils'
 
 export function Toaster() {
   const { toasts } = useToast()

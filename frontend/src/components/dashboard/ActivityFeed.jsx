@@ -4,7 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { FileText, Package, User, DollarSign, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSkeleton } from "@/components/shared";
-import { safeArray } from "@/lib/utils";
+import { safeArray } from '@/lib/array-utils';
 
 const activities = [
   {

@@ -4,7 +4,7 @@ import type {
   ToastActionElement,
   ToastProps,
 } from "@/components/ui/toast"
-import { safeArray } from "@/lib/utils"
+import { safeArray } from "@/lib/array-utils"
 
 const TOAST_LIMIT = 1
 const TOAST_REMOVE_DELAY = 1000000

@@ -23,7 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToastNotification } from "@/components/shared";
-import { safeArray } from "@/lib/utils";
+import { safeArray } from '@/lib/array-utils';
 
 const ONBOARDING_STORAGE_KEY = "freightdocs_onboarding_status";
 

@@ -1,5 +1,5 @@
 import { addDays, subDays, format } from "date-fns";
-import { safeArray } from "@/lib/utils";
+import { safeArray } from "@/lib/array-utils";
 
 export type LoadStatus = "Active" | "Completed" | "On Hold" | "Cancelled";
 

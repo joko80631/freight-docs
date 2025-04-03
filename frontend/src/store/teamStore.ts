@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database, Team, TeamMember, UserRole } from '@/types/database';
 import { getErrorMessage } from '@/lib/errors';
-import { safeArray } from '@/lib/utils';
+import { safeArray } from '@/lib/array-utils';
 
 interface User {
   id: string;

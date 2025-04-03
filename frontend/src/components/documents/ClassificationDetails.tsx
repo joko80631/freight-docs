@@ -16,7 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Document } from '@/types/document';
 import { formatDistanceToNow } from 'date-fns';
 import { getErrorMessage } from '@/lib/errors';
-import { safeArray } from '@/lib/utils';
+import { safeArray } from '@/lib/array-utils';
 
 interface ClassificationDetailsProps {
   document: Document;

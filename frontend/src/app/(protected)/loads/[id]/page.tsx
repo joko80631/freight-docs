@@ -14,7 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToastNotification } from "@/components/shared";
 import { Load, formatDate, getRelativeTime, generateMockLoads } from "@/lib/mock/loads";
-import { safeArray } from "@/lib/utils";
+import { safeArray } from '@/lib/array-utils';
 
 // Mock data - will be replaced with API call
 const mockLoad: Load = generateMockLoads(1)[0];

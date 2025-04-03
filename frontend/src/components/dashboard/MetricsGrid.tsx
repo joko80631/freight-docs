@@ -4,7 +4,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSkeleton } from "@/components/shared";
 import { DashboardMetric, defaultMetrics } from "@/lib/dashboard";
-import { safeArray } from "@/lib/utils";
+import { safeArray } from '@/lib/array-utils';
 
 interface MetricsGridProps {
   isLoading?: boolean;

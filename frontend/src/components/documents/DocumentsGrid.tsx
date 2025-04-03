@@ -5,7 +5,7 @@ import { FreightCard } from '@/components/freight/FreightCard';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { Document } from '@/types/document';
-import { safeArray } from '@/lib/utils';
+import { safeArray } from '@/lib/array-utils';
 
 export interface DocumentsGridProps {
   documents: Document[];

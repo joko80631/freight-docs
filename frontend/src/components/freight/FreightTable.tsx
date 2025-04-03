@@ -8,7 +8,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { cn, safeArray } from "@/lib/utils"
+import { cn } from "@/lib/utils"
+import { safeArray } from '@/lib/array-utils'
 
 interface FreightTableProps<T = any> {
   data?: T[];

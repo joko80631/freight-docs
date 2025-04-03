@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToastNotification } from "@/components/shared";
 import { Load, formatDate, getRelativeTime, getDocumentCompletionStatus, getMissingDocuments } from "@/lib/mock/loads";
-import { safeArray } from "@/lib/utils";
+import { safeArray } from "@/lib/array-utils";
 
 interface LoadsTableProps {
   loads: Load[];

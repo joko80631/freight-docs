@@ -14,7 +14,7 @@ import {
 import { LoadsTable } from "@/components/loads/LoadsTable";
 import { generateMockLoads } from "@/lib/mock/loads";
 import type { Load, LoadStatus } from "@/lib/mock/loads";
-import { safeArray } from "@/lib/utils";
+import { safeArray } from '@/lib/array-utils';
 
 const ITEMS_PER_PAGE = 10;
 const MAX_VISIBLE_PAGES = 5;

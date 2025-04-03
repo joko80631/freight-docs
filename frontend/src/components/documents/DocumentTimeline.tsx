@@ -5,7 +5,7 @@ import { FreightCard } from '@/components/freight/FreightCard';
 import { Loader2, FileText, Link, Unlink, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Document } from '@/types/document';
-import { safeArray } from '@/lib/utils';
+import { safeArray } from '@/lib/array-utils';
 
 interface DocumentTimelineProps {
   document: Document;

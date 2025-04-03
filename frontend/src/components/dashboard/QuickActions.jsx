@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Upload, FileText, Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { safeArray } from "@/lib/utils";
+import { safeArray } from '@/lib/array-utils';
 
 const actions = [
   {

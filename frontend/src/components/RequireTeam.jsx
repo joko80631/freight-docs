@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useTeamStore } from '../store/teamStore';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
-import { safeArray } from '@/lib/utils';
+import { safeArray } from '@/lib/array-utils';
 
 const PUBLIC_PATHS = ['/', '/login', '/signup', '/verify-email', '/teams/new'];
 

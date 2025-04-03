@@ -12,7 +12,7 @@ import {
   getPaginationIndices
 } from '@/lib/documents';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { safeArray } from '@/lib/utils';
+import { safeArray } from '@/lib/array-utils';
 
 export interface DocumentsTableProps {
   documents: Document[];
