@@ -8,8 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Document } from '@/types/document';
 import { 
   getConfidenceVariant, 
-  getConfidenceLabel, 
-  getStatusVariant 
+  getConfidenceLabel
 } from '@/lib/documents';
 
 interface DocumentDetailsProps {
@@ -58,27 +57,19 @@ export function DocumentDetails({ document, onDelete, onDownload, onViewLoad }: 
       <div className="mt-6 grid grid-cols-2 gap-4">
         <div>
           <h3 className="text-sm font-medium text-neutral-500">Document Type</h3>
-          <p className="mt-1">{document.type}</p>
+          <p className="mt-1">{document.type || 'Unclassified'}</p>
         </div>
         <div>
           <h3 className="text-sm font-medium text-neutral-500">Confidence</h3>
           <div className="mt-1">
-            <FreightBadge variant={getConfidenceVariant(document.confidence)}>
-              {getConfidenceLabel(document.confidence)}
+            <FreightBadge variant={getConfidenceVariant(document.confidence_score || 0)}>
+              {getConfidenceLabel(document.confidence_score || 0)}
             </FreightBadge>
           </div>
         </div>
         <div>
           <h3 className="text-sm font-medium text-neutral-500">Load ID</h3>
           <p className="mt-1">{document.load_id || 'Not linked'}</p>
-        </div>
-        <div>
-          <h3 className="text-sm font-medium text-neutral-500">Status</h3>
-          <div className="mt-1">
-            <FreightBadge variant={getStatusVariant(document.status)}>
-              {document.status}
-            </FreightBadge>
-          </div>
         </div>
       </div>
     </FreightCard>

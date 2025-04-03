@@ -1,157 +1,112 @@
 'use client';
 
-import { FreightTable } from '@/components/freight/FreightTable';
+import React from 'react';
+import { Document } from '@/types/document';
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import { Button } from '@/components/ui/button';
 import { formatDistanceToNow } from 'date-fns';
-import { Document } from '@/types/document';
 import { 
   getConfidenceVariant, 
-  getConfidenceLabel, 
-  getStatusVariant,
+  getConfidenceLabel,
   getPaginationIndices
 } from '@/lib/documents';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { safeArray } from '@/lib/array-utils';
 
-export interface DocumentsTableProps {
+interface DocumentsTableProps {
   documents: Document[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
   onDocumentClick: (document: Document) => void;
-  currentPage?: number;
-  pageSize?: number;
-  onPageChange?: (page: number) => void;
-  onPageSizeChange?: (size: number) => void;
 }
 
 export function DocumentsTable({
   documents,
-  onDocumentClick,
-  currentPage = 1,
-  pageSize = 10,
+  totalCount,
+  page,
+  pageSize,
   onPageChange,
-  onPageSizeChange
+  onDocumentClick
 }: DocumentsTableProps) {
-  const timeAgo = (date: string) => {
-    return formatDistanceToNow(new Date(date), { addSuffix: true });
-  };
-
-  const getConfidencePercent = (confidence: number) => {
-    return Math.round(confidence * 100);
-  };
-
-  // Calculate pagination
-  const totalDocs = safeArray(documents).length;
-  const { startIndex, endIndex } = getPaginationIndices(currentPage, pageSize, totalDocs);
-  const isFirstPage = currentPage === 1;
-  const isLastPage = currentPage * pageSize >= totalDocs;
+  const totalPages = Math.ceil(totalCount / pageSize);
   
-  // Get paginated documents
-  const paginatedDocuments = safeArray(documents).slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
-
+  if (documents.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-lg font-medium">No documents found</p>
+        <p className="text-sm text-neutral-500 mt-1">
+          Try adjusting your filters or upload a new document.
+        </p>
+      </div>
+    );
+  }
+  
   return (
-    <div className="w-full overflow-auto">
-      <table className="w-full caption-bottom text-sm">
-        <thead className="[&_tr]:border-b">
-          <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
-              Document
-            </th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
-              Type
-            </th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
-              Confidence
-            </th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
-              Status
-            </th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
-              Load
-            </th>
-            <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0">
-              Uploaded
-            </th>
-          </tr>
-        </thead>
-        <tbody className="[&_tr:last-child]:border-0">
-          {safeArray(paginatedDocuments).map((document) => (
-            <tr
-              key={document.id}
-              onClick={() => onDocumentClick(document)}
-              className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted cursor-pointer"
-            >
-              <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                <button className="text-left font-medium hover:underline">
-                  {document.name}
-                </button>
-              </td>
-              <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                <FreightBadge variant="info">{document.type}</FreightBadge>
-              </td>
-              <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                <FreightBadge variant={getConfidenceVariant(document.confidence)}>
-                  {getConfidencePercent(document.confidence)}%
-                </FreightBadge>
-              </td>
-              <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                <FreightBadge variant={getStatusVariant(document.status)}>
-                  {document.status}
-                </FreightBadge>
-              </td>
-              <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0">
-                {document.load_id ? (
-                  <FreightBadge variant="success">
-                    Load #{document.load?.reference_number || document.load_id}
-                  </FreightBadge>
-                ) : (
-                  <span className="text-muted-foreground">—</span>
-                )}
-              </td>
-              <td className="p-4 align-middle [&:has([role=checkbox])]:pr-0 text-muted-foreground">
-                {timeAgo(document.uploaded_at)}
-              </td>
+    <div>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b">
+              <th className="py-3 px-4 text-left font-medium">Name</th>
+              <th className="py-3 px-4 text-left font-medium">Type</th>
+              <th className="py-3 px-4 text-left font-medium">Confidence</th>
+              <th className="py-3 px-4 text-left font-medium">Load</th>
+              <th className="py-3 px-4 text-left font-medium">Uploaded</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      
-      {/* Pagination Controls */}
-      {onPageChange && (
-        <div className="mt-4 flex items-center justify-between">
-          <p className="text-sm text-neutral-500">
-            Showing {startIndex}–{endIndex} of {totalDocs} documents
-          </p>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              disabled={isFirstPage}
-              onClick={() => onPageChange(currentPage - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              disabled={isLastPage}
-              onClick={() => onPageChange(currentPage + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            {onPageSizeChange && (
-              <select 
-                className="rounded-md border border-neutral-300 p-2 text-sm"
-                value={pageSize}
-                onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          </thead>
+          <tbody>
+            {documents.map((document) => (
+              <tr
+                key={document.id}
+                className="border-b hover:bg-slate-50 cursor-pointer"
+                onClick={() => onDocumentClick(document)}
               >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-              </select>
-            )}
+                <td className="py-3 px-4">{document.name}</td>
+                <td className="py-3 px-4">
+                  {document.type?.toUpperCase() || 'UNCLASSIFIED'}
+                </td>
+                <td className="py-3 px-4">
+                  <FreightBadge variant={getConfidenceVariant(document.confidence_score || 0)}>
+                    {getConfidenceLabel(document.confidence_score || 0)}
+                  </FreightBadge>
+                </td>
+                <td className="py-3 px-4">
+                  {document.load_id || 'Not linked'}
+                </td>
+                <td className="py-3 px-4 text-neutral-500">
+                  {formatDistanceToNow(new Date(document.uploaded_at), { addSuffix: true })}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      
+      {totalPages > 1 && (
+        <div className="flex justify-between items-center mt-6">
+          <div className="text-sm text-neutral-500">
+            Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, totalCount)} of {totalCount} documents
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(page - 1)}
+              disabled={page === 0}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onPageChange(page + 1)}
+              disabled={page >= totalPages - 1}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
         </div>
       )}

@@ -9,8 +9,8 @@ export type VariantType = 'success' | 'warning' | 'error' | 'info';
  * Get the appropriate badge variant based on confidence level
  */
 export function getConfidenceVariant(confidence: number): VariantType {
-  if (confidence >= 0.9) return 'success';
-  if (confidence >= 0.7) return 'warning';
+  if (confidence >= 0.85) return 'success';
+  if (confidence >= 0.6) return 'warning';
   return 'error';
 }
 
@@ -19,22 +19,6 @@ export function getConfidenceVariant(confidence: number): VariantType {
  */
 export function getConfidenceLabel(confidence: number): string {
   return `${Math.round(confidence * 100)}%`;
-}
-
-/**
- * Get the appropriate badge variant based on document status
- */
-export function getStatusVariant(status: string): VariantType {
-  switch (status) {
-    case 'processed':
-      return 'success';
-    case 'processing':
-      return 'warning';
-    case 'failed':
-      return 'error';
-    default:
-      return 'info';
-  }
 }
 
 /**
@@ -56,10 +40,11 @@ export function createMockDocument(overrides: Partial<Document> = {}): Document 
   return {
     id,
     name: `Document ${id}`,
-    type: 'Invoice',
-    confidence: 0.85,
-    status: 'processed',
-    load_id: `LOAD-${id.substring(0, 3)}`,
+    storage_path: `/documents/${id}.pdf`,
+    type: 'invoice',
+    confidence_score: 0.85,
+    team_id: 'team_123',
+    uploaded_by: 'user_123',
     uploaded_at: timestamp,
     ...overrides
   };

@@ -1,40 +1,34 @@
-'use client';
-
 import React from 'react';
-import { DocumentPreview } from './DocumentPreview';
-import { Document } from '@/types/document';
+import { DocumentCard } from './DocumentCard';
 import { Button } from '@/components/ui/button';
+import { FileX } from 'lucide-react';
+import { Document } from '@/types/document';
 
-interface DocumentsGridProps {
+interface DocumentListProps {
   documents: Document[];
   totalCount: number;
   page: number;
   pageSize: number;
   onPageChange: (page: number) => void;
-  onDocumentClick: (document: Document) => void;
-  onDocumentDelete?: (id: string) => void;
-  onDocumentDownload?: (id: string) => void;
-  onViewLoad?: (loadId: string) => void;
+  onViewDocument: (id: string) => void;
 }
 
-export function DocumentsGrid({
+export function DocumentList({
   documents,
   totalCount,
   page,
   pageSize,
   onPageChange,
-  onDocumentClick,
-  onDocumentDelete,
-  onDocumentDownload,
-  onViewLoad
-}: DocumentsGridProps) {
+  onViewDocument
+}: DocumentListProps) {
   const totalPages = Math.ceil(totalCount / pageSize);
   
   if (documents.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-lg font-medium">No documents found</p>
-        <p className="text-sm text-neutral-500 mt-1">
+      <div className="text-center py-12 border rounded-lg">
+        <FileX className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+        <h3 className="text-lg font-medium">No documents found</h3>
+        <p className="text-slate-500 mt-1">
           Try adjusting your filters or upload a new document.
         </p>
       </div>
@@ -44,20 +38,18 @@ export function DocumentsGrid({
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {documents.map((document) => (
-          <DocumentPreview
-            key={document.id}
-            document={document}
-            onDelete={onDocumentDelete}
-            onDownload={onDocumentDownload}
-            onViewLoad={onViewLoad}
+        {documents.map((doc) => (
+          <DocumentCard
+            key={doc.id}
+            document={doc}
+            onViewDetails={onViewDocument}
           />
         ))}
       </div>
       
       {totalPages > 1 && (
         <div className="flex justify-between items-center mt-6">
-          <div className="text-sm text-neutral-500">
+          <div className="text-sm text-slate-500">
             Showing {page * pageSize + 1}-{Math.min((page + 1) * pageSize, totalCount)} of {totalCount} documents
           </div>
           <div className="flex space-x-2">

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useTeamStore } from '@/store/team-store';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -12,95 +14,119 @@ import {
 import { Button } from '@/components/ui/button';
 import { Search, X } from 'lucide-react';
 import { Document } from '@/types/document';
+import { Label } from '@/components/ui/label';
 
-export interface DocumentFiltersProps {
-  onSearchChange: (value: string) => void;
-  onTypeChange: (value: string) => void;
-  onStatusChange: (value: Document['status'] | '') => void;
-  onClearFilters: () => void;
-  searchValue: string;
-  typeValue: string;
-  statusValue: Document['status'] | '';
+interface DocumentFiltersProps {
+  onFilterChange: (filters: {
+    type?: string;
+    confidence?: number;
+    loadId?: string;
+  }) => void;
 }
 
-export function DocumentFilters({
-  onSearchChange,
-  onTypeChange,
-  onStatusChange,
-  onClearFilters,
-  searchValue,
-  typeValue,
-  statusValue,
-}: DocumentFiltersProps) {
-  const [searchInput, setSearchInput] = useState(searchValue);
-
-  const handleSearchChange = (value: string) => {
-    setSearchInput(value);
-    onSearchChange(value);
+export function DocumentFilters({ onFilterChange }: DocumentFiltersProps) {
+  const [type, setType] = useState<string>('');
+  const [confidence, setConfidence] = useState<number | null>(null);
+  const [loadId, setLoadId] = useState<string>('');
+  const supabase = createClientComponentClient();
+  const [loads, setLoads] = useState<Array<{ id: string; reference_number: string }>>([]);
+  const { currentTeam } = useTeamStore();
+  
+  useEffect(() => {
+    const fetchLoads = async () => {
+      if (!currentTeam?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('loads')
+          .select('id, reference_number')
+          .eq('team_id', currentTeam.id)
+          .order('created_at', { ascending: false });
+          
+        if (!error && data) {
+          setLoads(data);
+        }
+      } catch (error) {
+        console.error('Error fetching loads:', error);
+      }
+    };
+    
+    fetchLoads();
+  }, [currentTeam?.id, supabase]);
+  
+  const handleFilterChange = () => {
+    onFilterChange({
+      type: type || undefined,
+      confidence: confidence || undefined,
+      loadId: loadId || undefined
+    });
   };
-
-  const handleClearSearch = () => {
-    setSearchInput('');
-    onSearchChange('');
+  
+  const handleReset = () => {
+    setType('');
+    setConfidence(null);
+    setLoadId('');
+    onFilterChange({});
   };
-
-  const hasActiveFilters = searchValue || typeValue || statusValue;
-
+  
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search documents..."
-          value={searchInput}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="pl-9"
-        />
-        {searchInput && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2"
-            onClick={handleClearSearch}
+    <div className="bg-slate-50 p-4 rounded-lg mb-6">
+      <h3 className="font-medium mb-2">Filters</h3>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <Label className="text-sm font-medium">Document Type</Label>
+          <select
+            value={type}
+            onChange={(e) => setType(e.target.value)}
+            className="mt-1 block w-full p-2 border rounded-md"
           >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+            <option value="">All Types</option>
+            <option value="bol">BOL</option>
+            <option value="pod">POD</option>
+            <option value="invoice">Invoice</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        
+        <div>
+          <Label className="text-sm font-medium">Confidence</Label>
+          <select
+            value={confidence?.toString() || ''}
+            onChange={(e) => setConfidence(e.target.value ? Number(e.target.value) : null)}
+            className="mt-1 block w-full p-2 border rounded-md"
+          >
+            <option value="">Any Confidence</option>
+            <option value="0.85">High (85%+)</option>
+            <option value="0.6">Medium (60%+)</option>
+            <option value="0">Low (All)</option>
+          </select>
+        </div>
+        
+        <div>
+          <Label className="text-sm font-medium">Linked Load</Label>
+          <select
+            value={loadId}
+            onChange={(e) => setLoadId(e.target.value)}
+            className="mt-1 block w-full p-2 border rounded-md"
+          >
+            <option value="">Any Load</option>
+            {loads.map((load) => (
+              <option key={load.id} value={load.id}>
+                {load.reference_number}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
-
-      <Select value={typeValue} onValueChange={onTypeChange}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Document Type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="">All Types</SelectItem>
-          <SelectItem value="invoice">Invoice</SelectItem>
-          <SelectItem value="bill_of_lading">Bill of Lading</SelectItem>
-          <SelectItem value="proof_of_delivery">Proof of Delivery</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <Select value={statusValue} onValueChange={onStatusChange}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Status" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="">All Statuses</SelectItem>
-          <SelectItem value="pending">Pending</SelectItem>
-          <SelectItem value="processed">Processed</SelectItem>
-          <SelectItem value="error">Error</SelectItem>
-        </SelectContent>
-      </Select>
-
-      {hasActiveFilters && (
-        <Button
-          variant="outline"
-          onClick={onClearFilters}
-          className="whitespace-nowrap"
-        >
-          Clear Filters
+      
+      <div className="flex justify-end mt-4 space-x-2">
+        <Button variant="outline" onClick={handleReset}>
+          Reset
         </Button>
-      )}
+        <Button onClick={handleFilterChange}>
+          Apply Filters
+        </Button>
+      </div>
     </div>
   );
 } 
