@@ -37,7 +37,7 @@ interface Load {
   destination: string;
 }
 
-export default function LinkToLoadModal({ 
+export function LinkToLoadModal({ 
   open, 
   onOpenChange, 
   document, 
@@ -57,6 +57,15 @@ export default function LinkToLoadModal({
   }, [open, currentTeam?.id, searchTerm]);
 
   const fetchLoads = async () => {
+    if (!currentTeam?.id) {
+      toast({
+        title: 'Error',
+        description: 'No team selected',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
       
@@ -203,62 +212,53 @@ export default function LinkToLoadModal({
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search loads..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1"
+                className="pl-9"
               />
-              <Button 
-                variant="outline" 
-                size="icon" 
-                onClick={() => fetchLoads()}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Search className="h-4 w-4" />
-                )}
-              </Button>
             </div>
-            
-            <div>
-              <Select
-                value={selectedLoad}
-                onValueChange={setSelectedLoad}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a load" />
-                </SelectTrigger>
-                <SelectContent>
-                  {loads.length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground">
-                      No loads found
-                    </div>
-                  ) : (
-                    loads.map((load) => (
+
+            <div className="max-h-[300px] overflow-y-auto">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                </div>
+              ) : loads.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground">
+                  No loads found
+                </div>
+              ) : (
+                <Select value={selectedLoad} onValueChange={setSelectedLoad}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a load" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {loads.map((load) => (
                       <SelectItem key={load.id} value={load.id}>
-                        <div>
-                          <div>Load #{load.reference_number || load.id}</div>
-                          <div className="text-xs text-muted-foreground">
+                        <div className="flex flex-col">
+                          <span className="font-medium">
+                            Load #{load.reference_number || load.id}
+                          </span>
+                          <span className="text-sm text-muted-foreground">
                             {load.origin} → {load.destination}
-                          </div>
+                          </span>
                         </div>
                       </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={handleLink}
                 disabled={!selectedLoad || isLoading}
               >

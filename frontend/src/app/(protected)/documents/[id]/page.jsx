@@ -12,7 +12,7 @@ import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import LoadingSkeleton from '@/components/ui/loading-skeleton';
 import EmptyState from '@/components/ui/empty-state';
-import DocumentPreview from '@/components/documents/DocumentPreview';
+import { DocumentPreview } from '@/components/documents/DocumentPreview';
 import ClassificationDetails from '@/components/documents/ClassificationDetails';
 import DocumentTimeline from '@/components/documents/DocumentTimeline';
 import LinkToLoadModal from '@/components/documents/LinkToLoadModal';

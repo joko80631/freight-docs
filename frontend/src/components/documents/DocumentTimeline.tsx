@@ -10,7 +10,7 @@ interface DocumentTimelineProps {
   document: Document;
 }
 
-export default function DocumentTimeline({ document }: DocumentTimelineProps) {
+export function DocumentTimeline({ document }: DocumentTimelineProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

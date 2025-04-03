@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClientComponentClient, User } from '@supabase/auth-helpers-nextjs';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,30 +24,40 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function SettingsPage() {
-  const [user, setUser] = useState(null);
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [fullName, setFullName] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const { toast } = useToast();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     async function loadUser() {
       try {
         const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        
+
+        if (error) {
+          throw error;
+        }
+
+        if (!user) {
+          router.push('/login');
+          return;
+        }
+
         setUser(user);
         setFullName(user.user_metadata?.full_name || '');
       } catch (error) {
         console.error('Error loading user:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load user information',
+          description: 'Failed to load user data',
           variant: 'destructive',
         });
       } finally {
@@ -55,9 +66,11 @@ export default function SettingsPage() {
     }
 
     loadUser();
-  }, []);
+  }, [router, supabase.auth, toast]);
 
   const updateProfile = async () => {
+    if (!user) return;
+
     try {
       setUpdating(true);
       const { error } = await supabase.auth.updateUser({
@@ -92,6 +105,8 @@ export default function SettingsPage() {
       return;
     }
 
+    if (!user) return;
+
     try {
       setUpdating(true);
       const { error } = await supabase.auth.updateUser({
@@ -119,6 +134,8 @@ export default function SettingsPage() {
   };
 
   const deleteAccount = async () => {
+    if (!user) return;
+
     try {
       setUpdating(true);
       // First, delete user data from your database
@@ -149,6 +166,10 @@ export default function SettingsPage() {
 
   if (loading) {
     return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return <div>No user found</div>;
   }
 
   return (

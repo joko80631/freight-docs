@@ -23,7 +23,7 @@ export interface DocumentFiltersProps {
   statusValue: Document['status'] | '';
 }
 
-export default function DocumentFilters({
+export function DocumentFilters({
   onSearchChange,
   onTypeChange,
   onStatusChange,

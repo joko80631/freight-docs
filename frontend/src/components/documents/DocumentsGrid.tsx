@@ -14,7 +14,7 @@ export interface DocumentsGridProps {
   hasMore: boolean;
 }
 
-export default function DocumentsGrid({
+export function DocumentsGrid({
   documents,
   isLoading,
   onDocumentClick,

@@ -22,7 +22,7 @@ export interface DocumentsTableProps {
   onPageSizeChange?: (size: number) => void;
 }
 
-export default function DocumentsTable({
+export function DocumentsTable({
   documents,
   onDocumentClick,
   currentPage = 1,

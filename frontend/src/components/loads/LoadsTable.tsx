@@ -117,6 +117,11 @@ export function LoadsTable({ loads, isLoading = false }: LoadsTableProps) {
     const aValue = a[sortConfig.field as keyof Load];
     const bValue = b[sortConfig.field as keyof Load];
 
+    // Handle undefined values
+    if (aValue === undefined && bValue === undefined) return 0;
+    if (aValue === undefined) return sortConfig.direction === "asc" ? 1 : -1;
+    if (bValue === undefined) return sortConfig.direction === "asc" ? -1 : 1;
+
     if (sortConfig.direction === "asc") {
       return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
     }

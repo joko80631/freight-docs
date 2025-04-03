@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ArrowLeft } from 'lucide-react';
 import { LOAD_STATUSES, LOAD_STATUS_LABELS } from '@/config/constants';
-import { TableSkeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from "@/components/ui/use-toast";
 
 export default function EditLoadPage() {
@@ -91,7 +91,7 @@ export default function EditLoadPage() {
   };
 
   if (isLoading) {
-    return <TableSkeleton />;
+    return <Skeleton />;
   }
 
   if (error) {

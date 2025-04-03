@@ -21,7 +21,7 @@ interface ClassificationDetailsProps {
   onReclassify: (updatedDoc: Document) => void;
 }
 
-export default function ClassificationDetails({
+export function ClassificationDetails({
   document,
   onReclassify,
 }: ClassificationDetailsProps) {

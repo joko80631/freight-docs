@@ -1,3 +1,5 @@
+'use client';
+
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import { FreightCard } from '@/components/freight/FreightCard';
 import { FreightModal } from '@/components/freight/FreightModal';
@@ -9,7 +11,7 @@ import { useState } from 'react';
 interface Document {
   id: string;
   name: string;
-  status: 'pending' | 'approved' | 'rejected';
+  type: string;
   confidence: number;
 }
 
@@ -17,25 +19,63 @@ const mockData: Document[] = [
   {
     id: 'DOC-001',
     name: 'Invoice #12345',
-    status: 'approved',
+    type: 'invoice',
     confidence: 0.95,
   },
   {
     id: 'DOC-002',
     name: 'Bill of Lading',
-    status: 'pending',
-    confidence: 0.75,
+    type: 'bill_of_lading',
+    confidence: 0.87,
   },
   {
     id: 'DOC-003',
     name: 'Customs Declaration',
-    status: 'rejected',
-    confidence: 0.45,
+    type: 'proof_of_delivery',
+    confidence: 0.92,
   },
 ];
 
 export default function PlaygroundPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [data] = useState<Document[]>([
+    { id: '1', name: 'Invoice.pdf', type: 'invoice', confidence: 0.95 },
+    { id: '2', name: 'BOL.pdf', type: 'bill_of_lading', confidence: 0.87 },
+    { id: '3', name: 'POD.pdf', type: 'proof_of_delivery', confidence: 0.92 },
+  ]);
+
+  const columns: {
+    header: string;
+    accessorKey: keyof Document;
+    cell?: (value: string | number, row: Document) => React.ReactNode;
+  }[] = [
+    {
+      header: 'Name',
+      accessorKey: 'name',
+      cell: (value) => {
+        return <span className="font-medium">{String(value)}</span>;
+      },
+    },
+    {
+      header: 'Type',
+      accessorKey: 'type',
+      cell: (value) => {
+        return <FreightBadge>{String(value)}</FreightBadge>;
+      },
+    },
+    {
+      header: 'Confidence',
+      accessorKey: 'confidence',
+      cell: (value) => {
+        const confidence = Number(value);
+        return (
+          <FreightBadge variant={confidence > 0.9 ? 'success' : 'warning'}>
+            {Math.round(confidence * 100)}%
+          </FreightBadge>
+        );
+      },
+    },
+  ];
 
   return (
     <Layout>
@@ -58,18 +98,18 @@ export default function PlaygroundPage() {
           {/* Cards Section */}
           <section>
             <h2 className="mb-4 text-xl font-semibold">Cards</h2>
-            <div className="grid gap-4 md:grid-cols-3">
-              <FreightCard variant="default">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <FreightCard>
                 <h3 className="font-semibold">Default Card</h3>
-                <p className="mt-2 text-sm text-neutral-600">Basic card with no special styling</p>
+                <p className="mt-2 text-sm text-neutral-600">Card with default styling</p>
               </FreightCard>
               <FreightCard variant="bordered">
                 <h3 className="font-semibold">Bordered Card</h3>
                 <p className="mt-2 text-sm text-neutral-600">Card with a border</p>
               </FreightCard>
-              <FreightCard variant="elevated" hover>
-                <h3 className="font-semibold">Elevated Card</h3>
-                <p className="mt-2 text-sm text-neutral-600">Card with shadow and hover effect</p>
+              <FreightCard variant="default" hover>
+                <h3 className="font-semibold">Hover Card</h3>
+                <p className="mt-2 text-sm text-neutral-600">Card with hover effect</p>
               </FreightCard>
             </div>
           </section>
@@ -78,45 +118,9 @@ export default function PlaygroundPage() {
           <section>
             <h2 className="mb-4 text-xl font-semibold">Table</h2>
             <FreightTable
-              data={mockData}
-              columns={[
-                { header: 'ID', accessorKey: 'id' },
-                { header: 'Name', accessorKey: 'name' },
-                {
-                  header: 'Status',
-                  accessorKey: 'status',
-                  cell: (value: string) => (
-                    <FreightBadge
-                      variant={
-                        value === 'approved'
-                          ? 'success'
-                          : value === 'rejected'
-                          ? 'error'
-                          : 'warning'
-                      }
-                    >
-                      {value}
-                    </FreightBadge>
-                  ),
-                },
-                {
-                  header: 'Confidence',
-                  accessorKey: 'confidence',
-                  cell: (value: number) => (
-                    <FreightBadge
-                      variant={
-                        value > 0.8
-                          ? 'success'
-                          : value > 0.6
-                          ? 'warning'
-                          : 'error'
-                      }
-                    >
-                      {(value * 100).toFixed(0)}%
-                    </FreightBadge>
-                  ),
-                },
-              ]}
+              data={data}
+              columns={columns}
+              onRowClick={(row) => console.log('Clicked row:', row)}
             />
           </section>
 
