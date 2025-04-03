@@ -14,6 +14,7 @@ import {
 import { LoadsTable } from "@/components/loads/LoadsTable";
 import { generateMockLoads } from "@/lib/mock/loads";
 import type { Load, LoadStatus } from "@/lib/mock/loads";
+import { safeArray } from "@/lib/utils";
 
 const ITEMS_PER_PAGE = 10;
 const MAX_VISIBLE_PAGES = 5;
@@ -89,7 +90,7 @@ export default function LoadsPage() {
     fetchLoads();
   }, []);
 
-  const filteredLoads = loads.filter((load) => {
+  const filteredLoads = safeArray(loads).filter((load) => {
     const matchesSearch =
       searchQuery === "" ||
       load.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -178,7 +179,7 @@ export default function LoadsPage() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-1">
-              {getPageNumbers(currentPage, totalPages).map((page, index) => (
+              {safeArray(getPageNumbers(currentPage, totalPages)).map((page, index) => (
                 page === "ellipsis" ? (
                   <span key={`ellipsis-${index}`} className="px-2">
                     ...

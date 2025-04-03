@@ -1,4 +1,5 @@
 import { addDays, subDays, format } from "date-fns";
+import { safeArray } from "@/lib/utils";
 
 export type LoadStatus = "Active" | "Completed" | "On Hold" | "Cancelled";
 
@@ -84,13 +85,13 @@ function generateRandomDocuments(): Document[] {
   const random = Math.random();
   if (random < 0.2) {
     // 20% chance of all documents complete
-    return DOCUMENT_TYPES.map((type) => ({ type, status: "complete" as const }));
+    return safeArray(DOCUMENT_TYPES).map((type) => ({ type, status: "complete" as const }));
   } else if (random < 0.4) {
     // 20% chance of all documents missing
-    return DOCUMENT_TYPES.map((type) => ({ type, status: "missing" as const }));
+    return safeArray(DOCUMENT_TYPES).map((type) => ({ type, status: "missing" as const }));
   } else {
     // 60% chance of partial completion
-    return DOCUMENT_TYPES.map((type) => ({
+    return safeArray(DOCUMENT_TYPES).map((type) => ({
       type,
       status: Math.random() > 0.5 ? "complete" : "missing",
     }));
@@ -171,8 +172,8 @@ export function getRelativeTime(date: Date): string {
 }
 
 export function getDocumentCompletionStatus(documents: Document[]): { complete: number; total: number; percentage: number } {
-  const total = documents.length;
-  const complete = documents.filter((doc) => doc.status === "complete").length;
+  const total = safeArray(documents).length;
+  const complete = safeArray(documents).filter((doc) => doc.status === "complete").length;
   const missing = total - complete;
 
   return {
@@ -183,7 +184,7 @@ export function getDocumentCompletionStatus(documents: Document[]): { complete: 
 }
 
 export function getMissingDocuments(documents: Document[]): DocumentType[] {
-  return documents
+  return safeArray(documents)
     .filter((doc) => doc.status === "missing")
     .map((doc) => doc.type);
 } 

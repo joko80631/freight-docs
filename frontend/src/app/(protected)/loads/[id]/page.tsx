@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToastNotification } from "@/components/shared";
 import { Load, formatDate, getRelativeTime, generateMockLoads } from "@/lib/mock/loads";
+import { safeArray } from "@/lib/utils";
 
 // Mock data - will be replaced with API call
 const mockLoad: Load = generateMockLoads(1)[0];
@@ -177,7 +178,7 @@ export default function LoadDetailPage({ params }: { params: { id: string } }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {load.documents.map((doc) => (
+            {safeArray(load.documents).map((doc) => (
               <div
                 key={doc.type}
                 className="flex items-center justify-between p-4 border rounded-lg"
@@ -223,7 +224,7 @@ export default function LoadDetailPage({ params }: { params: { id: string } }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
+            {safeArray([
               {
                 type: "creation",
                 description: "Load created",
@@ -242,20 +243,17 @@ export default function LoadDetailPage({ params }: { params: { id: string } }) {
                 timestamp: new Date(load.dateCreated.getTime() + 60 * 60 * 1000),
                 user: load.createdBy,
               },
-            ].map((activity, index) => (
+            ]).map((activity, index) => (
               <div key={index} className="flex gap-4">
                 <div className="flex flex-col items-center">
                   <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
                     <FileText className="h-4 w-4 text-primary" />
                   </div>
-                  {index < 2 && (
-                    <div className="w-0.5 h-full bg-border" />
-                  )}
                 </div>
-                <div className="flex-1 pb-4">
+                <div className="flex-1">
                   <p className="font-medium">{activity.description}</p>
                   <p className="text-sm text-muted-foreground">
-                    {getRelativeTime(activity.timestamp)} by {activity.user}
+                    {activity.user} • {getRelativeTime(activity.timestamp)}
                   </p>
                 </div>
               </div>

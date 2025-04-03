@@ -23,6 +23,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useTeamStore } from '@/store/teamStore';
 import { Document } from '@/types/document';
 import { getErrorMessage } from '@/lib/errors';
+import { safeArray } from '@/lib/utils';
 
 interface LinkToLoadModalProps {
   open: boolean;
@@ -238,7 +239,7 @@ export function LinkToLoadModal({
                     <SelectValue placeholder="Select a load" />
                   </SelectTrigger>
                   <SelectContent>
-                    {loads.map((load) => (
+                    {safeArray(loads).map((load) => (
                       <SelectItem key={load.id} value={load.id}>
                         <div className="flex flex-col">
                           <span className="font-medium">

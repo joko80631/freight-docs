@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Document } from '@/types/document';
 import { formatDistanceToNow } from 'date-fns';
 import { getErrorMessage } from '@/lib/errors';
+import { safeArray } from '@/lib/utils';
 
 interface ClassificationDetailsProps {
   document: Document;
@@ -142,7 +143,7 @@ export function ClassificationDetails({
         <FreightCard variant="bordered">
           <h3 className="mb-4 font-medium">Classification History</h3>
           <div className="space-y-4">
-            {document.classification_history.map((history) => (
+            {safeArray(document.classification_history).map((history) => (
               <div key={history.id} className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="font-medium">{history.type}</div>

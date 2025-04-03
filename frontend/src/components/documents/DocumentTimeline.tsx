@@ -5,6 +5,7 @@ import { FreightCard } from '@/components/freight/FreightCard';
 import { Loader2, FileText, Link, Unlink, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Document } from '@/types/document';
+import { safeArray } from '@/lib/utils';
 
 interface DocumentTimelineProps {
   document: Document;
@@ -70,7 +71,7 @@ export function DocumentTimeline({ document }: DocumentTimelineProps) {
   }
 
   // Group events by date
-  const groupedEvents = document.events.reduce((groups, event) => {
+  const groupedEvents = safeArray(document.events).reduce((groups, event) => {
     const date = new Date(event.timestamp).toLocaleDateString();
     if (!groups[date]) {
       groups[date] = [];
@@ -85,7 +86,7 @@ export function DocumentTimeline({ document }: DocumentTimelineProps) {
         <div key={date}>
           <h3 className="mb-4 font-medium">{date}</h3>
           <div className="space-y-4">
-            {events.map((event) => (
+            {safeArray(events).map((event) => (
               <div key={event.id} className="flex gap-4">
                 <div className={`mt-1 ${getEventColor(event.type)}`}>
                   {getEventIcon(event.type)}

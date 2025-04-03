@@ -23,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToastNotification } from "@/components/shared";
+import { safeArray } from "@/lib/utils";
 
 const ONBOARDING_STORAGE_KEY = "freightdocs_onboarding_status";
 
@@ -170,7 +171,7 @@ export function OnboardingChecklist() {
 
           {/* Checklist Items */}
           <div className="space-y-4">
-            {checklistItems.map((item) => {
+            {safeArray(checklistItems).map((item) => {
               const isCompleted = completedItems.includes(item.id);
               return (
                 <div

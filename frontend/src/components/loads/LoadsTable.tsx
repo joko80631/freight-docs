@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToastNotification } from "@/components/shared";
 import { Load, formatDate, getRelativeTime, getDocumentCompletionStatus, getMissingDocuments } from "@/lib/mock/loads";
+import { safeArray } from "@/lib/utils";
 
 interface LoadsTableProps {
   loads: Load[];
@@ -162,7 +163,7 @@ export function LoadsTable({ loads, isLoading = false }: LoadsTableProps) {
       <div className="space-y-3">
         <div className="h-8 w-[250px] animate-pulse rounded-md bg-muted" />
         <div className="space-y-2">
-          {Array.from({ length: 5 }).map((_, i) => (
+          {safeArray(Array.from({ length: 5 })).map((_, i) => (
             <div key={i} className="h-12 animate-pulse rounded-md bg-muted" />
           ))}
         </div>
@@ -241,7 +242,7 @@ export function LoadsTable({ loads, isLoading = false }: LoadsTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedLoads.map((load) => {
+          {safeArray(sortedLoads).map((load) => {
             const docStatus = getDocumentCompletionStatus(load.documents);
             const missingDocs = getMissingDocuments(load.documents);
 
@@ -265,16 +266,12 @@ export function LoadsTable({ loads, isLoading = false }: LoadsTableProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span>{formatDate(load.dateCreated)}</span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {getRelativeTime(load.dateCreated)}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                  <div className="flex items-center gap-1">
+                    <span>{formatDate(load.dateCreated)}</span>
+                    <span className="text-muted-foreground">
+                      ({getRelativeTime(load.dateCreated)})
+                    </span>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -289,83 +286,78 @@ export function LoadsTable({ loads, isLoading = false }: LoadsTableProps) {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div className="flex items-center gap-2">
-                          <div className="w-20">
-                            <Progress
-                              value={docStatus.percentage}
-                              className="h-2"
-                              max={100}
-                            />
-                          </div>
+                          <Progress
+                            value={docStatus.percentage}
+                            className="w-24"
+                          />
                           <span className="text-sm">
-                            {docStatus.complete}/{docStatus.total}
+                            {docStatus.percentage}%
                           </span>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {missingDocs.length > 0 ? (
-                          <div className="space-y-1">
-                            <p className="font-medium">Missing Documents:</p>
-                            <ul className="list-inside list-disc text-sm">
-                              {missingDocs.map((doc) => (
-                                <li key={doc}>{doc}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : (
-                          <p>All documents complete</p>
-                        )}
+                        <div className="space-y-1">
+                          <p className="font-medium">
+                            {docStatus.complete} of {docStatus.total} documents
+                          </p>
+                          {missingDocs.length > 0 && (
+                            <p className="text-sm text-muted-foreground">
+                              Missing: {missingDocs.join(", ")}
+                            </p>
+                          )}
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleView(load.id)}>
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEdit(load.id)}>
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => handleDelete(load.id)}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleView(load.id)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleEdit(load.id)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(load.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Load</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this load? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={confirmDelete}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </TableCell>
               </TableRow>
             );
           })}
         </TableBody>
       </Table>
-
-      <AlertDialog open={!!deleteLoadId} onOpenChange={() => setDeleteLoadId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Load</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the load
-              and all associated documents.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 } 

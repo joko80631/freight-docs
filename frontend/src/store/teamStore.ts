@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database, Team, TeamMember, UserRole } from '@/types/database';
 import { getErrorMessage } from '@/lib/errors';
+import { safeArray } from '@/lib/utils';
 
 interface User {
   id: string;
@@ -57,7 +58,7 @@ export const useTeamStore = create<TeamStore>((set, get) => ({
 
       if (error) throw error;
 
-      const transformedTeams = data
+      const transformedTeams = safeArray(data)
         ?.filter(Boolean)
         ?.filter(team => team.teams)
         ?.map(team => ({

@@ -12,6 +12,7 @@ import {
   getPaginationIndices
 } from '@/lib/documents';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { safeArray } from '@/lib/utils';
 
 export interface DocumentsTableProps {
   documents: Document[];
@@ -39,13 +40,13 @@ export function DocumentsTable({
   };
 
   // Calculate pagination
-  const totalDocs = documents.length;
+  const totalDocs = safeArray(documents).length;
   const { startIndex, endIndex } = getPaginationIndices(currentPage, pageSize, totalDocs);
   const isFirstPage = currentPage === 1;
   const isLastPage = currentPage * pageSize >= totalDocs;
   
   // Get paginated documents
-  const paginatedDocuments = documents.slice(
+  const paginatedDocuments = safeArray(documents).slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
@@ -76,7 +77,7 @@ export function DocumentsTable({
           </tr>
         </thead>
         <tbody className="[&_tr:last-child]:border-0">
-          {paginatedDocuments.map((document) => (
+          {safeArray(paginatedDocuments).map((document) => (
             <tr
               key={document.id}
               onClick={() => onDocumentClick(document)}

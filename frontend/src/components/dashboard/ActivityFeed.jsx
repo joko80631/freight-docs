@@ -4,6 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { FileText, Package, User, DollarSign, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSkeleton } from "@/components/shared";
+import { safeArray } from "@/lib/utils";
 
 const activities = [
   {
@@ -79,7 +80,7 @@ export function ActivityFeed({ isLoading }) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map((activity) => {
+          {safeArray(activities).map((activity) => {
             const Icon = activity.icon;
             return (
               <div key={activity.id} className="flex items-start space-x-4">

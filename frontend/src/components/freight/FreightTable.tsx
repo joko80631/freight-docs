@@ -8,7 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { cn } from "@/lib/utils"
+import { cn, safeArray } from "@/lib/utils"
 
 interface FreightTableProps<T = any> {
   data?: T[];
@@ -51,7 +51,7 @@ export function FreightTable<T = any>({
         <table className="w-full caption-bottom text-sm">
           <thead className="[&_tr]:border-b">
             <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-              {columns.map((column, index) => (
+              {safeArray(columns).map((column, index) => (
                 <th
                   key={index}
                   className="h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0"
@@ -62,12 +62,12 @@ export function FreightTable<T = any>({
             </tr>
           </thead>
           <tbody className="[&_tr:last-child]:border-0">
-            {data.map((row, rowIndex) => (
+            {safeArray(data).map((row, rowIndex) => (
               <tr
                 key={rowIndex}
                 className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
               >
-                {columns.map((column, colIndex) => (
+                {safeArray(columns).map((column, colIndex) => (
                   <td
                     key={colIndex}
                     className="p-4 align-middle [&:has([role=checkbox])]:pr-0"

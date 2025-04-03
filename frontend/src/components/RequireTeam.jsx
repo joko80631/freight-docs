@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useTeamStore } from '../store/teamStore';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
+import { safeArray } from '@/lib/utils';
 
 const PUBLIC_PATHS = ['/', '/login', '/signup', '/verify-email', '/teams/new'];
 
@@ -96,7 +97,7 @@ export function RequireTeam({ children }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {teams.map((team) => (
+              {safeArray(teams).map((team) => (
                 <Button
                   key={team.id}
                   variant="outline"

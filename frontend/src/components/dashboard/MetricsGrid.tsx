@@ -4,6 +4,7 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingSkeleton } from "@/components/shared";
 import { DashboardMetric, defaultMetrics } from "@/lib/dashboard";
+import { safeArray } from "@/lib/utils";
 
 interface MetricsGridProps {
   isLoading?: boolean;
@@ -37,7 +38,7 @@ export function MetricsGrid({ isLoading = false, metrics = defaultMetrics }: Met
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {metrics.map((metric) => {
+      {safeArray(metrics).map((metric) => {
         const Icon = metric.icon;
         return (
           <Card key={metric.title}>

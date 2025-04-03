@@ -5,6 +5,7 @@ import { FreightCard } from '@/components/freight/FreightCard';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { Document } from '@/types/document';
+import { safeArray } from '@/lib/utils';
 
 export interface DocumentsGridProps {
   documents: Document[];
@@ -45,7 +46,7 @@ export function DocumentsGrid({
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {documents.map((document) => (
+        {safeArray(documents).map((document) => (
           <DocumentPreview
             key={document.id}
             document={document}

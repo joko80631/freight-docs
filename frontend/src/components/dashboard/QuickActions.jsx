@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Upload, FileText, Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { safeArray } from "@/lib/utils";
 
 const actions = [
   {
@@ -42,7 +43,7 @@ export function QuickActions() {
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 sm:grid-cols-2">
-          {actions.map((action) => {
+          {safeArray(actions).map((action) => {
             const Icon = action.icon;
             return (
               <Button
