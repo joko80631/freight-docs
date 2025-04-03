@@ -1,49 +1,46 @@
-import { createClient } from '@supabase/supabase-js';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client with service role for admin operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      persistSession: false,
-    }
-  }
-);
-
-interface AuditLogParams {
-  action: string;
-  documentIds?: string[];
-  teamId: string;
-  userId: string;
-  metadata?: Record<string, any>;
+export interface AuditLogContext {
+  documentId?: string;
+  userId?: string;
+  teamId?: string;
+  [key: string]: any;
 }
 
-export async function createAuditLog({
-  action,
-  documentIds = [],
-  teamId,
-  userId,
-  metadata = {}
-}: AuditLogParams) {
-  try {
-    const { error } = await supabaseAdmin
-      .from('audit_logs')
-      .insert({
-        action,
-        document_ids: documentIds,
-        team_id: teamId,
-        user_id: userId,
-        metadata,
-        created_at: new Date().toISOString()
-      });
+export interface AuditLogEntry {
+  action: string;
+  document_id?: string;
+  user_id?: string;
+  team_id?: string;
+  metadata?: Record<string, any>;
+  created_at?: string;
+}
 
+export async function createAuditLog(
+  supabase: SupabaseClient,
+  action: string,
+  context: AuditLogContext
+): Promise<void> {
+  try {
+    const { documentId, userId, teamId, ...metadata } = context;
+    
+    const entry: AuditLogEntry = {
+      action,
+      document_id: documentId,
+      user_id: userId,
+      team_id: teamId,
+      metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+      created_at: new Date().toISOString()
+    };
+    
+    const { error } = await supabase
+      .from('audit_logs')
+      .insert(entry);
+      
     if (error) {
-      console.error('Audit log creation failed:', error);
-      // Don't throw - audit logging should never block main operations
+      console.error('Failed to create audit log:', error);
     }
-  } catch (err) {
-    console.error('Unexpected error in audit logging:', err);
-    // Don't throw - audit logging should never block main operations
+  } catch (error) {
+    console.error('Error creating audit log:', error);
   }
 } 

@@ -6,9 +6,11 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Toaster } from '@/components/ui/toaster';
-import { Loader2, File, FileText, ArrowLeft } from 'lucide-react';
+import { Loader2, File, FileText, ArrowLeft, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { AuditLogViewer } from '@/components/audit/AuditLogViewer';
+import { ConfidenceBadge } from '@/components/documents/ConfidenceBadge';
+import { ClassificationReason } from '@/components/documents/ClassificationReason';
 
 export default function DocumentDetailPage() {
   const params = useParams();
@@ -20,6 +22,7 @@ export default function DocumentDetailPage() {
   const [document, setDocument] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isReclassifying, setIsReclassifying] = useState(false);
+  const [isRetryingClassification, setIsRetryingClassification] = useState(false);
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);
   
   useEffect(() => {
@@ -123,6 +126,69 @@ export default function DocumentDetailPage() {
       setIsReclassifying(false);
     }
   };
+
+  const handleRetryClassification = async () => {
+    if (!document || isRetryingClassification) return;
+    
+    setIsRetryingClassification(true);
+    
+    try {
+      const response = await fetch('/api/documents/retry-classification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentId: document.id
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to retry classification');
+      }
+      
+      // Update local document state with new classification
+      setDocument({
+        ...document,
+        type: result.classification.type,
+        confidence_score: result.classification.confidence,
+        classification_reason: result.classification.reason,
+        source: 'openai_retry'
+      });
+      
+      toast({
+        title: 'Classification Updated',
+        description: `Document classified as ${result.classification.type.toUpperCase()} with ${Math.round(result.classification.confidence * 100)}% confidence`,
+      });
+      
+      // Refresh the document data to get updated classification history
+      const { data, error } = await supabase
+        .from('documents')
+        .select(`
+          *,
+          loads(*),
+          classification_history(*)
+        `)
+        .eq('id', documentId)
+        .single();
+        
+      if (!error && data) {
+        setDocument(data);
+      }
+      
+    } catch (error) {
+      console.error('Retry classification error:', error);
+      toast({
+        title: 'Classification Failed',
+        description: error.message,
+        variant: 'destructive'
+      });
+    } finally {
+      setIsRetryingClassification(false);
+    }
+  };
   
   if (isLoading) {
     return (
@@ -168,15 +234,10 @@ export default function DocumentDetailPage() {
           </div>
           
           {document.confidence_score && (
-            <div className={`px-3 py-1 rounded-full text-sm ${
-              document.confidence_score >= 0.85 
-                ? 'bg-green-100 text-green-800' 
-                : document.confidence_score >= 0.6 
-                  ? 'bg-yellow-100 text-yellow-800' 
-                  : 'bg-red-100 text-red-800'
-            }`}>
-              Confidence: {Math.round(document.confidence_score * 100)}%
-            </div>
+            <ConfidenceBadge 
+              confidence={document.confidence_score} 
+              size="sm"
+            />
           )}
           
           {document.source && (
@@ -203,6 +264,27 @@ export default function DocumentDetailPage() {
               </Button>
             ))}
           </div>
+        </div>
+
+        <div className="mt-4">
+          <Button 
+            onClick={handleRetryClassification} 
+            disabled={isRetryingClassification}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            {isRetryingClassification ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            Retry AI Classification
+          </Button>
+          {document.confidence_score < 0.6 && (
+            <p className="text-xs text-amber-600 mt-1">
+              Low confidence detected. Consider retrying classification.
+            </p>
+          )}
         </div>
       </div>
       
@@ -254,10 +336,7 @@ export default function DocumentDetailPage() {
               )}
               
               {document.classification_reason && (
-                <div>
-                  <h3 className="text-sm font-medium text-slate-500">Classification Reason</h3>
-                  <p className="text-sm">{document.classification_reason}</p>
-                </div>
+                <ClassificationReason reason={document.classification_reason} />
               )}
             </div>
             
