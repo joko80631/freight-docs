@@ -47,17 +47,17 @@ export default function SettingsPage() {
         }
 
         if (!user) {
-          router.push('/login');
+          router?.push('/login');
           return;
         }
 
         setUser(user);
-        setFullName(user.user_metadata?.full_name || '');
+        setFullName(user?.user_metadata?.full_name || '');
       } catch (error) {
         console.error('Error loading user:', error);
         toast({
           title: 'Error',
-          description: 'Failed to load user data',
+          description: error?.message || 'Failed to load user data',
           variant: 'destructive',
         });
       } finally {
@@ -87,7 +87,7 @@ export default function SettingsPage() {
       console.error('Error updating profile:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update profile',
+        description: error?.message || 'Failed to update profile',
         variant: 'destructive',
       });
     } finally {
@@ -125,7 +125,7 @@ export default function SettingsPage() {
       console.error('Error updating password:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update password',
+        description: error?.message || 'Failed to update password',
         variant: 'destructive',
       });
     } finally {
@@ -142,12 +142,12 @@ export default function SettingsPage() {
       const { error: deleteError } = await supabase
         .from('users')
         .delete()
-        .eq('id', user.id);
+        .eq('id', user?.id);
 
       if (deleteError) throw deleteError;
 
       // Then, delete the auth user
-      const { error } = await supabase.auth.admin.deleteUser(user.id);
+      const { error } = await supabase.auth.admin.deleteUser(user?.id);
       if (error) throw error;
 
       // Sign out
@@ -156,7 +156,7 @@ export default function SettingsPage() {
       console.error('Error deleting account:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete account',
+        description: error?.message || 'Failed to delete account',
         variant: 'destructive',
       });
     } finally {
@@ -187,7 +187,7 @@ export default function SettingsPage() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
-                value={user?.email}
+                value={user?.email || ''}
                 disabled
                 type="email"
               />
@@ -196,16 +196,16 @@ export default function SettingsPage() {
               <Label htmlFor="fullName">Full Name</Label>
               <Input
                 id="fullName"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Enter your full name"
+                value={fullName || ''}
+                onChange={(e) => setFullName(e?.target?.value || '')}
+                disabled={updating}
               />
             </div>
-            <Button 
-              onClick={updateProfile} 
+            <Button
+              onClick={updateProfile}
               disabled={updating}
             >
-              Update Profile
+              {updating ? 'Updating...' : 'Update Profile'}
             </Button>
           </CardContent>
         </Card>
@@ -221,9 +221,9 @@ export default function SettingsPage() {
               <Input
                 id="newPassword"
                 type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
+                value={newPassword || ''}
+                onChange={(e) => setNewPassword(e?.target?.value || '')}
+                disabled={updating}
               />
             </div>
             <div className="space-y-2">
@@ -231,16 +231,16 @@ export default function SettingsPage() {
               <Input
                 id="confirmPassword"
                 type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
+                value={confirmPassword || ''}
+                onChange={(e) => setConfirmPassword(e?.target?.value || '')}
+                disabled={updating}
               />
             </div>
-            <Button 
+            <Button
               onClick={updatePassword}
-              disabled={updating || !newPassword || !confirmPassword}
+              disabled={updating}
             >
-              Update Password
+              {updating ? 'Updating...' : 'Update Password'}
             </Button>
           </CardContent>
         </Card>
@@ -248,29 +248,26 @@ export default function SettingsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Delete Account</CardTitle>
-            <CardDescription>
-              Permanently delete your account and all associated data.
-            </CardDescription>
+            <CardDescription>Permanently delete your account and all associated data.</CardDescription>
           </CardHeader>
           <CardContent>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive">Delete Account</Button>
+                <Button variant="destructive" disabled={updating}>
+                  {updating ? 'Deleting...' : 'Delete Account'}
+                </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your
-                    account and remove your data from our servers.
+                    This action cannot be undone. This will permanently delete your account
+                    and remove all associated data from our servers.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={deleteAccount}
-                    className="bg-destructive text-destructive-foreground"
-                  >
+                  <AlertDialogAction onClick={deleteAccount}>
                     Delete Account
                   </AlertDialogAction>
                 </AlertDialogFooter>

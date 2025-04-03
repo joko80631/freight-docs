@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
-const useLoadStore = create((set, get) => ({
+export const useLoadStore = create((set, get) => ({
   loads: [],
   isLoading: false,
   error: null,
@@ -171,6 +171,4 @@ const useLoadStore = create((set, get) => ({
       }
     });
   }
-}));
-
-export default useLoadStore; 
+})); 

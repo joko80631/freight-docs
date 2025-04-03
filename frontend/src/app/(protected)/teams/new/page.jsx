@@ -12,13 +12,13 @@ import { useRouter } from 'next/navigation';
 const NewTeamPage = () => {
   const router = useRouter();
   const { toast } = useToast();
-  const { createTeam, setCurrentTeam } = useTeamStore();
+  const { createTeam = async () => {}, setCurrentTeam = async () => {} } = useTeamStore();
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) {
+    if (!name?.trim()) {
       toast({
         title: "Error",
         description: "Team name is required",
@@ -30,16 +30,20 @@ const NewTeamPage = () => {
     setIsSubmitting(true);
     try {
       const newTeam = await createTeam({ name: name.trim() });
-      await setCurrentTeam(newTeam);
-      toast({
-        title: "Success",
-        description: "Team created successfully",
-      });
-      router.push('/dashboard');
+      if (newTeam) {
+        await setCurrentTeam(newTeam);
+        toast({
+          title: "Success",
+          description: "Team created successfully",
+        });
+        router.push('/dashboard');
+      } else {
+        throw new Error('Failed to create team');
+      }
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create team",
+        description: error?.message || "Failed to create team",
         variant: "destructive",
       });
     } finally {
@@ -59,8 +63,8 @@ const NewTeamPage = () => {
               <Label htmlFor="name">Team Name</Label>
               <Input
                 id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={name || ''}
+                onChange={(e) => setName(e?.target?.value || '')}
                 placeholder="Enter team name"
                 disabled={isSubmitting}
               />
@@ -75,7 +79,7 @@ const NewTeamPage = () => {
               <Button 
                 type="button" 
                 variant="outline"
-                onClick={() => router.back()}
+                onClick={() => router?.back()}
                 disabled={isSubmitting}
               >
                 Cancel

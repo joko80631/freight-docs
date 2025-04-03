@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, X } from 'lucide-react';
 import { Progress } from "@/components/ui/progress";
 
-const DocumentUpload = ({ onUpload, isUploading, progress }) => {
+export function DocumentUpload({ onUpload, isUploading, progress }) {
   const onDrop = useCallback((acceptedFiles) => {
     onUpload(acceptedFiles);
   }, [onUpload]);
@@ -64,6 +64,4 @@ const DocumentUpload = ({ onUpload, isUploading, progress }) => {
       </CardContent>
     </Card>
   );
-};
-
-export default DocumentUpload; 
+} 

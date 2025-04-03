@@ -1,102 +1,97 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useTeamStore } from '@/store/teamStore';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 
 interface UserProfile {
   id: string;
   email: string;
-  full_name?: string;
-  created_at: string;
+  name?: string;
+  role?: string;
 }
 
-export default function ProfilePage() {
-  const router = useRouter();
+function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { teams, role } = useTeamStore();
+  const { teams = [], getCurrentRole = () => undefined } = useTeamStore();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     async function loadProfile() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-
-      if (error || !user) {
-        router.push('/login');
-        return;
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const role = getCurrentRole?.() || undefined;
+          setProfile({
+            id: user?.id || '',
+            email: user?.email || '',
+            name: user?.user_metadata?.name,
+            role
+          });
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setLoading(false);
       }
-
-      setProfile({
-        id: user.id,
-        email: user.email!,
-        full_name: user.user_metadata?.full_name,
-        created_at: user.created_at,
-      });
-      setLoading(false);
     }
 
     loadProfile();
-  }, [router, supabase.auth]);
+  }, [supabase, getCurrentRole]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <LoadingSkeleton className="h-[400px]" />;
   }
 
   if (!profile) {
-    return <div>No profile found</div>;
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center text-muted-foreground">
+            <p>No profile found</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
+        <p className="text-muted-foreground">
+          Manage your account settings
+        </p>
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Your account information</CardDescription>
+          <CardTitle>Account Information</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-4">
-            <Avatar>
-              <AvatarFallback>
-                {profile.full_name?.[0] || profile.email[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <h3 className="font-medium">{profile.full_name || 'No name set'}</h3>
-              <p className="text-sm text-muted-foreground">{profile.email}</p>
-            </div>
+        <CardContent className="space-y-4">
+          <div>
+            <h3 className="text-sm font-medium">Name</h3>
+            <p className="text-sm text-muted-foreground">
+              {profile?.name || 'Not set'}
+            </p>
           </div>
-          <div className="mt-6 space-y-4">
-            <div>
-              <h4 className="text-sm font-medium">Role</h4>
-              <p className="text-sm text-muted-foreground">{role || 'No role assigned'}</p>
-            </div>
-            <div>
-              <h4 className="text-sm font-medium">Teams</h4>
-              {teams && teams.length > 0 ? (
-                <ul className="mt-2 space-y-2">
-                  {teams.map((team) => (
-                    <li key={team.id} className="text-sm text-muted-foreground">
-                      {team.name} ({team.role})
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">Not a member of any teams</p>
-              )}
-            </div>
+          <div>
+            <h3 className="text-sm font-medium">Email</h3>
+            <p className="text-sm text-muted-foreground">{profile?.email || ''}</p>
+          </div>
+          <div>
+            <h3 className="text-sm font-medium">Role</h3>
+            <p className="text-sm text-muted-foreground">
+              {profile?.role || 'No role assigned'}
+            </p>
           </div>
         </CardContent>
       </Card>
     </div>
   );
-} 
+}
+
+export default ProfilePage; 

@@ -1,3 +1,3 @@
-import LoadingSkeleton from '../shared/LoadingSkeleton';
+import { LoadingSkeleton } from '../shared/LoadingSkeleton';
 
-export default LoadingSkeleton; 
+export { LoadingSkeleton }; 

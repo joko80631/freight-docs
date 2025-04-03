@@ -59,8 +59,8 @@ export function createMockDocument(overrides: Partial<Document> = {}): Document 
     type: 'Invoice',
     confidence: 0.85,
     status: 'processed',
-    loadId: `LOAD-${id.substring(0, 3)}`,
-    uploadedAt: timestamp,
+    load_id: `LOAD-${id.substring(0, 3)}`,
+    uploaded_at: timestamp,
     ...overrides
   };
 } 

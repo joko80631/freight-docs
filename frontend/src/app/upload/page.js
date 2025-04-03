@@ -16,10 +16,11 @@ export default function UploadPage() {
           throw new Error('Failed to fetch loads')
         }
         const data = await response.json()
-        setLoads(data)
+        setLoads(data || [])
       } catch (err) {
         toast.error('Failed to load available loads')
         console.error('Error fetching loads:', err)
+        setLoads([])
       } finally {
         setIsLoadingLoads(false)
       }
@@ -97,12 +98,12 @@ export default function UploadPage() {
             <option value="">Select a load...</option>
             {isLoadingLoads ? (
               <option value="" disabled>Loading loads...</option>
-            ) : loads.length === 0 ? (
+            ) : !loads || loads.length === 0 ? (
               <option value="" disabled>No loads available</option>
             ) : (
-              loads.map(load => (
-                <option key={load.id} value={load.id}>
-                  {load.load_number} – {load.carrier_name}
+              (loads || []).map(load => (
+                <option key={load?.id} value={load?.id}>
+                  {load?.load_number} – {load?.carrier_name}
                 </option>
               ))
             )}

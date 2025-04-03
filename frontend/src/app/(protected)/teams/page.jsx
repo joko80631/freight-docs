@@ -7,22 +7,22 @@ import { Users, Plus, Settings } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import EmptyState from '@/components/ui/empty-state';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useRouter } from 'next/navigation';
 
-const TeamsPage = () => {
+function TeamsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { 
-    teams, 
-    currentTeam,
-    isLoading,
-    error,
-    fetchTeams,
-    setCurrentTeam,
-    createTeam,
-    updateTeam,
-    deleteTeam
+    teams = [], 
+    currentTeam = null,
+    isLoading = false,
+    error = null,
+    fetchTeams = async () => {},
+    setCurrentTeam = async () => {},
+    createTeam = async () => {},
+    updateTeam = async () => {},
+    deleteTeam = async () => {}
   } = useTeamStore();
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +35,7 @@ const TeamsPage = () => {
         console.error('Failed to fetch teams:', error);
         toast({
           title: "Error",
-          description: "Failed to load teams",
+          description: error?.message || "Failed to load teams",
           variant: "destructive",
         });
       } finally {
@@ -47,27 +47,29 @@ const TeamsPage = () => {
   }, [fetchTeams, toast]);
 
   const handleCreateTeam = () => {
-    router.push('/teams/new');
+    router?.push('/teams/new');
   };
 
   const handleSwitchTeam = async (team) => {
+    if (!team) return;
     try {
       await setCurrentTeam(team);
       toast({
         title: "Success",
-        description: `Switched to ${team.name}`,
+        description: `Switched to ${team?.name || 'team'}`,
       });
-      router.push('/dashboard');
+      router?.push('/dashboard');
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to switch team",
+        description: error?.message || "Failed to switch team",
         variant: "destructive",
       });
     }
   };
 
   const handleManageTeam = (team) => {
+    if (!team) return;
     // TODO: Implement team management
     toast({
       title: "Coming Soon",
@@ -123,15 +125,15 @@ const TeamsPage = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {teams.map((team) => (
+        {(teams || []).map((team) => team && (
           <Card 
-            key={team.id}
-            className={currentTeam?.id === team.id ? 'border-primary' : ''}
+            key={team?.id}
+            className={currentTeam?.id === team?.id ? 'border-primary' : ''}
           >
             <CardHeader>
               <CardTitle className="text-lg flex items-center justify-between">
-                {team.name}
-                {currentTeam?.id === team.id && (
+                {team?.name}
+                {currentTeam?.id === team?.id && (
                   <span className="text-sm text-primary">Current Team</span>
                 )}
               </CardTitle>
@@ -139,10 +141,10 @@ const TeamsPage = () => {
             <CardContent>
               <div className="flex flex-col gap-2">
                 <p className="text-sm text-muted-foreground">
-                  {team.member_count || 0} members
+                  {team?.member_count || 0} members
                 </p>
                 <div className="flex gap-2 mt-2">
-                  {currentTeam?.id !== team.id && (
+                  {currentTeam?.id !== team?.id && (
                     <Button 
                       variant="outline" 
                       size="sm"
@@ -167,6 +169,6 @@ const TeamsPage = () => {
       </div>
     </div>
   );
-};
+}
 
 export default TeamsPage; 

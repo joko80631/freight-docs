@@ -10,12 +10,12 @@ import { useToast } from '@/components/ui/use-toast';
 import { Download, Link, Trash, RefreshCw, FileText, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import LoadingSkeleton from '@/components/ui/loading-skeleton';
-import EmptyState from '@/components/ui/empty-state';
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DocumentPreview } from '@/components/documents/DocumentPreview';
-import ClassificationDetails from '@/components/documents/ClassificationDetails';
-import DocumentTimeline from '@/components/documents/DocumentTimeline';
-import LinkToLoadModal from '@/components/documents/LinkToLoadModal';
+import { ClassificationDetails } from '@/components/documents/ClassificationDetails';
+import { DocumentTimeline } from '@/components/documents/DocumentTimeline';
+import { LinkToLoadModal } from '@/components/documents/LinkToLoadModal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +41,7 @@ const getConfidencePercent = (val) => {
 };
 
 export default function DocumentDetailPage() {
-  const { id } = useParams();
+  const { id = '' } = useParams();
   const router = useRouter();
   const [document, setDocument] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,10 +49,12 @@ export default function DocumentDetailPage() {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
-  const { user, isAdmin } = useAuth();
+  const { user = null, isAdmin = false } = useAuth();
 
   useEffect(() => {
-    fetchDocument();
+    if (id) {
+      fetchDocument();
+    }
   }, [id]);
 
   const fetchDocument = async () => {
@@ -63,9 +65,9 @@ export default function DocumentDetailPage() {
         throw new Error('Failed to fetch document');
       }
       const data = await response.json();
-      setDocument(data);
+      setDocument(data || null);
     } catch (error) {
-      setError(error.message);
+      setError(error?.message || 'An error occurred');
       toast({
         title: 'Error',
         description: 'Failed to load document',

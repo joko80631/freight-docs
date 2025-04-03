@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
-const useDashboardStore = create((set, get) => ({
+export const useDashboardStore = create((set, get) => ({
   metrics: {
     totalLoads: 0,
     activeLoads: 0,
@@ -118,6 +118,4 @@ const useDashboardStore = create((set, get) => ({
       error: null
     });
   }
-}));
-
-export default useDashboardStore; 
+})); 

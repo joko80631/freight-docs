@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
-const EmptyState = ({
+export function EmptyState({
   icon: Icon,
   title,
   description,
@@ -13,7 +13,7 @@ const EmptyState = ({
   variant = 'centered',
   className,
   'aria-label': ariaLabel,
-}) => {
+}) {
   const containerClasses = cn(
     'flex flex-col items-center justify-center p-4 sm:p-6',
     {
@@ -101,6 +101,4 @@ const EmptyState = ({
       </div>
     </div>
   );
-};
-
-export default EmptyState; 
+} 

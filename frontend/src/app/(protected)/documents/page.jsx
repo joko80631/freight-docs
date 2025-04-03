@@ -2,30 +2,41 @@
 
 import { useState, useEffect } from 'react';
 import { useTeamStore } from '@/store/teamStore';
-import useDocumentStore from '@/store/documentStore';
+import { useDocumentStore } from '@/store/documentStore';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Grid, List, Upload, Filter } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
-import DocumentUpload from '@/components/documents/DocumentUpload';
-import DocumentsGrid from '@/components/documents/DocumentsGrid';
-import DocumentsTable from '@/components/documents/DocumentsTable';
-import DocumentFilters from '@/components/documents/DocumentFilters';
-import EmptyState from '@/components/ui/empty-state';
-import LoadingSkeleton from '@/components/ui/loading-skeleton';
+import { DocumentUpload } from '@/components/documents/DocumentUpload';
+import { DocumentsGrid } from '@/components/documents/DocumentsGrid';
+import { DocumentsTable } from '@/components/documents/DocumentsTable';
+import { DocumentFilters } from '@/components/documents/DocumentFilters';
+import { EmptyState } from '@/components/ui/empty-state';
+import { LoadingSkeleton } from '@/components/ui/loading-skeleton';
 
-export default function DocumentsPage() {
-  const { currentTeam } = useTeamStore();
+function DocumentsPage() {
+  const { currentTeam = null } = useTeamStore();
   const { 
-    documents, 
-    isLoading, 
-    error, 
-    filters, 
-    pagination,
-    fetchDocuments, 
-    setFilters,
-    setPagination 
+    documents = [], 
+    isLoading = false, 
+    error = null, 
+    filters = {
+      documentType: '',
+      confidence: '',
+      loadStatus: '',
+      dateFrom: '',
+      dateTo: '',
+      search: '',
+    }, 
+    pagination = {
+      page: 1,
+      limit: 10,
+      total: 0,
+    },
+    fetchDocuments = async () => {}, 
+    setFilters = () => {},
+    setPagination = () => {} 
   } = useDocumentStore();
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -125,4 +136,6 @@ export default function DocumentsPage() {
       )}
     </div>
   );
-} 
+}
+
+export default DocumentsPage; 

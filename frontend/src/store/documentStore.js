@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { useTeamStore } from './teamStore';
 
-const useDocumentStore = create((set, get) => ({
+export const useDocumentStore = create((set, get) => ({
   documents: [],
   isLoading: false,
   error: null,
@@ -420,6 +420,4 @@ const useDocumentStore = create((set, get) => ({
       set({ isLoading: false });
     }
   },
-}));
-
-export default useDocumentStore; 
+})); 
