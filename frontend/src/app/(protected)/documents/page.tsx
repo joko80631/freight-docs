@@ -92,16 +92,16 @@ export default function DocumentsPage() {
     }
   }, [currentTeam?.id, page, pageSize, filters]);
   
-  const handleViewDocument = (id) => {
+  const handleViewDocument = (id: string) => {
     router.push(`/documents/${id}`);
   };
   
-  const handleFilterChange = (newFilters) => {
+  const handleFilterChange = (newFilters: DocumentFilters) => {
     setFilters(newFilters);
     setPage(0); // Reset to first page when filters change
   };
   
-  const handlePageChange = (newPage) => {
+  const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
   
@@ -149,7 +149,11 @@ export default function DocumentsPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4">Upload Document</h2>
-            <DocumentUpload onUploadComplete={handleUploadComplete} />
+            <DocumentUpload 
+              onUpload={handleUploadComplete}
+              isUploading={false}
+              progress={0}
+            />
             <div className="mt-4 flex justify-end">
               <Button variant="outline" onClick={() => setShowUploadModal(false)}>
                 Cancel
