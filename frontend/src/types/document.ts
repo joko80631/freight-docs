@@ -12,13 +12,13 @@ export interface Document {
   };
   uploaded_at: string;
   status: 'pending' | 'processed' | 'error';
-  classification_history?: {
+  classification_history?: Array<{
     id: string;
     type: string;
     confidence: number;
-    timestamp: string;
     reason?: string;
-  }[];
+    timestamp: string;
+  }>;
   events?: {
     id: string;
     type: string;
