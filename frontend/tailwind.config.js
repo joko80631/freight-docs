@@ -2,11 +2,19 @@
 module.exports = {
     darkMode: ['class'],
     content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './app/**/*.{ts,tsx}',
+    './src/**/*.{ts,tsx}',
   ],
   theme: {
+  	container: {
+  		center: true,
+  		padding: '2rem',
+  		screens: {
+  			'2xl': '1400px',
+  		},
+  	},
   	extend: {
   		colors: {
   			border: 'hsl(var(--border))',
@@ -16,7 +24,7 @@ module.exports = {
   			foreground: 'hsl(var(--foreground))',
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
+  				foreground: 'hsl(var(--primary-foreground))',
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
@@ -34,13 +42,13 @@ module.exports = {
   				DEFAULT: 'hsl(var(--accent))',
   				foreground: 'hsl(var(--accent-foreground))'
   			},
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
   			popover: {
   				DEFAULT: 'hsl(var(--popover))',
   				foreground: 'hsl(var(--popover-foreground))'
+  			},
+  			card: {
+  				DEFAULT: 'hsl(var(--card))',
+  				foreground: 'hsl(var(--card-foreground))'
   			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
@@ -48,7 +56,40 @@ module.exports = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+  			neutral: {
+  				50: 'rgb(var(--color-neutral-50) / <alpha-value>)',
+  				100: 'rgb(var(--color-neutral-100) / <alpha-value>)',
+  				200: 'rgb(var(--color-neutral-200) / <alpha-value>)',
+  				300: 'rgb(var(--color-neutral-300) / <alpha-value>)',
+  				400: 'rgb(var(--color-neutral-400) / <alpha-value>)',
+  				500: 'rgb(var(--color-neutral-500) / <alpha-value>)',
+  				600: 'rgb(var(--color-neutral-600) / <alpha-value>)',
+  				700: 'rgb(var(--color-neutral-700) / <alpha-value>)',
+  				800: 'rgb(var(--color-neutral-800) / <alpha-value>)',
+  				900: 'rgb(var(--color-neutral-900) / <alpha-value>)',
+  				950: 'rgb(var(--color-neutral-950) / <alpha-value>)',
+  			},
+  			success: {
+  				100: 'rgb(var(--color-success-100) / <alpha-value>)',
+  				500: 'rgb(var(--color-success-500) / <alpha-value>)',
+  				600: 'rgb(var(--color-success-600) / <alpha-value>)',
+  			},
+  			warning: {
+  				100: 'rgb(var(--color-warning-100) / <alpha-value>)',
+  				500: 'rgb(var(--color-warning-500) / <alpha-value>)',
+  				600: 'rgb(var(--color-warning-600) / <alpha-value>)',
+  			},
+  			error: {
+  				100: 'rgb(var(--color-error-100) / <alpha-value>)',
+  				500: 'rgb(var(--color-error-500) / <alpha-value>)',
+  				600: 'rgb(var(--color-error-600) / <alpha-value>)',
+  			},
+  			info: {
+  				100: 'rgb(var(--color-info-100) / <alpha-value>)',
+  				500: 'rgb(var(--color-info-500) / <alpha-value>)',
+  				600: 'rgb(var(--color-info-600) / <alpha-value>)',
+  			},
   		},
   		fontFamily: {
   			sans: [
@@ -62,8 +103,50 @@ module.exports = {
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
-  		}
+  			sm: 'calc(var(--radius) - 4px)',
+  			xl: 'var(--radius-xl)',
+  			'2xl': 'var(--radius-2xl)',
+  			full: 'var(--radius-full)',
+  		},
+  		spacing: {
+  			1: 'var(--spacing-1)',
+  			2: 'var(--spacing-2)',
+  			3: 'var(--spacing-3)',
+  			4: 'var(--spacing-4)',
+  			5: 'var(--spacing-5)',
+  			6: 'var(--spacing-6)',
+  			8: 'var(--spacing-8)',
+  			10: 'var(--spacing-10)',
+  			12: 'var(--spacing-12)',
+  			16: 'var(--spacing-16)',
+  			20: 'var(--spacing-20)',
+  			24: 'var(--spacing-24)',
+  		},
+  		boxShadow: {
+  			sm: 'var(--shadow-sm)',
+  			md: 'var(--shadow-md)',
+  			lg: 'var(--shadow-lg)',
+  			xl: 'var(--shadow-xl)',
+  		},
+  		transitionDuration: {
+  			fast: 'var(--transition-fast)',
+  			normal: 'var(--transition-normal)',
+  			slow: 'var(--transition-slow)',
+  		},
+  		keyframes: {
+  			'accordion-down': {
+  				from: { height: 0 },
+  				to: { height: 'var(--radix-accordion-content-height)' },
+  			},
+  			'accordion-up': {
+  				from: { height: 'var(--radix-accordion-content-height)' },
+  				to: { height: 0 },
+  			},
+  		},
+  		animation: {
+  			'accordion-down': 'accordion-down 0.2s ease-out',
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  		},
   	}
   },
   plugins: [require("tailwindcss-animate")],
