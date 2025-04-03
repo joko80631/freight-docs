@@ -75,4 +75,47 @@
 
 body {
   background: rgb(var(--background-rgb));
+}
+
+/* Timeline sticky headers */
+.date-header.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background-color: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+  margin: 0 -1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0;
+}
+
+/* Timeline visual enhancements */
+.timeline-group {
+  position: relative;
+}
+
+.timeline-event {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.timeline-event:hover {
+  transform: translateX(4px);
+}
+
+/* Health indicator animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+[data-health="at-risk"] {
+  animation: pulse 2s infinite;
 } 

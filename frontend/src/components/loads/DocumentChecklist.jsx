@@ -3,119 +3,132 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, AlertCircle, Clock, FileText, Upload, RefreshCw } from 'lucide-react';
+import { cn } from "@/lib/utils";
 
-const DOCUMENT_STATUS = {
-  COMPLETE: 'complete',
-  PENDING: 'pending',
-  MISSING: 'missing'
+const DOCUMENT_TYPES = {
+  BOL: {
+    label: 'Bill of Lading',
+    required: true,
+  },
+  POD: {
+    label: 'Proof of Delivery',
+    required: true,
+  },
+  INVOICE: {
+    label: 'Invoice',
+    required: true,
+  },
+  OTHER: {
+    label: 'Other Documents',
+    required: false,
+  },
 };
 
-const STATUS_CONFIG = {
-  [DOCUMENT_STATUS.COMPLETE]: {
-    icon: CheckCircle2,
-    color: 'text-green-500',
-    label: 'Complete'
-  },
-  [DOCUMENT_STATUS.PENDING]: {
-    icon: Clock,
-    color: 'text-yellow-500',
-    label: 'Pending'
-  },
-  [DOCUMENT_STATUS.MISSING]: {
-    icon: AlertCircle,
-    color: 'text-red-500',
-    label: 'Missing'
-  }
+const STATUS_ICONS = {
+  complete: <CheckCircle2 className="h-5 w-5 text-green-500" />,
+  pending: <Clock className="h-5 w-5 text-yellow-500" />,
+  missing: <AlertCircle className="h-5 w-5 text-red-500" />,
+};
+
+const STATUS_LABELS = {
+  complete: 'Complete',
+  pending: 'Pending Verification',
+  missing: 'Missing',
 };
 
 export default function DocumentChecklist({ 
-  documents = [], 
-  onViewDocument, 
-  onUploadDocument, 
-  onReplaceDocument 
+  load, 
+  onUpload, 
+  onView, 
+  onReplace,
+  className 
 }) {
-  const getDocumentStatus = (doc) => {
-    if (!doc) return DOCUMENT_STATUS.MISSING;
-    if (doc.verified) return DOCUMENT_STATUS.COMPLETE;
-    return DOCUMENT_STATUS.PENDING;
+  const getDocumentStatus = (type) => {
+    const document = load.documents?.find(doc => doc.type === type);
+    if (!document) return 'missing';
+    if (document.status === 'verified') return 'complete';
+    return 'pending';
   };
 
-  const renderDocumentAction = (doc, status) => {
-    switch (status) {
-      case DOCUMENT_STATUS.COMPLETE:
-        return (
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => onViewDocument(doc)}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              View
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => onReplaceDocument(doc)}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Replace
-            </Button>
-          </div>
-        );
-      case DOCUMENT_STATUS.PENDING:
-        return (
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onViewDocument(doc)}
-          >
-            <FileText className="mr-2 h-4 w-4" />
-            View
-          </Button>
-        );
-      case DOCUMENT_STATUS.MISSING:
-        return (
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onUploadDocument(doc?.type)}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Upload
-          </Button>
-        );
+  const handleAction = (type, action) => {
+    switch (action) {
+      case 'upload':
+        onUpload?.(type);
+        break;
+      case 'view':
+        onView?.(type);
+        break;
+      case 'replace':
+        onReplace?.(type);
+        break;
       default:
-        return null;
+        break;
     }
   };
 
   return (
-    <Card>
+    <Card className={cn("w-full", className)}>
       <CardHeader>
         <CardTitle>Document Checklist</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {documents.map((doc) => {
-            const status = getDocumentStatus(doc);
-            const StatusIcon = STATUS_CONFIG[status].icon;
-            
+          {Object.entries(DOCUMENT_TYPES).map(([type, { label, required }]) => {
+            const status = getDocumentStatus(type);
+            const document = load.documents?.find(doc => doc.type === type);
+
             return (
               <div
-                key={doc?.type || 'missing'}
+                key={type}
                 className="flex items-center justify-between p-4 border rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  <StatusIcon className={`h-5 w-5 ${STATUS_CONFIG[status].color}`} />
+                  {STATUS_ICONS[status]}
                   <div>
-                    <p className="font-medium">{doc?.type || 'Document'}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{label}</p>
+                      {required && (
+                        <Badge variant="outline" className="text-xs">
+                          Required
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                      {STATUS_CONFIG[status].label}
+                      {STATUS_LABELS[status]}
                     </p>
                   </div>
                 </div>
-                {renderDocumentAction(doc, status)}
+                <div className="flex items-center gap-2">
+                  {status === 'complete' ? (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleAction(type, 'view')}
+                      >
+                        <FileText className="mr-2 h-4 w-4" />
+                        View
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleAction(type, 'replace')}
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Replace
+                      </Button>
+                    </>
+                  ) : (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleAction(type, 'upload')}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload
+                    </Button>
+                  )}
+                </div>
               </div>
             );
           })}
