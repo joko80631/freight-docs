@@ -16,7 +16,7 @@ interface UserProfile {
 function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { teams = [], getCurrentRole = () => undefined } = useTeamStore();
+  const { currentTeam } = useTeamStore();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -24,12 +24,11 @@ function ProfilePage() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const role = getCurrentRole?.() || undefined;
           setProfile({
             id: user?.id || '',
             email: user?.email || '',
             name: user?.user_metadata?.name,
-            role
+            role: currentTeam?.role
           });
         }
       } catch (error) {
@@ -40,7 +39,7 @@ function ProfilePage() {
     }
 
     loadProfile();
-  }, [supabase, getCurrentRole]);
+  }, [supabase, currentTeam]);
 
   if (loading) {
     return <LoadingSkeleton className="h-[400px]" />;
