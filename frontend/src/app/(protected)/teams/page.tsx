@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
-import { useTeamStore } from '@/store/teamStore';
+import { useTeamStore } from '@/store/team-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -55,6 +55,9 @@ interface Team {
   id: string;
   name: string;
   created_at: string;
+  updated_at: string;
+  created_by: string;
+  role: 'admin' | 'member' | 'viewer';
   member_count?: number;
 }
 
@@ -199,8 +202,14 @@ function TeamsPage() {
   const handleSwitchTeam = async (team: Team) => {
     if (!team) return;
     try {
-      await setCurrentTeam(team);
-      setTeam(team);
+      const teamWithRole: Team = {
+        ...team,
+        role: 'admin', // Default role for team creator
+        updated_at: team.updated_at || new Date().toISOString(),
+        created_by: team.created_by || currentUser?.id || ''
+      };
+      await setCurrentTeam(teamWithRole);
+      setTeam(teamWithRole);
       await loadTeamMembers(team.id);
       toast({
         title: "Success",
@@ -246,6 +255,9 @@ function TeamsPage() {
             label: 'Create Team',
             onClick: handleCreateTeam
           }}
+          secondaryCta={null}
+          className=""
+          aria-label="No teams found"
           variant="centered"
         />
       </div>
