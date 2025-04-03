@@ -9,13 +9,27 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
 import { getErrorMessage } from '@/lib/errors';
+
+interface NotificationPreferences {
+  email_updates: boolean;
+  document_alerts: boolean;
+  team_changes: boolean;
+}
 
 interface UserProfile {
   id: string;
   email: string;
   name?: string;
+  notification_preferences: NotificationPreferences;
 }
+
+const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  email_updates: true,
+  document_alerts: true,
+  team_changes: true
+};
 
 function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -26,7 +40,7 @@ function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const { currentTeam } = useTeamStore();
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -38,7 +52,8 @@ function SettingsPage() {
           setProfile({
             id: user?.id || '',
             email: user?.email || '',
-            name: user?.user_metadata?.name
+            name: user?.user_metadata?.name,
+            notification_preferences: user?.user_metadata?.notification_preferences || DEFAULT_NOTIFICATION_PREFERENCES
           });
         }
       } catch (error) {
@@ -59,7 +74,10 @@ function SettingsPage() {
 
     try {
       const { error } = await supabase.auth.updateUser({
-        data: { name: profile?.name }
+        data: { 
+          name: profile?.name,
+          notification_preferences: profile?.notification_preferences
+        }
       });
 
       if (error) throw error;
@@ -84,6 +102,12 @@ function SettingsPage() {
       return;
     }
 
+    if (newPassword.length < 8) {
+      setError('Password must be at least 8 characters long');
+      setSaving(false);
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.updateUser({
         password: newPassword
@@ -103,7 +127,8 @@ function SettingsPage() {
   }
 
   async function handleDeleteAccount() {
-    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+    if (!deleteConfirm) {
+      setDeleteConfirm(true);
       return;
     }
 
@@ -181,6 +206,79 @@ function SettingsPage() {
 
       <Card>
         <CardHeader>
+          <CardTitle>Notification Preferences</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Email Updates</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receive updates about your account and system changes
+                </p>
+              </div>
+              <Switch
+                checked={profile?.notification_preferences?.email_updates}
+                onCheckedChange={(checked) => 
+                  setProfile(prev => prev ? {
+                    ...prev,
+                    notification_preferences: {
+                      ...prev.notification_preferences,
+                      email_updates: checked
+                    }
+                  } : null)
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Document Alerts</Label>
+                <p className="text-sm text-muted-foreground">
+                  Get notified when documents are shared or updated
+                </p>
+              </div>
+              <Switch
+                checked={profile?.notification_preferences?.document_alerts}
+                onCheckedChange={(checked) => 
+                  setProfile(prev => prev ? {
+                    ...prev,
+                    notification_preferences: {
+                      ...prev.notification_preferences,
+                      document_alerts: checked
+                    }
+                  } : null)
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Team Changes</Label>
+                <p className="text-sm text-muted-foreground">
+                  Receive notifications about team member changes
+                </p>
+              </div>
+              <Switch
+                checked={profile?.notification_preferences?.team_changes}
+                onCheckedChange={(checked) => 
+                  setProfile(prev => prev ? {
+                    ...prev,
+                    notification_preferences: {
+                      ...prev.notification_preferences,
+                      team_changes: checked
+                    }
+                  } : null)
+                }
+              />
+            </div>
+            <Button type="submit" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Preferences'}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle>Change Password</CardTitle>
         </CardHeader>
         <CardContent>
@@ -236,8 +334,13 @@ function SettingsPage() {
               onClick={handleDeleteAccount}
               disabled={saving}
             >
-              {saving ? 'Deleting...' : 'Delete Account'}
+              {saving ? 'Deleting...' : deleteConfirm ? 'Confirm Delete Account' : 'Delete Account'}
             </Button>
+            {deleteConfirm && (
+              <p className="text-sm text-destructive">
+                Warning: This action cannot be undone. All your data will be permanently deleted.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
