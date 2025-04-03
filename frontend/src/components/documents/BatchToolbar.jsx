@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 import { useToast } from '../ui/use-toast';
-import { useDocumentStore } from '../../store/documentStore';
+import useDocumentStore from '../../store/documentStore';
 import { Load, FileText, Trash2, X, Link, Download } from 'lucide-react';
 import LinkToLoadModal from './LinkToLoadModal';
 import ReclassifyModal from './ReclassifyModal';

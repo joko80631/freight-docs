@@ -15,7 +15,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useDocumentStore } from '../../store/documentStore';
+import useDocumentStore from '../../store/documentStore';
 import { useTeamStore } from '../../store/teamStore';
 import DocumentCard from './DocumentCard';
 import DocumentFilters from './DocumentFilters';

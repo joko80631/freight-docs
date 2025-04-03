@@ -11,7 +11,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../../lib/utils';
 import { useRouter } from 'next/navigation';
-import { useDocumentStore } from '../../store/documentStore';
+import useDocumentStore from '../../store/documentStore';
 import { useToast } from '../ui/use-toast';
 import { Checkbox } from '../ui/checkbox';
 

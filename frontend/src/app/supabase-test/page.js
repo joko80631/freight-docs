@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 export default function SupabaseTest() {
   const [status, setStatus] = useState('Testing...')
   const [error, setError] = useState(null)
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     const test = async () => {
@@ -24,7 +25,7 @@ export default function SupabaseTest() {
     }
 
     test()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="p-6">

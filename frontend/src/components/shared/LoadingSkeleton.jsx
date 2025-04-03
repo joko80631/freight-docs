@@ -67,4 +67,6 @@ export function ListSkeleton({ items = 3, className = "", ...props }) {
       ))}
     </div>
   );
-} 
+}
+
+export default LoadingSkeleton; 
