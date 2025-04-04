@@ -2,10 +2,45 @@
 module.exports = {
     darkMode: ['class'],
     content: [
-    './src/pages/**/*.{ts,tsx}',
-    './src/components/**/*.{ts,tsx}',
-    './src/app/**/*.{ts,tsx}',
-    './src/**/*.{ts,tsx}',
+    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/**/*.{js,ts,jsx,tsx,mdx}',
+    './public/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  safelist: [
+    // Grid layout classes
+    'lg:grid-cols-1',
+    'lg:grid-cols-2',
+    'lg:grid-cols-3',
+    'lg:grid-cols-4',
+    'lg:col-span-1',
+    'lg:col-span-2',
+    'lg:col-span-3',
+    'lg:col-span-4',
+    // Responsive display classes
+    'lg:flex',
+    'lg:hidden',
+    'lg:block',
+    // Responsive background classes
+    'lg:bg-red-400',
+    'lg:bg-green-400',
+    'lg:bg-blue-400',
+    // Responsive text classes
+    'lg:text-left',
+    'lg:text-center',
+    'lg:text-right',
+    // Responsive spacing classes
+    'lg:p-4',
+    'lg:m-4',
+    'lg:space-x-4',
+    'lg:space-y-4',
+    // Responsive width/height classes
+    'lg:w-full',
+    'lg:h-full',
+    // Responsive border classes
+    'lg:border',
+    'lg:rounded',
   ],
   theme: {
   	container: {

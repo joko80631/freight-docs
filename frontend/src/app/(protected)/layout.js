@@ -133,11 +133,6 @@ export default function ProtectedLayout({ children }) {
 
       {/* Main content - REMOVED max-width constraint to allow dashboard to control its own width */}
       <main className="py-6">
-        {/* Debug container to verify layout rendering */}
-        <div className="border-2 border-blue-500 p-2 mb-4 text-center text-blue-700 font-bold">
-          PROTECTED LAYOUT WRAPPER
-        </div>
-        
         {children}
       </main>
     </div>
