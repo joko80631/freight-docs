@@ -11,7 +11,8 @@ import {
   Upload, 
   Users,
   TrendingUp, 
-  TrendingDown
+  TrendingDown,
+  LucideIcon
 } from "lucide-react";
 import { 
   FreightCard, 
@@ -24,8 +25,28 @@ import { useRouter } from "next/navigation";
 
 const ONBOARDING_STORAGE_KEY = "freightdocs_onboarding_status";
 
+// Define types for our data
+interface Metric {
+  title: string;
+  value: string;
+  change: string;
+  trend: "up" | "down";
+  icon: LucideIcon;
+  description: string;
+}
+
+interface TimelineItem {
+  title: string;
+  description: string;
+  metadata: { 
+    time: string; 
+    user: string; 
+  };
+  variant: "info" | "success" | "warning" | "error";
+}
+
 // Dashboard metrics data
-const metrics = [
+const metrics: Metric[] = [
   {
     title: "Active Loads",
     value: "12",
@@ -83,36 +104,36 @@ const actions = [
 ];
 
 // Activity timeline data
-const timelineItems = [
+const timelineItems: TimelineItem[] = [
   {
     title: "New BOL uploaded",
     description: "Bill of Lading #12345 was uploaded for Load #789",
     metadata: { time: "5 minutes ago", user: "System" },
-    variant: "info" as const,
+    variant: "info",
   },
   {
     title: "Load status updated",
     description: "Load #789 status changed to In Transit",
     metadata: { time: "15 minutes ago", user: "System" },
-    variant: "success" as const,
+    variant: "success",
   },
   {
     title: "New team member",
     description: "Sarah Johnson joined the team",
     metadata: { time: "30 minutes ago", user: "Admin" },
-    variant: "info" as const,
+    variant: "info",
   },
   {
     title: "Payment received",
     description: "Payment of $2,500 received for Load #789",
     metadata: { time: "1 hour ago", user: "System" },
-    variant: "success" as const,
+    variant: "success",
   },
   {
     title: "Delay reported",
     description: "Load #789 delayed by 2 hours due to traffic",
     metadata: { time: "2 hours ago", user: "Carrier" },
-    variant: "warning" as const,
+    variant: "warning",
   },
 ];
 
