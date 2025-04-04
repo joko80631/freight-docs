@@ -166,6 +166,11 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="dashboard-container" data-debug="layout">
+      {/* Temporary Debug Marker */}
+      <div className="bg-blue-500 text-white p-4 rounded-lg shadow-lg mb-4 text-center font-bold">
+        DASHBOARD V2 - DEBUG MARKER
+      </div>
+      
       {/* Debug Marker */}
       <div className="text-red-600 font-bold p-2 bg-yellow-100 border border-red-500 mb-4">
         DASHBOARD: TSX FILE IS ACTIVE
