@@ -2,14 +2,51 @@
 module.exports = {
     darkMode: ['class'],
     content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/**/*.{js,ts,jsx,tsx,mdx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './components/**/*.{js,ts,jsx,tsx,mdx}',
     './public/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   safelist: [
     // Grid layout classes
+    'grid',
+    'grid-cols-1',
+    'grid-cols-2',
+    'grid-cols-3',
+    'grid-cols-4',
+    'col-span-1',
+    'col-span-2',
+    'col-span-3',
+    'col-span-4',
+    // Display classes
+    'flex',
+    'hidden',
+    'block',
+    // Background classes
+    'bg-gray-100',
+    'bg-white',
+    'bg-black',
+    // Text classes
+    'text-left',
+    'text-center',
+    'text-right',
+    // Spacing classes
+    'p-4',
+    'px-4',
+    'py-4',
+    'm-4',
+    'mx-4',
+    'my-4',
+    'space-x-4',
+    'space-y-4',
+    // Width/height classes
+    'w-full',
+    'h-full',
+    'max-w-7xl',
+    // Border classes
+    'border',
+    'rounded',
+    // Responsive variants
     'lg:grid-cols-1',
     'lg:grid-cols-2',
     'lg:grid-cols-3',
@@ -18,27 +55,26 @@ module.exports = {
     'lg:col-span-2',
     'lg:col-span-3',
     'lg:col-span-4',
-    // Responsive display classes
     'lg:flex',
     'lg:hidden',
     'lg:block',
-    // Responsive background classes
-    'lg:bg-red-400',
-    'lg:bg-green-400',
-    'lg:bg-blue-400',
-    // Responsive text classes
+    'lg:bg-gray-100',
+    'lg:bg-white',
+    'lg:bg-black',
     'lg:text-left',
     'lg:text-center',
     'lg:text-right',
-    // Responsive spacing classes
     'lg:p-4',
+    'lg:px-4',
+    'lg:py-4',
     'lg:m-4',
+    'lg:mx-4',
+    'lg:my-4',
     'lg:space-x-4',
     'lg:space-y-4',
-    // Responsive width/height classes
     'lg:w-full',
     'lg:h-full',
-    // Responsive border classes
+    'lg:max-w-7xl',
     'lg:border',
     'lg:rounded',
   ],
