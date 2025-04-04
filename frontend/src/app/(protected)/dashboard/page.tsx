@@ -166,29 +166,29 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="w-full max-w-screen-xl mx-auto px-6 md:px-8 py-10 space-y-12">
-      {/* Page Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">
+    <section className="w-full max-w-screen-xl mx-auto px-6 md:px-10 py-12 space-y-12">
+      {/* Page Heading */}
+      <header className="space-y-1">
+        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
           Welcome back, {isLoading ? <LoadingSkeleton className="h-6 w-32" /> : "John"}
         </h1>
         <p className="text-sm text-gray-500">
           {format(new Date(), "EEEE, MMMM d, yyyy")}
         </p>
-      </div>
+      </header>
 
-      {/* Metrics Grid */}
+      {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {metrics.map((metric) => {
           const Icon = metric.icon;
           return (
-            <FreightCard key={metric.title} className="p-4 md:p-6">
-              <div className="flex flex-col gap-2">
+            <FreightCard key={metric.title} className="p-5">
+              <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-sm text-gray-700">
                   <span className="font-medium">{metric.title}</span>
                   <Icon className="h-4 w-4 text-gray-400" />
                 </div>
-                <span className="text-2xl font-bold text-gray-900">{metric.value}</span>
+                <span className="text-2xl font-semibold text-gray-900">{metric.value}</span>
                 <div className="flex items-center gap-1 text-xs">
                   {metric.trend === "up" ? (
                     <TrendingUp className="h-4 w-4 text-green-500" />
@@ -198,7 +198,7 @@ export default function DashboardPage() {
                   <span className={metric.trend === "up" ? "text-green-500" : "text-red-500"}>
                     {metric.change}
                   </span>
-                  <span className="text-gray-500 ml-1">{metric.description}</span>
+                  <span className="ml-1 text-gray-500">{metric.description}</span>
                 </div>
               </div>
             </FreightCard>
@@ -206,11 +206,11 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Actions + Timeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+      {/* Actions + Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Quick Actions */}
         <FreightCard header={{ title: "Quick Actions" }}>
-          <div className="p-4 md:p-6 space-y-4">
+          <div className="p-5 space-y-4">
             {actions.map((action) => {
               const Icon = action.icon;
               return (
@@ -221,7 +221,7 @@ export default function DashboardPage() {
                   onClick={() => router.push(action.path)}
                 >
                   <Icon className="mr-2 h-4 w-4" />
-                  <div className="flex flex-col items-start text-left">
+                  <div className="flex flex-col items-start">
                     <span className="text-sm font-medium text-gray-900">{action.title}</span>
                     <span className="text-xs text-gray-500">{action.description}</span>
                   </div>
@@ -233,11 +233,11 @@ export default function DashboardPage() {
 
         {/* Recent Activity */}
         <FreightCard header={{ title: "Recent Activity" }} className="lg:col-span-2">
-          <div className="p-4 md:p-6">
+          <div className="p-5">
             <Timeline items={timelineItems} />
           </div>
         </FreightCard>
       </div>
-    </div>
+    </section>
   );
 } 
