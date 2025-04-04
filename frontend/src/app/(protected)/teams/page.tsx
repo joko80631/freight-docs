@@ -226,7 +226,7 @@ function TeamsPage() {
 
   if (loading || isLoading) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {[...Array(3)].map((_, i) => (
             <Card key={i}>
@@ -246,7 +246,7 @@ function TeamsPage() {
 
   if (!teams || teams.length === 0) {
     return (
-      <div className="container mx-auto p-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
         <EmptyState
           icon={Users}
           title="No teams found"
@@ -268,11 +268,11 @@ function TeamsPage() {
   const adminCount = members.filter(m => m.role === 'admin').length;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Teams</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-gray-900">Teams</h1>
+          <p className="text-sm text-gray-500">
             Manage your teams and team members
           </p>
         </div>

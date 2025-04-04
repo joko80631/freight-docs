@@ -83,53 +83,55 @@ export default function UploadPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="upload-page" data-debug="layout">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4" data-testid="upload-header">
-        <h1 className="text-xl font-semibold text-gray-900">Upload Document</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Upload Document</h1>
       </div>
 
       <FreightCard>
-        <form onSubmit={handleSubmit} className="p-6 space-y-6" data-testid="upload-form">
-          <div>
-            <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-2" data-testid="upload-file-label">
-              Select Document
-            </label>
-            <input
-              type="file"
-              id="file"
-              name="file"
-              accept=".pdf,.txt"
-              className="w-full border border-gray-300 p-2 rounded-lg"
-              disabled={isSubmitting}
-              data-testid="upload-file-input"
-            />
-            <p className="mt-1 text-sm text-gray-500" data-testid="upload-file-help">
-              Supported formats: PDF, TXT (max 10MB)
-            </p>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6 p-6" data-testid="upload-form">
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-2" data-testid="upload-file-label">
+                Select Document
+              </label>
+              <input
+                type="file"
+                id="file"
+                name="file"
+                accept=".pdf,.txt"
+                className="w-full border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isSubmitting}
+                data-testid="upload-file-input"
+              />
+              <p className="mt-1 text-sm text-gray-500" data-testid="upload-file-help">
+                Supported formats: PDF, TXT (max 10MB)
+              </p>
+            </div>
 
-          <div>
-            <label htmlFor="load_id" className="block text-sm font-medium text-gray-700 mb-2" data-testid="upload-load-label">
-              Associated Load (Optional)
-            </label>
-            <select
-              id="load_id"
-              name="load_id"
-              className="w-full border border-gray-300 p-2 rounded-lg bg-white"
-              disabled={isLoadingLoads || isSubmitting}
-              data-testid="upload-load-select"
-            >
-              <option value="">Select a load...</option>
-              {isLoadingLoads ? (
-                <option value="" disabled>Loading loads...</option>
-              ) : loads.length === 0 ? (
-                <option value="" disabled>No loads available</option>
-              ) : (
-                loads.map(load => (
-                  <option key={load.id} value={load.id}>
-                    {load.load_number} – {load.carrier_name}
-                  </option>
-                ))
-              )}
-            </select>
+            <div>
+              <label htmlFor="load_id" className="block text-sm font-medium text-gray-700 mb-2" data-testid="upload-load-label">
+                Associated Load (Optional)
+              </label>
+              <select
+                id="load_id"
+                name="load_id"
+                className="w-full border border-gray-300 p-2 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                disabled={isLoadingLoads || isSubmitting}
+                data-testid="upload-load-select"
+              >
+                <option value="">Select a load...</option>
+                {isLoadingLoads ? (
+                  <option value="" disabled>Loading loads...</option>
+                ) : loads.length === 0 ? (
+                  <option value="" disabled>No loads available</option>
+                ) : (
+                  loads.map(load => (
+                    <option key={load.id} value={load.id}>
+                      {load.load_number} – {load.carrier_name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
           </div>
 
           <FreightButton

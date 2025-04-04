@@ -8,12 +8,14 @@ import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { DocumentList } from './components/DocumentList';
 import { DocumentFilters } from './components/DocumentFilters';
 import { Button } from '@/components/ui/button';
-import { Loader2, Plus, Search, Filter, Upload } from 'lucide-react';
+import { Loader2, Plus, Search, Filter, Upload, FileText } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { FreightCard } from '@/components/freight/FreightCard';
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import { FreightButton } from '@/components/freight/FreightButton';
+import { EmptyState } from '@/components/freight/EmptyState';
+import { MotionCard } from '@/components/freight/MotionCard';
 import { ChevronDown } from 'lucide-react';
 
 interface Load {
@@ -192,8 +194,8 @@ export default function DocumentsPage() {
         </div>
       </div>
 
-      <FreightCard>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+      <div className="bg-white rounded-lg shadow">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 md:p-6">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
               <div
@@ -203,22 +205,28 @@ export default function DocumentsPage() {
               />
             ))
           ) : documents.length === 0 ? (
-            <div className="col-span-full text-center py-8" data-testid="documents-empty">
-              <p className="text-gray-500">No documents found</p>
-              <p className="text-sm text-gray-400 mt-2">
-                Try adjusting your filters or upload a new document
-              </p>
+            <div className="col-span-full" data-testid="documents-empty">
+              <EmptyState
+                icon={FileText}
+                title="No documents found"
+                description="Try adjusting your filters or upload a new document"
+                action={{
+                  label: "Upload Document",
+                  onClick: () => router.push('/upload')
+                }}
+              />
             </div>
           ) : (
-            documents.map((doc) => (
-              <FreightCard
+            documents.map((doc, index) => (
+              <MotionCard
                 key={doc.id}
                 className="hover:shadow-md transition-shadow"
                 data-testid={`document-card-${doc.id}`}
+                delay={index * 0.05}
               >
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-medium truncate" data-testid={`document-name-${doc.id}`}>
+                    <h3 className="font-semibold text-gray-900 truncate" data-testid={`document-name-${doc.id}`}>
                       {doc.name}
                     </h3>
                     <FreightBadge variant={doc.confidence_score >= 0.85 ? 'success' : doc.confidence_score >= 0.6 ? 'warning' : 'error'}>
@@ -237,11 +245,11 @@ export default function DocumentsPage() {
                     Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}
                   </div>
                 </div>
-              </FreightCard>
+              </MotionCard>
             ))
           )}
         </div>
-      </FreightCard>
+      </div>
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-6" data-testid="documents-pagination">

@@ -7,7 +7,9 @@ import { FreightCard } from '@/components/freight/FreightCard';
 import { FreightTable } from '@/components/freight/FreightTable';
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import { FreightButton } from '@/components/freight/FreightButton';
-import { Search, Filter, ChevronDown } from 'lucide-react';
+import { EmptyState } from '@/components/freight/EmptyState';
+import { Search, Filter, ChevronDown, Package } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface Load {
   id: string;
@@ -27,6 +29,7 @@ export default function LoadsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const supabase = createClientComponentClient();
   const { currentTeam } = useTeamStore();
+  const router = useRouter();
 
   useEffect(() => {
     fetchLoads();
@@ -78,7 +81,12 @@ export default function LoadsPage() {
       header: 'Status',
       accessorKey: 'status' as keyof Load,
       cell: (value: string) => (
-        <FreightBadge variant={value as 'success' | 'warning' | 'error'}>
+        <FreightBadge variant={
+          value === 'delivered' ? 'success' : 
+          value === 'in_transit' ? 'warning' : 
+          value === 'cancelled' ? 'error' : 
+          'neutral'
+        }>
           {value}
         </FreightBadge>
       ),
@@ -115,7 +123,7 @@ export default function LoadsPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="loads-page" data-debug="layout">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4" data-testid="loads-header">
-        <h1 className="text-xl font-semibold text-gray-900">Loads</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Loads</h1>
         <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
           <div className="relative flex-1 md:flex-initial">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -152,6 +160,17 @@ export default function LoadsPage() {
           columns={columns}
           isLoading={isLoading}
           data-testid="loads-table"
+          emptyState={
+            <EmptyState
+              icon={Package}
+              title="No loads found"
+              description="Try adjusting your filters or create a new load"
+              action={{
+                label: "Create Load",
+                onClick: () => router.push('/loads/new')
+              }}
+            />
+          }
         />
       </FreightCard>
 

@@ -1,0 +1,115 @@
+# FreightDocs Spacing System
+
+This document outlines the spacing system used in the FreightDocs UI to maintain consistent spacing throughout the application.
+
+## Container Spacing
+
+The standard container spacing for pages is:
+
+```tsx
+<div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
+```
+
+This provides:
+- Maximum width of 7xl (80rem/1280px)
+- Horizontal padding that increases at breakpoints
+- Vertical padding of 1.5rem (py-6)
+- Vertical spacing between direct children of 1.5rem (space-y-6)
+
+## Component Spacing
+
+### Cards
+
+Cards should use consistent padding:
+
+```tsx
+<div className="p-4 md:p-6">
+```
+
+This provides:
+- 1rem padding on small screens
+- 1.5rem padding on medium screens and up
+
+### Form Elements
+
+Form elements should have consistent spacing:
+
+```tsx
+<div className="space-y-4">
+  <div className="space-y-2">
+    <label>Label</label>
+    <input />
+  </div>
+</div>
+```
+
+This provides:
+- 1rem spacing between form groups (space-y-4)
+- 0.5rem spacing between label and input (space-y-2)
+
+### Tables
+
+Tables should have consistent cell padding:
+
+```tsx
+<td className="px-4 py-3">
+```
+
+This provides:
+- 1rem horizontal padding
+- 0.75rem vertical padding
+
+## Typography Spacing
+
+### Headings
+
+Headings should have consistent spacing:
+
+```tsx
+<h1 className="text-2xl font-bold text-gray-900 mb-1">
+  Heading
+</h1>
+<p className="text-sm text-gray-500">
+  Description
+</p>
+```
+
+This provides:
+- 0.25rem margin below headings (mb-1)
+
+### Lists
+
+Lists should have consistent spacing:
+
+```tsx
+<ul className="space-y-2">
+  <li>Item</li>
+</ul>
+```
+
+This provides:
+- 0.5rem spacing between list items (space-y-2)
+
+## Grid Spacing
+
+Grid layouts should use consistent gap spacing:
+
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+```
+
+This provides:
+- 1rem gap on small screens (gap-4)
+- 1.5rem gap on medium screens and up (md:gap-6)
+
+## Best Practices
+
+1. **Use Tailwind's spacing scale**: Stick to Tailwind's spacing scale (0, 1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 64) for consistency.
+
+2. **Be responsive**: Use responsive variants (sm:, md:, lg:, xl:) to adjust spacing at different breakpoints.
+
+3. **Maintain vertical rhythm**: Use consistent vertical spacing between sections (space-y-6).
+
+4. **Group related elements**: Use space-y-{n} for consistent vertical spacing between related elements.
+
+5. **Avoid arbitrary values**: Try to use Tailwind's predefined spacing values instead of arbitrary values when possible. 

@@ -20,6 +20,7 @@ import {
   Timeline
 } from "@/components/freight";
 import { LoadingSkeleton } from "@/components/shared";
+import { useRouter } from "next/navigation";
 
 const ONBOARDING_STORAGE_KEY = "freightdocs_onboarding_status";
 
@@ -118,6 +119,7 @@ const timelineItems = [
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // Check onboarding status from localStorage
@@ -142,7 +144,7 @@ export default function DashboardPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="dashboard-container" data-debug="layout">
       {/* Page Header */}
       <div className="flex flex-col gap-1" data-testid="dashboard-header">
-        <h1 className="text-xl font-semibold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900">
           Welcome back, {isLoading ? <LoadingSkeleton className="h-6 w-32" /> : "John"}
         </h1>
         <p className="text-sm text-gray-500">
@@ -190,10 +192,10 @@ export default function DashboardPage() {
               <FreightCard key={metric.title} className="p-4 md:p-6" data-testid={`metric-card-${metric.title.toLowerCase().replace(/\s+/g, '-')}`}>
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-500">{metric.title}</span>
+                    <span className="text-sm font-medium text-gray-700">{metric.title}</span>
                     <Icon className="h-4 w-4 text-gray-400" />
                   </div>
-                  <span className="mt-1 text-2xl font-semibold text-gray-900">{metric.value}</span>
+                  <span className="mt-1 text-2xl font-bold text-gray-900">{metric.value}</span>
                   <div className="mt-1 flex items-center text-xs">
                     {metric.trend === "up" ? (
                       <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
@@ -218,24 +220,32 @@ export default function DashboardPage() {
         <div className="lg:col-span-1" data-testid="quick-actions-container">
           <FreightCard header={{ title: "Quick Actions" }} data-testid="quick-actions-card">
             <div className="p-4 md:p-6 space-y-3">
-              {actions.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <FreightButton
-                    key={action.title}
-                    variant="secondary"
-                    className="w-full justify-start"
-                    leftIcon={<Icon className="h-4 w-4" />}
-                    onClick={() => window.location.href = action.path}
-                    data-testid={`quick-action-${action.title.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    <div className="flex flex-col items-start">
-                      <span className="font-medium">{action.title}</span>
-                      <span className="text-xs text-gray-500">{action.description}</span>
-                    </div>
-                  </FreightButton>
-                );
-              })}
+              <div className="flex flex-col gap-2">
+                <FreightButton
+                  variant="secondary"
+                  className="w-full md:w-auto justify-start"
+                  onClick={() => router.push('/upload')}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Document
+                </FreightButton>
+                <FreightButton
+                  variant="secondary"
+                  className="w-full md:w-auto justify-start"
+                  onClick={() => router.push('/loads/new')}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Load
+                </FreightButton>
+                <FreightButton
+                  variant="secondary"
+                  className="w-full md:w-auto justify-start"
+                  onClick={() => router.push('/documents')}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  View Documents
+                </FreightButton>
+              </div>
             </div>
           </FreightCard>
         </div>
