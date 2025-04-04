@@ -167,7 +167,7 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full max-w-screen-xl mx-auto px-6 md:px-8 py-8 space-y-8">
-      {/* 1. Page Header with proper typography hierarchy */}
+      {/* Header */}
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-gray-900">
           Welcome back, {isLoading ? <LoadingSkeleton className="h-6 w-32" /> : "John"}
@@ -177,69 +177,36 @@ export default function DashboardPage() {
         </p>
       </div>
 
-      {/* Onboarding Checklist for New Users */}
-      {isNewUser && (
-        <FreightCard variant="subtle">
-          <div className="p-4 md:p-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Welcome to FreightDocs</h2>
-            <p className="text-sm text-gray-700 mb-4">
-              Let's get you started with a few simple steps to set up your account.
-            </p>
-            {/* Onboarding checklist content would go here */}
-          </div>
-        </FreightCard>
-      )}
-
-      {/* 2. Metrics Grid - EACH metric in its OWN FreightCard */}
+      {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {isLoading ? (
-          // Loading skeletons for metrics
-          Array.from({ length: 4 }).map((_, i) => (
-            <FreightCard key={i} className="p-4 md:p-6">
+        {metrics.map((metric) => {
+          const Icon = metric.icon;
+          return (
+            <FreightCard key={metric.title} className="p-4 md:p-6">
               <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-500">
-                  <LoadingSkeleton className="h-4 w-24" />
-                </span>
-                <span className="mt-1 text-2xl font-semibold text-gray-900">
-                  <LoadingSkeleton className="h-8 w-16" />
-                </span>
-                <span className="mt-1 text-xs text-gray-500">
-                  <LoadingSkeleton className="h-3 w-32" />
-                </span>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">{metric.title}</span>
+                  <Icon className="h-4 w-4 text-gray-400" />
+                </div>
+                <span className="mt-1 text-2xl font-bold text-gray-900">{metric.value}</span>
+                <div className="mt-1 flex items-center text-xs">
+                  {metric.trend === "up" ? (
+                    <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
+                  ) : (
+                    <TrendingDown className="mr-1 h-4 w-4 text-red-500" />
+                  )}
+                  <span className={metric.trend === "up" ? "text-green-500" : "text-red-500"}>
+                    {metric.change}
+                  </span>
+                  <span className="ml-1 text-gray-500">{metric.description}</span>
+                </div>
               </div>
             </FreightCard>
-          ))
-        ) : (
-          // Actual metrics
-          metrics.map((metric) => {
-            const Icon = metric.icon;
-            return (
-              <FreightCard key={metric.title} className="p-4 md:p-6">
-                <div className="flex flex-col">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700">{metric.title}</span>
-                    <Icon className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <span className="mt-1 text-2xl font-bold text-gray-900">{metric.value}</span>
-                  <div className="mt-1 flex items-center text-xs">
-                    {metric.trend === "up" ? (
-                      <TrendingUp className="mr-1 h-4 w-4 text-green-500" />
-                    ) : (
-                      <TrendingDown className="mr-1 h-4 w-4 text-red-500" />
-                    )}
-                    <span className={metric.trend === "up" ? "text-green-500" : "text-red-500"}>
-                      {metric.change}
-                    </span>
-                    <span className="ml-1 text-gray-500">{metric.description}</span>
-                  </div>
-                </div>
-              </FreightCard>
-            );
-          })
-        )}
+          );
+        })}
       </div>
 
-      {/* 3. Two-column Layout for Actions and Timeline */}
+      {/* Actions + Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <FreightCard header={{ title: "Quick Actions" }}>
           <div className="p-4 md:p-6 space-y-3">
