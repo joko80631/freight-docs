@@ -166,7 +166,7 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
+    <div className="w-full max-w-screen-xl mx-auto px-6 md:px-8 py-8 space-y-8">
       {/* 1. Page Header with proper typography hierarchy */}
       <div className="flex flex-col gap-1">
         <h1 className="text-xl font-semibold text-gray-900">
@@ -264,7 +264,9 @@ export default function DashboardPage() {
         </FreightCard>
 
         <FreightCard header={{ title: "Recent Activity" }} className="lg:col-span-2">
-          <Timeline items={timelineItems} />
+          <div className="p-4 md:p-6">
+            <Timeline items={timelineItems} />
+          </div>
         </FreightCard>
       </div>
     </div>
