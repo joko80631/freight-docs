@@ -28,7 +28,7 @@ export function FreightCard({
   return (
     <Component
       className={cn(
-        'rounded-md border border-gray-200 bg-white',
+        'rounded-md border border-gray-200 bg-white w-full',
         variant === 'subtle' && 'bg-gray-50',
         variant === 'filter' && 'border-gray-200',
         onClick && 'cursor-pointer',

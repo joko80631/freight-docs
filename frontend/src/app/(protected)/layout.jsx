@@ -41,7 +41,7 @@ export default function ProtectedLayout({ children }) {
   }, [router, supabase, setCurrentTeam]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full">
       <Toaster position="top-right" />
       {children}
     </div>

@@ -141,7 +141,7 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="dashboard-container" data-debug="layout">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="dashboard-container" data-debug="layout">
       {/* Page Header */}
       <div className="flex flex-col gap-1" data-testid="dashboard-header">
         <h1 className="text-2xl font-bold text-gray-900">
@@ -166,11 +166,11 @@ export default function DashboardPage() {
       )}
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" data-testid="metrics-grid">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full" data-testid="metrics-grid">
         {isLoading ? (
           // Loading skeletons for metrics
           Array.from({ length: 4 }).map((_, i) => (
-            <FreightCard key={i} className="p-4 md:p-6" data-testid={`metric-card-skeleton-${i}`}>
+            <FreightCard key={i} className="p-4 md:p-6 w-full" data-testid={`metric-card-skeleton-${i}`}>
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-gray-500">
                   <LoadingSkeleton className="h-4 w-24" />
@@ -189,7 +189,7 @@ export default function DashboardPage() {
           metrics.map((metric) => {
             const Icon = metric.icon;
             return (
-              <FreightCard key={metric.title} className="p-4 md:p-6" data-testid={`metric-card-${metric.title.toLowerCase().replace(/\s+/g, '-')}`}>
+              <FreightCard key={metric.title} className="p-4 md:p-6 w-full" data-testid={`metric-card-${metric.title.toLowerCase().replace(/\s+/g, '-')}`}>
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">{metric.title}</span>
@@ -215,10 +215,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" data-testid="dashboard-content-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full" data-testid="dashboard-content-grid">
         {/* Quick Actions */}
-        <div className="lg:col-span-1" data-testid="quick-actions-container">
-          <FreightCard header={{ title: "Quick Actions" }} data-testid="quick-actions-card">
+        <div className="lg:col-span-1 w-full" data-testid="quick-actions-container">
+          <FreightCard header={{ title: "Quick Actions" }} className="w-full h-full" data-testid="quick-actions-card">
             <div className="p-4 md:p-6 space-y-3">
               <div className="flex flex-col gap-2">
                 <FreightButton
@@ -251,8 +251,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Activity Timeline */}
-        <div className="lg:col-span-2" data-testid="activity-timeline-container">
-          <FreightCard header={{ title: "Recent Activity" }} data-testid="activity-timeline-card">
+        <div className="lg:col-span-2 w-full" data-testid="activity-timeline-container">
+          <FreightCard header={{ title: "Recent Activity" }} className="w-full h-full" data-testid="activity-timeline-card">
             <div className="p-4 md:p-6">
               {isLoading ? (
                 <div className="space-y-4" data-testid="activity-timeline-loading">
