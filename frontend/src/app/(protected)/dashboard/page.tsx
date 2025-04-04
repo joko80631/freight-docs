@@ -240,32 +240,30 @@ export default function DashboardPage() {
 
       {/* 3. Two-column Layout for Actions and Timeline */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions - 1/3 width on large screens */}
+        {/* Quick Actions - 1/3 width */}
         <FreightCard header={{ title: "Quick Actions" }}>
           <div className="p-4 md:p-6 space-y-3">
-            <div className="flex flex-col gap-2">
-              {actions.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <FreightButton
-                    key={action.title}
-                    variant="secondary"
-                    className="w-full justify-start"
-                    onClick={() => router.push(action.path)}
-                  >
-                    <Icon className="mr-2 h-4 w-4" />
-                    <div className="flex flex-col items-start">
-                      <span>{action.title}</span>
-                      <span className="text-xs text-gray-500">{action.description}</span>
-                    </div>
-                  </FreightButton>
-                );
-              })}
-            </div>
+            {actions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <FreightButton
+                  key={action.title}
+                  variant="secondary"
+                  className="w-full justify-start"
+                  onClick={() => router.push(action.path)}
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  <div className="flex flex-col items-start">
+                    <span>{action.title}</span>
+                    <span className="text-xs text-gray-500">{action.description}</span>
+                  </div>
+                </FreightButton>
+              );
+            })}
           </div>
         </FreightCard>
 
-        {/* Timeline Activity - 2/3 width on large screens */}
+        {/* Recent Activity - 2/3 width */}
         <FreightCard header={{ title: "Recent Activity" }} className="lg:col-span-2">
           <Timeline items={timelineItems} />
         </FreightCard>
