@@ -141,7 +141,7 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="dashboard-container" data-debug="layout">
       {/* Page Header */}
-      <div className="flex flex-col gap-1 mb-6" data-testid="dashboard-header">
+      <div className="flex flex-col gap-1" data-testid="dashboard-header">
         <h1 className="text-xl font-semibold text-gray-900">
           Welcome back, {isLoading ? <LoadingSkeleton className="h-6 w-32" /> : "John"}
         </h1>
@@ -213,7 +213,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6" data-testid="dashboard-content-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" data-testid="dashboard-content-grid">
         {/* Quick Actions */}
         <div className="lg:col-span-1" data-testid="quick-actions-container">
           <FreightCard header={{ title: "Quick Actions" }} data-testid="quick-actions-card">
