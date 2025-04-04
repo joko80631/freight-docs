@@ -23,6 +23,9 @@ import {
 import { LoadingSkeleton } from "@/components/shared";
 import { useRouter } from "next/navigation";
 
+// Force dynamic rendering to prevent caching issues
+export const dynamic = 'force-dynamic';
+
 const ONBOARDING_STORAGE_KEY = "freightdocs_onboarding_status";
 
 // Define types for our data
@@ -163,6 +166,16 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="dashboard-container" data-debug="layout">
+      {/* Debug Marker */}
+      <div className="text-red-600 font-bold p-2 bg-yellow-100 border border-red-500 mb-4">
+        DASHBOARD: TSX FILE IS ACTIVE
+      </div>
+      
+      {/* Tailwind Debug */}
+      <div className="bg-green-200 lg:bg-red-400 p-2 text-center font-bold">
+        TAILWIND DEBUG: Should be green on mobile, red on desktop
+      </div>
+      
       {/* Page Header */}
       <div className="flex flex-col gap-1" data-testid="dashboard-header">
         <h1 className="text-2xl font-bold text-gray-900">

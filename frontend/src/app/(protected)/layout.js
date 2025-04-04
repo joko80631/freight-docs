@@ -13,6 +13,9 @@ export default function ProtectedLayout({ children }) {
   const pathname = usePathname();
   const supabase = createClientComponentClient();
 
+  // Add console logging to verify layout rendering
+  console.log(">>> PROTECTED LAYOUT LOADED", { pathname });
+
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -128,8 +131,13 @@ export default function ProtectedLayout({ children }) {
         </div>
       </nav>
 
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      {/* Main content - REMOVED max-width constraint to allow dashboard to control its own width */}
+      <main className="py-6">
+        {/* Debug container to verify layout rendering */}
+        <div className="border-2 border-blue-500 p-2 mb-4 text-center text-blue-700 font-bold">
+          PROTECTED LAYOUT WRAPPER
+        </div>
+        
         {children}
       </main>
     </div>
