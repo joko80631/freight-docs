@@ -1,5 +1,6 @@
 'use client';
 
+// safelist: lg:col-span-2 lg:grid-cols-3 grid-cols-1 gap-6
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { 
