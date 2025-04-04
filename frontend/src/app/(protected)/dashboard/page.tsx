@@ -165,10 +165,10 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="dashboard-container">
-      {/* Page Header */}
-      <div className="flex flex-col gap-1" data-testid="dashboard-header">
-        <h1 className="text-2xl font-bold text-gray-900">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6">
+      {/* 1. Page Header with proper typography hierarchy */}
+      <div className="flex flex-col gap-1">
+        <h1 className="text-xl font-semibold text-gray-900">
           Welcome back, {isLoading ? <LoadingSkeleton className="h-6 w-32" /> : "John"}
         </h1>
         <p className="text-sm text-gray-500">
@@ -178,7 +178,7 @@ export default function DashboardPage() {
 
       {/* Onboarding Checklist for New Users */}
       {isNewUser && (
-        <FreightCard variant="subtle" data-testid="onboarding-card">
+        <FreightCard variant="subtle">
           <div className="p-4 md:p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-4">Welcome to FreightDocs</h2>
             <p className="text-sm text-gray-700 mb-4">
@@ -189,12 +189,12 @@ export default function DashboardPage() {
         </FreightCard>
       )}
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full" data-testid="metrics-grid">
+      {/* 2. Metrics Grid - EACH metric in its OWN FreightCard */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {isLoading ? (
           // Loading skeletons for metrics
           Array.from({ length: 4 }).map((_, i) => (
-            <FreightCard key={i} className="p-4 md:p-6 w-full" data-testid={`metric-card-skeleton-${i}`}>
+            <FreightCard key={i} className="p-4 md:p-6">
               <div className="flex flex-col">
                 <span className="text-sm font-medium text-gray-500">
                   <LoadingSkeleton className="h-4 w-24" />
@@ -213,7 +213,7 @@ export default function DashboardPage() {
           metrics.map((metric) => {
             const Icon = metric.icon;
             return (
-              <FreightCard key={metric.title} className="p-4 md:p-6 w-full" data-testid={`metric-card-${metric.title.toLowerCase().replace(/\s+/g, '-')}`}>
+              <FreightCard key={metric.title} className="p-4 md:p-6">
                 <div className="flex flex-col">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700">{metric.title}</span>
@@ -238,64 +238,37 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full" data-testid="dashboard-content-grid">
-        {/* Quick Actions */}
-        <div className="lg:col-span-1 w-full" data-testid="quick-actions-container">
-          <FreightCard header={{ title: "Quick Actions" }} className="w-full h-full" data-testid="quick-actions-card">
-            <div className="p-4 md:p-6 space-y-3">
-              <div className="flex flex-col gap-2">
-                <FreightButton
-                  variant="secondary"
-                  className="w-full md:w-auto justify-start"
-                  onClick={() => router.push('/upload')}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Document
-                </FreightButton>
-                <FreightButton
-                  variant="secondary"
-                  className="w-full md:w-auto justify-start"
-                  onClick={() => router.push('/loads/new')}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create Load
-                </FreightButton>
-                <FreightButton
-                  variant="secondary"
-                  className="w-full md:w-auto justify-start"
-                  onClick={() => router.push('/documents')}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  View Documents
-                </FreightButton>
-              </div>
-            </div>
-          </FreightCard>
-        </div>
-
-        {/* Activity Timeline */}
-        <div className="lg:col-span-2 w-full" data-testid="activity-timeline-container">
-          <FreightCard header={{ title: "Recent Activity" }} className="w-full h-full" data-testid="activity-timeline-card">
-            <div className="p-4 md:p-6">
-              {isLoading ? (
-                <div className="space-y-4" data-testid="activity-timeline-loading">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={`skeleton-${i}`} className="flex items-start space-x-4" data-testid={`activity-skeleton-${i}`}>
-                      <LoadingSkeleton className="h-8 w-8 rounded-full" />
-                      <div className="flex-1 space-y-1">
-                        <LoadingSkeleton className="h-4 w-48" />
-                        <LoadingSkeleton className="h-3 w-64" />
-                      </div>
+      {/* 3. Two-column Layout for Actions and Timeline */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Quick Actions - 1/3 width on large screens */}
+        <FreightCard header={{ title: "Quick Actions" }}>
+          <div className="p-4 md:p-6 space-y-3">
+            <div className="flex flex-col gap-2">
+              {actions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <FreightButton
+                    key={action.title}
+                    variant="secondary"
+                    className="w-full justify-start"
+                    onClick={() => router.push(action.path)}
+                  >
+                    <Icon className="mr-2 h-4 w-4" />
+                    <div className="flex flex-col items-start">
+                      <span>{action.title}</span>
+                      <span className="text-xs text-gray-500">{action.description}</span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <Timeline items={timelineItems} data-testid="activity-timeline" />
-              )}
+                  </FreightButton>
+                );
+              })}
             </div>
-          </FreightCard>
-        </div>
+          </div>
+        </FreightCard>
+
+        {/* Timeline Activity - 2/3 width on large screens */}
+        <FreightCard header={{ title: "Recent Activity" }} className="lg:col-span-2">
+          <Timeline items={timelineItems} />
+        </FreightCard>
       </div>
     </div>
   );

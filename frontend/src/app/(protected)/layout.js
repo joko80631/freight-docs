@@ -70,40 +70,40 @@ export default function ProtectedLayout({ children }) {
           <div className="flex justify-between h-16">
             <div className="flex">
               <div className="flex-shrink-0 flex items-center">
-                <Link href="/loads" className="text-xl font-bold text-indigo-600">
+                <Link href="/dashboard" className="text-xl font-bold text-indigo-600">
                   Freight Tracker
                 </Link>
               </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <div className="hidden sm:ml-6 sm:flex sm:items-center sm:gap-6">
+                <Link
+                  href="/dashboard"
+                  className={`text-sm font-medium ${
+                    pathname === '/dashboard'
+                      ? 'text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Dashboard
+                </Link>
                 <Link
                   href="/loads"
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  className={`text-sm font-medium ${
                     pathname.startsWith('/loads')
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      ? 'text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   Loads
                 </Link>
                 <Link
                   href="/upload"
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                  className={`text-sm font-medium ${
                     pathname.startsWith('/upload')
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      ? 'text-gray-900'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   Upload
-                </Link>
-                <Link
-                  href="/documents"
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                    pathname.startsWith('/documents')
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                >
-                  Documents
                 </Link>
               </div>
             </div>
