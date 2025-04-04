@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { getConfidenceVariant, getConfidenceLabel } from '@/lib/classification';
 
 interface DocumentPreviewProps {
   document: Document;
@@ -29,12 +30,6 @@ export function DocumentPreview({ document, onClick, onDelete }: DocumentPreview
 
   const timeAgo = (date: string) => {
     return formatDistanceToNow(new Date(date), { addSuffix: true });
-  };
-
-  const getConfidenceVariant = (confidence: number): 'success' | 'warning' | 'error' => {
-    if (confidence > 0.8) return 'success';
-    if (confidence > 0.6) return 'warning';
-    return 'error';
   };
 
   const getConfidencePercent = (confidence: number) => {

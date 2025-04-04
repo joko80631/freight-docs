@@ -4,7 +4,7 @@ import React from 'react';
 import { Document } from '@/types/document';
 import { FreightCard } from '@/components/freight/FreightCard';
 import { formatDistanceToNow } from 'date-fns';
-import { getConfidenceVariant, getConfidenceLabel } from '@/lib/documents';
+import { getConfidenceVariant, getConfidenceLabel } from '@/lib/classification';
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import ReactMarkdown from 'react-markdown';
 
@@ -15,14 +15,14 @@ interface DocumentTimelineProps {
 export function DocumentTimeline({ document }: DocumentTimelineProps) {
   if (!document.classification_history || document.classification_history.length === 0) {
     return (
-      <FreightCard variant="bordered" className="p-4 text-center text-muted-foreground">
+      <FreightCard variant="subtle" className="p-4 text-center text-muted-foreground">
         No classification history
       </FreightCard>
     );
   }
   
   return (
-    <FreightCard variant="bordered" className="p-4">
+    <FreightCard variant="default" className="p-4">
       <h3 className="font-medium mb-4">Classification Timeline</h3>
       <div className="space-y-4">
         {document.classification_history.map((entry) => (

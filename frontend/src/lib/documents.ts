@@ -1,25 +1,7 @@
 import { Document } from '@/types/document';
+import { getConfidenceVariant, getConfidenceLabel } from './classification';
 
-/**
- * Badge variant types
- */
-export type VariantType = 'success' | 'warning' | 'error' | 'info';
-
-/**
- * Get the appropriate badge variant based on confidence level
- */
-export function getConfidenceVariant(confidence: number): VariantType {
-  if (confidence >= 0.85) return 'success';
-  if (confidence >= 0.6) return 'warning';
-  return 'error';
-}
-
-/**
- * Format confidence as a percentage string
- */
-export function getConfidenceLabel(confidence: number): string {
-  return `${Math.round(confidence * 100)}%`;
-}
+export { getConfidenceVariant, getConfidenceLabel };
 
 /**
  * Calculate pagination indices

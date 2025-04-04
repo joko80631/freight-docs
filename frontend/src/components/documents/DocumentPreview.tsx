@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Document } from '@/types/document';
 import { Button } from '@/components/ui/button';
 import { FreightBadge } from '@/components/freight/FreightBadge';
-import { getConfidenceVariant, getConfidenceLabel } from '@/lib/documents';
+import { getConfidenceVariant, getConfidenceLabel } from '@/lib/classification';
 import { formatDistanceToNow } from 'date-fns';
 import { DownloadIcon, TrashIcon } from 'lucide-react';
 
