@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 export interface FreightCardProps {
   children: React.ReactNode;
-  variant?: 'default' | 'subtle' | 'filter';
+  variant?: 'default' | 'subtle' | 'filter' | 'elevated';
   className?: string;
   contentClassName?: string;
   onClick?: () => void;
@@ -30,9 +30,11 @@ export function FreightCard({
   return (
     <Component
       className={cn(
-        'rounded-lg border border-gray-200 bg-white w-full shadow-sm',
+        'rounded-lg border border-gray-200 bg-white w-full',
         variant === 'subtle' && 'bg-gray-50',
         variant === 'filter' && 'border-gray-200',
+        variant === 'elevated' && 'bg-white shadow-md rounded-2xl',
+        !variant && 'shadow-sm',
         onClick && 'cursor-pointer hover:shadow-md transition-shadow duration-200',
         className
       )}
@@ -48,7 +50,7 @@ export function FreightCard({
           </div>
         </div>
       )}
-      <div className={cn("px-6 py-4", contentClassName)}>
+      <div className={cn("px-6 py-4 space-y-4", contentClassName)}>
         {children}
       </div>
       {footer && (
