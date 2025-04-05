@@ -4,7 +4,8 @@ import {
   FileText, 
   DollarSign,
   Users,
-  Plus
+  Plus,
+  LucideIcon
 } from "lucide-react";
 import { ReactNode } from "react";
 
@@ -16,7 +17,7 @@ export interface Metric {
     value: number;
     isPositive: boolean;
   };
-  icon?: ReactNode;
+  icon?: LucideIcon;
 }
 
 export interface Activity {
@@ -25,12 +26,12 @@ export interface Activity {
   description?: string;
   timestamp: Date;
   type?: "success" | "warning" | "error" | "default";
-  icon?: ReactNode;
+  icon?: LucideIcon;
 }
 
 export interface QuickAction {
   label: string;
-  icon?: ReactNode;
+  icon?: LucideIcon;
   href?: string;
   onClick?: () => void;
 }
@@ -41,28 +42,28 @@ export const mockMetrics: Metric[] = [
     value: "245",
     description: "Active freight loads",
     trend: { value: 12, isPositive: true },
-    icon: <Truck className="h-4 w-4" />,
+    icon: Truck,
   },
   {
     title: "Documents",
     value: "1,234",
     description: "Processed this month",
     trend: { value: 8, isPositive: true },
-    icon: <FileText className="h-4 w-4" />,
+    icon: FileText,
   },
   {
     title: "Revenue",
     value: "$45,231",
     description: "This month",
     trend: { value: 15, isPositive: true },
-    icon: <DollarSign className="h-4 w-4" />,
+    icon: DollarSign,
   },
   {
     title: "Team Members",
     value: "12",
     description: "Active users",
     trend: { value: 2, isPositive: true },
-    icon: <Users className="h-4 w-4" />,
+    icon: Users,
   },
 ];
 
@@ -73,7 +74,7 @@ export const mockActivities: Activity[] = [
     description: "Load #1234 from LA to NYC",
     timestamp: new Date(),
     type: "success",
-    icon: <Truck className="h-4 w-4" />,
+    icon: Truck,
   },
   {
     id: "2",
@@ -81,7 +82,7 @@ export const mockActivities: Activity[] = [
     description: "BOL for Load #1234",
     timestamp: new Date(Date.now() - 3600000),
     type: "default",
-    icon: <FileText className="h-4 w-4" />,
+    icon: FileText,
   },
   {
     id: "3",
@@ -89,24 +90,24 @@ export const mockActivities: Activity[] = [
     description: "$1,234 for Load #1234",
     timestamp: new Date(Date.now() - 7200000),
     type: "success",
-    icon: <DollarSign className="h-4 w-4" />,
+    icon: DollarSign,
   },
 ];
 
 export const mockQuickActions: QuickAction[] = [
   {
     label: "Create Load",
-    icon: <Plus className="h-4 w-4" />,
+    icon: Plus,
     href: "/loads/new",
   },
   {
     label: "Upload Document",
-    icon: <FileText className="h-4 w-4" />,
+    icon: FileText,
     href: "/documents/upload",
   },
   {
     label: "View Reports",
-    icon: <BarChart className="h-4 w-4" />,
+    icon: BarChart,
     href: "/reports",
   },
 ]; 

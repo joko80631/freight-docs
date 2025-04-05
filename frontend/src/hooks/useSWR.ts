@@ -25,17 +25,16 @@ export function useCustomSWR<T>(
   const mergedConfig = { ...defaultConfig, ...config };
 
   const { data, error, isLoading, mutate } = useSWR<T>(
-    key,
+    key || null,
     fetcher,
     {
       revalidateOnFocus: mergedConfig.revalidateOnFocus,
       revalidateOnReconnect: mergedConfig.revalidateOnReconnect,
       refreshInterval: mergedConfig.refreshInterval,
-      retry: (retryCount: number) => {
-        if (retryCount >= (mergedConfig.retryCount ?? 3)) return false;
-        return true;
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        if (retryCount >= (mergedConfig.retryCount ?? 3)) return;
+        setTimeout(() => revalidate({ retryCount }), mergedConfig.retryDelay);
       },
-      retryDelay: mergedConfig.retryDelay,
     }
   );
 
