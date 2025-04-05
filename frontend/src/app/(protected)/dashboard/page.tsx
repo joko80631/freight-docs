@@ -166,30 +166,30 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <section className="space-y-8">
+    <div className="h-full">
       {/* Page Heading */}
-      <header>
+      <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
           Welcome back, {isLoading ? <LoadingSkeleton className="h-6 w-32" /> : "John"}
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-2 text-sm text-gray-500">
           {format(new Date(), "EEEE, MMMM d, yyyy")}
         </p>
       </header>
 
       {/* Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {metrics.map((metric) => {
           const Icon = metric.icon;
           return (
             <FreightCard key={metric.title}>
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between text-sm text-gray-700">
                   <span className="font-medium">{metric.title}</span>
                   <Icon className="h-4 w-4 text-gray-400" />
                 </div>
                 <span className="text-2xl font-semibold text-gray-900">{metric.value}</span>
-                <div className="flex items-center gap-1 text-xs">
+                <div className="flex items-center gap-1.5 text-xs">
                   {metric.trend === "up" ? (
                     <TrendingUp className="h-4 w-4 text-green-500" />
                   ) : (
@@ -198,7 +198,7 @@ export default function DashboardPage() {
                   <span className={metric.trend === "up" ? "text-green-500" : "text-red-500"}>
                     {metric.change}
                   </span>
-                  <span className="ml-1 text-gray-500">{metric.description}</span>
+                  <span className="text-gray-500">{metric.description}</span>
                 </div>
               </div>
             </FreightCard>
@@ -236,6 +236,6 @@ export default function DashboardPage() {
           <Timeline items={timelineItems} />
         </FreightCard>
       </div>
-    </section>
+    </div>
   );
 } 
