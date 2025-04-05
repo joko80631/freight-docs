@@ -166,13 +166,13 @@ export default function DashboardPage() {
   }, []);
 
   return (
-    <section className="w-full max-w-screen-xl mx-auto px-6 md:px-10 py-12 space-y-12">
+    <section className="space-y-8">
       {/* Page Heading */}
-      <header className="space-y-1">
+      <header>
         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
           Welcome back, {isLoading ? <LoadingSkeleton className="h-6 w-32" /> : "John"}
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="mt-1 text-sm text-gray-500">
           {format(new Date(), "EEEE, MMMM d, yyyy")}
         </p>
       </header>
@@ -182,7 +182,7 @@ export default function DashboardPage() {
         {metrics.map((metric) => {
           const Icon = metric.icon;
           return (
-            <FreightCard key={metric.title} contentClassName="p-6">
+            <FreightCard key={metric.title}>
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-sm text-gray-700">
                   <span className="font-medium">{metric.title}</span>
@@ -207,10 +207,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Actions + Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Quick Actions */}
-        <FreightCard header={{ title: "Quick Actions" }} contentClassName="p-6">
-          <div className="space-y-4">
+        <FreightCard header={{ title: "Quick Actions" }}>
+          <div className="space-y-3">
             {actions.map((action) => {
               const Icon = action.icon;
               return (
@@ -232,7 +232,7 @@ export default function DashboardPage() {
         </FreightCard>
 
         {/* Recent Activity */}
-        <FreightCard header={{ title: "Recent Activity" }} className="lg:col-span-2" contentClassName="p-6">
+        <FreightCard header={{ title: "Recent Activity" }} className="lg:col-span-2">
           <Timeline items={timelineItems} />
         </FreightCard>
       </div>

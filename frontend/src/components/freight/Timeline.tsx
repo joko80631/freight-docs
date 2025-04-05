@@ -28,24 +28,24 @@ const defaultIcons = {
 
 export function Timeline({ items, className }: TimelineProps) {
   return (
-    <div className={cn('space-y-6', className)}>
+    <div className={cn('space-y-4', className)}>
       {items.map((item, index) => (
-        <div key={index} className="relative pl-8">
+        <div key={index} className="relative pl-6">
           {/* Connector line */}
           {index !== items.length - 1 && (
-            <div className="absolute left-3.5 top-5 h-full w-0.5 bg-gray-200" />
+            <div className="absolute left-[0.5625rem] top-5 h-full w-px bg-gray-200" />
           )}
           
           {/* Icon circle */}
-          <div className="absolute left-0 top-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-200 bg-white">
+          <div className="absolute left-0 top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full border border-gray-200 bg-white">
             {item.icon || defaultIcons[item.variant || 'info']}
           </div>
 
           {/* Content */}
-          <div className="space-y-1">
+          <div className="space-y-1 pt-0.5">
             <h4 className="text-sm font-medium text-gray-900">{item.title}</h4>
             {item.description && (
-              <p className="text-sm text-gray-700">{item.description}</p>
+              <p className="text-sm text-gray-600">{item.description}</p>
             )}
             {item.metadata && (
               <div className="flex items-center gap-2 text-xs text-gray-500">

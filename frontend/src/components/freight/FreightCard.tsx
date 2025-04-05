@@ -30,7 +30,8 @@ export function FreightCard({
   return (
     <Component
       className={cn(
-        'rounded-2xl border border-gray-200 bg-white w-full shadow-sm',
+        'rounded-lg border border-gray-200 bg-white w-full',
+        'hover:shadow-md transition-shadow duration-200',
         variant === 'subtle' && 'bg-gray-50',
         variant === 'filter' && 'border-gray-200',
         onClick && 'cursor-pointer',
@@ -42,16 +43,18 @@ export function FreightCard({
       data-testid="freight-card"
     >
       {header && (
-        <div className="border-b border-gray-200 p-4" data-testid="freight-card-header">
+        <div className="border-b border-gray-200 px-6 py-4" data-testid="freight-card-header">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-medium text-gray-900">{header.title}</h3>
             {header.actions && <div className="flex items-center gap-2">{header.actions}</div>}
           </div>
         </div>
       )}
-      <div className={cn("p-4", contentClassName)} data-testid="freight-card-content">{children}</div>
+      <div className={cn("px-6 py-4", contentClassName)} data-testid="freight-card-content">
+        {children}
+      </div>
       {footer && (
-        <div className="border-t border-gray-200 p-4" data-testid="freight-card-footer">
+        <div className="border-t border-gray-200 px-6 py-4" data-testid="freight-card-footer">
           {footer}
         </div>
       )}
