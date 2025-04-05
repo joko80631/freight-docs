@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useTeamStore } from '@/store/team-store';
-import { FreightCard } from '@/components/freight/FreightCard';
+import { Card, CardContent } from '@/components/ui/card';
 import { FreightTable } from '@/components/freight/FreightTable';
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import { FreightButton } from '@/components/freight/FreightButton';
@@ -154,25 +154,27 @@ export default function LoadsPage() {
         </div>
       </div>
 
-      <FreightCard>
-        <FreightTable
-          data={loads}
-          columns={columns}
-          isLoading={isLoading}
-          data-testid="loads-table"
-          emptyState={
-            <EmptyState
-              icon={Package}
-              title="No loads found"
-              description="Try adjusting your filters or create a new load"
-              action={{
-                label: "Create Load",
-                onClick: () => router.push('/loads/new')
-              }}
-            />
-          }
-        />
-      </FreightCard>
+      <Card className="border border-border/40 shadow-sm">
+        <CardContent className="p-6">
+          <FreightTable
+            data={loads}
+            columns={columns}
+            isLoading={isLoading}
+            data-testid="loads-table"
+            emptyState={
+              <EmptyState
+                icon={Package}
+                title="No loads found"
+                description="Try adjusting your filters or create a new load"
+                action={{
+                  label: "Create Load",
+                  onClick: () => router.push('/loads/new')
+                }}
+              />
+            }
+          />
+        </CardContent>
+      </Card>
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-2 mt-6" data-testid="loads-pagination">

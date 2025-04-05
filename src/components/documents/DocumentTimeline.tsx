@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FreightCard } from '@/components/freight/FreightCard';
+import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, FileText, Link, Unlink, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Document } from '@/types/document';
@@ -45,15 +45,17 @@ export function DocumentTimeline({ document }: DocumentTimelineProps) {
 
   if (!events.length) {
     return (
-      <FreightCard variant="bordered">
-        <div className="flex items-center justify-center h-[200px] text-muted-foreground">
-          <div className="text-center">
-            <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-            <p>No timeline events yet</p>
-            <p className="text-sm">This document has not been modified since upload</p>
+      <Card className="border-2">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center h-[200px] text-muted-foreground">
+            <div className="text-center">
+              <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+              <p>No timeline events yet</p>
+              <p className="text-sm">This document has not been modified since upload</p>
+            </div>
           </div>
-        </div>
-      </FreightCard>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -70,33 +72,35 @@ export function DocumentTimeline({ document }: DocumentTimelineProps) {
   return (
     <div className="space-y-6">
       {Object.entries(groupedEvents).map(([date, dateEvents]) => (
-        <FreightCard key={date} variant="bordered">
-          <h3 className="mb-4 font-medium">{date}</h3>
-          <div className="space-y-4">
-            {dateEvents.map((event) => (
-              <div key={event.id} className="flex items-start gap-4">
-                <div className="p-2 rounded-full bg-primary/10">
-                  {event.type === 'upload' && <FileText className="h-4 w-4" />}
-                  {event.type === 'link' && <Link className="h-4 w-4" />}
-                  {event.type === 'unlink' && <Unlink className="h-4 w-4" />}
-                </div>
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">
-                      {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
-                    </p>
-                    <span className="text-sm text-muted-foreground">
-                      {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
-                    </span>
+        <Card key={date} className="border-2">
+          <CardContent className="p-6">
+            <h3 className="mb-4 font-medium">{date}</h3>
+            <div className="space-y-4">
+              {dateEvents.map((event) => (
+                <div key={event.id} className="flex items-start gap-4">
+                  <div className="p-2 rounded-full bg-primary/10">
+                    {event.type === 'upload' && <FileText className="h-4 w-4" />}
+                    {event.type === 'link' && <Link className="h-4 w-4" />}
+                    {event.type === 'unlink' && <Unlink className="h-4 w-4" />}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    {event.details || 'No additional details'}
-                  </p>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">
+                        {event.type.charAt(0).toUpperCase() + event.type.slice(1)}
+                      </p>
+                      <span className="text-sm text-muted-foreground">
+                        {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {event.details || 'No additional details'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </FreightCard>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

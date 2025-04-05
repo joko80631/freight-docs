@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FreightCard } from '@/components/freight/FreightCard';
+import { Card, CardContent } from '@/components/ui/card';
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import { Button } from '@/components/ui/button';
 import { FileText, MoreVertical, Download, RefreshCw, Trash2 } from 'lucide-react';
@@ -77,102 +77,103 @@ export function DocumentPreview({ document, onClick, onDelete }: DocumentPreview
   };
 
   return (
-    <FreightCard
-      variant="bordered"
-      hover
+    <Card
+      className="border-2 hover:shadow-md transition-shadow cursor-pointer"
       onClick={onClick}
     >
-      <div className="space-y-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-primary/10 p-2">
-              <FileText className="h-5 w-5 text-primary" />
+      <CardContent className="p-6">
+        <div className="space-y-3">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-medium line-clamp-1">{document.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  Uploaded {timeAgo(document.uploaded_at)}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-medium line-clamp-1">{document.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                Uploaded {timeAgo(document.uploaded_at)}
-              </p>
-            </div>
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="rounded-full p-1 hover:bg-muted">
-                <MoreVertical className="h-4 w-4" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleDownload}>
-                <Download className="mr-2 h-4 w-4" />
-                Download
-              </DropdownMenuItem>
-              {canDelete && onDelete && (
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete();
-                  }}
-                  className="text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="rounded-full p-1 hover:bg-muted">
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleDownload}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
                 </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                {canDelete && onDelete && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete();
+                    }}
+                    className="text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
-          <FreightBadge variant={getConfidenceVariant(document.confidence)}>
-            {getConfidencePercent(document.confidence)}% AI Confidence
-          </FreightBadge>
-          <FreightBadge variant="info">
-            {document.type}
-          </FreightBadge>
-          <FreightBadge variant={getStatusVariant(document.status)}>
-            {document.status}
-          </FreightBadge>
-          {document.load_id && (
-            <FreightBadge variant="success">
-              Load #{document.load?.reference_number || document.load_id}
+          <div className="flex flex-wrap gap-2">
+            <FreightBadge variant={getConfidenceVariant(document.confidence)}>
+              {getConfidencePercent(document.confidence)}% AI Confidence
             </FreightBadge>
+            <FreightBadge variant="info">
+              {document.type}
+            </FreightBadge>
+            <FreightBadge variant={getStatusVariant(document.status)}>
+              {document.status}
+            </FreightBadge>
+            {document.load_id && (
+              <FreightBadge variant="success">
+                Load #{document.load?.reference_number || document.load_id}
+              </FreightBadge>
+            )}
+          </div>
+
+          {previewError && (
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-destructive">{previewError}</p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRetryPreview}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Retrying...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Retry Preview
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownload}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Instead
+                </Button>
+              </div>
+            </div>
           )}
         </div>
-
-        {previewError && (
-          <div className="mt-4 space-y-2">
-            <p className="text-sm text-destructive">{previewError}</p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRetryPreview}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Retrying...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Retry Preview
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownload}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Download Instead
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </FreightCard>
+      </CardContent>
+    </Card>
   );
 } 

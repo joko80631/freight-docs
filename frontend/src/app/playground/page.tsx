@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { 
-  FreightCard, 
   FreightBadge, 
   FreightTable, 
   FreightButton,
@@ -10,6 +9,7 @@ import {
   Timeline,
   ClassificationDisplay
 } from '@/components/freight';
+import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Plus, Trash, Edit, Search, Filter, ArrowRight } from 'lucide-react';
 
 export default function PlaygroundPage() {
@@ -84,33 +84,43 @@ export default function PlaygroundPage() {
     <div className="container mx-auto py-8 space-y-12">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">FreightDocs Design System Playground</h1>
       
-      {/* FreightCard Examples */}
+      {/* Card Examples */}
       <section className="space-y-6">
-        <h2 className="text-2xl font-semibold text-gray-900">FreightCard</h2>
+        <h2 className="text-2xl font-semibold text-gray-900">Card</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FreightCard>
-            <p>Default card with content</p>
-          </FreightCard>
+          <Card>
+            <CardContent className="p-6">
+              <p>Default card with content</p>
+            </CardContent>
+          </Card>
           
-          <FreightCard variant="subtle">
-            <p>Subtle variant with light gray background</p>
-          </FreightCard>
+          <Card className="bg-muted/50">
+            <CardContent className="p-6">
+              <p>Subtle variant with light gray background</p>
+            </CardContent>
+          </Card>
           
-          <FreightCard 
-            header={{ 
-              title: 'Card with Header', 
-              actions: <FreightButton size="small" variant="secondary">Action</FreightButton> 
-            }}
-          >
-            <p>Card with header and action button</p>
-          </FreightCard>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <h3 className="text-lg font-semibold">Card with Header</h3>
+              <FreightButton size="small" variant="secondary">Action</FreightButton>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p>Card with header and action button</p>
+            </CardContent>
+          </Card>
           
-          <FreightCard 
-            header={{ title: 'Card with Header and Footer' }}
-            footer={<div className="flex justify-end"><FreightButton size="small">Save</FreightButton></div>}
-          >
-            <p>Card with header and footer</p>
-          </FreightCard>
+          <Card>
+            <CardHeader>
+              <h3 className="text-lg font-semibold">Card with Header and Footer</h3>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p>Card with header and footer</p>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <FreightButton size="small">Save</FreightButton>
+            </CardFooter>
+          </Card>
         </div>
       </section>
       

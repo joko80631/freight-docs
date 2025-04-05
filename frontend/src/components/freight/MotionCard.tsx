@@ -1,17 +1,38 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { FreightCard, FreightCardProps } from './FreightCard';
+import { Card, CardContent } from '@/components/ui/card';
 
-export interface MotionCardProps extends FreightCardProps {
+export interface MotionCardProps {
+  children: React.ReactNode;
+  className?: string;
   delay?: number;
+  variant?: 'default' | 'bordered' | 'elevated' | 'subtle';
+  hover?: boolean;
 }
 
 export const MotionCard: React.FC<MotionCardProps> = ({ 
   children, 
   className = '', 
   delay = 0,
+  variant = 'default',
+  hover = false,
   ...props 
 }) => {
+  // Map FreightCard variants to shadcn/ui Card styles
+  const getCardClassName = () => {
+    let baseClass = 'border border-border/40 shadow-sm';
+    
+    if (variant === 'bordered') {
+      baseClass += ' border-2';
+    } else if (variant === 'elevated') {
+      baseClass += ' shadow-md';
+    } else if (variant === 'subtle') {
+      baseClass += ' bg-muted/50';
+    }
+    
+    return `${baseClass} ${className}`;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -21,14 +42,16 @@ export const MotionCard: React.FC<MotionCardProps> = ({
         delay,
         ease: 'easeOut'
       }}
-      whileHover={{ 
+      whileHover={hover ? { 
         y: -2,
         transition: { duration: 0.2 }
-      }}
+      } : undefined}
     >
-      <FreightCard className={className} {...props}>
-        {children}
-      </FreightCard>
+      <Card className={getCardClassName()} {...props}>
+        <CardContent className="p-6">
+          {children}
+        </CardContent>
+      </Card>
     </motion.div>
   );
 }; 

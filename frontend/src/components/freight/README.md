@@ -67,22 +67,6 @@ A data table component with loading and empty states.
 />
 ```
 
-### FreightCard
-
-A card component with variants and hover effects.
-
-```tsx
-<FreightCard variant="elevated" hover>
-  <h3>Card Title</h3>
-  <p>Card content</p>
-</FreightCard>
-```
-
-Variants:
-- `default`
-- `bordered`
-- `elevated`
-
 ### Layout System
 
 A composable layout system with header, content, sidebar, and footer.
@@ -139,11 +123,12 @@ Common animation presets are available in `@/lib/motion`:
 
 ## Usage Guidelines
 
-1. Always use the wrapped components (`Freight*`) instead of raw ShadCN components
-2. Use token-based classes for colors, spacing, and typography
-3. Follow the layout structure defined in `Layout.*`
-4. Use motion presets for consistent animations
-5. Keep visual logic in components, not in pages
+1. Use shadcn/ui components for base UI elements (Card, Button, etc.)
+2. Use Freight* components for business-specific UI elements
+3. Use token-based classes for colors, spacing, and typography
+4. Follow the layout structure defined in `Layout.*`
+5. Use motion presets for consistent animations
+6. Keep visual logic in components, not in pages
 
 ## Development
 

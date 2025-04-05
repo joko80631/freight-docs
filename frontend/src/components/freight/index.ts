@@ -1,4 +1,4 @@
-export { FreightCard } from './FreightCard';
+// export { FreightCard } from './FreightCard';
 export { FreightBadge } from './FreightBadge';
 export { FreightTable } from './FreightTable';
 export { FreightButton } from './FreightButton';

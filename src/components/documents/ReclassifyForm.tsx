@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FreightCard } from '@/components/freight/FreightCard';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -78,53 +78,55 @@ export function ReclassifyForm({ document, onReclassify }: ReclassifyFormProps) 
   };
 
   return (
-    <FreightCard variant="bordered">
-      <div className="space-y-4">
-        <div>
-          <h3 className="font-medium">Update Document Type</h3>
-          <div className="mt-2 space-y-4">
-            <Select value={newType} onValueChange={setNewType}>
-              <SelectTrigger aria-label="Select new document type">
-                <SelectValue placeholder="Select new type" />
-              </SelectTrigger>
-              <SelectContent>
-                {DOCUMENT_TYPES.map((type) => (
-                  <SelectItem 
-                    key={type.value} 
-                    value={type.value}
-                    disabled={type.value.toLowerCase() === document.type.toLowerCase()}
-                  >
-                    {type.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+    <Card className="border-2">
+      <CardContent className="p-6">
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-medium">Update Document Type</h3>
+            <div className="mt-2 space-y-4">
+              <Select value={newType} onValueChange={setNewType}>
+                <SelectTrigger aria-label="Select new document type">
+                  <SelectValue placeholder="Select new type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOCUMENT_TYPES.map((type) => (
+                    <SelectItem 
+                      key={type.value} 
+                      value={type.value}
+                      disabled={type.value.toLowerCase() === document.type.toLowerCase()}
+                    >
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-            <Input
-              placeholder="Why are you changing this?"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              aria-label="Reason for changing document type"
-            />
+              <Input
+                placeholder="Why are you changing this?"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                aria-label="Reason for changing document type"
+              />
 
-            <Button
-              onClick={handleReclassify}
-              disabled={!newType || !reason || isSubmitting}
-              className="w-full"
-              aria-label="Update document type"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Updating...
-                </>
-              ) : (
-                'Update Document Type'
-              )}
-            </Button>
+              <Button
+                onClick={handleReclassify}
+                disabled={!newType || !reason || isSubmitting}
+                className="w-full"
+                aria-label="Update document type"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Document Type'
+                )}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </FreightCard>
+      </CardContent>
+    </Card>
   );
 } 

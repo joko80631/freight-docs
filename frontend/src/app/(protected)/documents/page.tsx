@@ -11,12 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Plus, Search, Filter, Upload, FileText } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
-import { FreightCard } from '@/components/freight/FreightCard';
+import { Card, CardContent } from '@/components/ui/card';
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import { FreightButton } from '@/components/freight/FreightButton';
 import { EmptyState } from '@/components/freight/EmptyState';
 import { MotionCard } from '@/components/freight/MotionCard';
 import { ChevronDown } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface Load {
   id: string;
@@ -144,6 +145,12 @@ export default function DocumentsPage() {
     return pages;
   };
   
+  const getConfidenceVariant = (confidence: number) => {
+    if (confidence >= 0.85) return 'success';
+    if (confidence >= 0.6) return 'warning';
+    return 'error';
+  };
+  
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="documents-page" data-debug="layout">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4" data-testid="documents-header">
@@ -198,53 +205,66 @@ export default function DocumentsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 md:p-6">
           {isLoading ? (
             Array.from({ length: 6 }).map((_, i) => (
-              <div
-                key={i}
-                className="animate-pulse bg-gray-100 rounded-lg h-48"
-                data-testid={`document-skeleton-${i}`}
-              />
+              <Card key={i} className="animate-pulse">
+                <CardContent className="p-6">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </CardContent>
+              </Card>
             ))
           ) : documents.length === 0 ? (
-            <div className="col-span-full" data-testid="documents-empty">
-              <EmptyState
-                icon={FileText}
+            <div className="col-span-full">
+              <EmptyState 
                 title="No documents found"
-                description="Try adjusting your filters or upload a new document"
+                description="Upload your first document to get started."
                 action={{
                   label: "Upload Document",
-                  onClick: () => router.push('/upload')
+                  onClick: () => setShowUploadModal(true)
                 }}
               />
             </div>
           ) : (
-            documents.map((doc, index) => (
-              <MotionCard
-                key={doc.id}
-                className="hover:shadow-md transition-shadow"
-                data-testid={`document-card-${doc.id}`}
-                delay={index * 0.05}
-              >
-                <div className="p-4">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-gray-900 truncate" data-testid={`document-name-${doc.id}`}>
-                      {doc.name}
-                    </h3>
-                    <FreightBadge variant={doc.confidence_score >= 0.85 ? 'success' : doc.confidence_score >= 0.6 ? 'warning' : 'error'}>
-                      {Math.round(doc.confidence_score * 100)}%
-                    </FreightBadge>
-                  </div>
-                  <div className="text-sm text-gray-500 mb-2" data-testid={`document-type-${doc.id}`}>
-                    {doc.type.toUpperCase()}
-                  </div>
-                  {doc.loads && doc.loads.length > 0 && (
-                    <div className="text-sm text-gray-500" data-testid={`document-loads-${doc.id}`}>
-                      Linked to: {doc.loads.map((load: Load) => load.reference_number).join(', ')}
+            documents.map((doc) => (
+              <MotionCard key={doc.id} delay={0.1}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="rounded-lg bg-primary/10 p-2">
+                        <FileText className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium line-clamp-1">{doc.name}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Uploaded {formatDistanceToNow(new Date(doc.uploaded_at), { addSuffix: true })}
+                        </p>
+                      </div>
                     </div>
-                  )}
-                  <div className="text-xs text-gray-400 mt-2" data-testid={`document-date-${doc.id}`}>
-                    Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}
                   </div>
-                </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <FreightBadge variant={getConfidenceVariant(doc.confidence_score)}>
+                      {Math.round(doc.confidence_score * 100)}% AI Confidence
+                    </FreightBadge>
+                    <FreightBadge variant="neutral">
+                      {doc.type}
+                    </FreightBadge>
+                    {doc.loads?.[0] && (
+                      <FreightBadge variant="success">
+                        Load #{doc.loads[0].reference_number}
+                      </FreightBadge>
+                    )}
+                  </div>
+
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewDocument(doc.id)}
+                    >
+                      View Details
+                    </Button>
+                  </div>
+                </CardContent>
               </MotionCard>
             ))
           )}
