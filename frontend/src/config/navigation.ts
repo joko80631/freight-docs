@@ -17,7 +17,7 @@ export interface NavigationItem {
   badge?: string | number;
 }
 
-export const navigation: NavigationItem[] = [
+export const navigationConfig: NavigationItem[] = [
   {
     label: "Dashboard",
     href: "/dashboard",

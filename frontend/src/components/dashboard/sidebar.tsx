@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { navigation } from "@/config/navigation";
+import { navigationConfig } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -63,7 +63,7 @@ export function Sidebar({
 
       <nav className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1 px-2">
-          {navigation.map((item) => {
+          {navigationConfig.map((item) => {
             const isActive = pathname === item.href;
             return (
               <li key={item.href}>
