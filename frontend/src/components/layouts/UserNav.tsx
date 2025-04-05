@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ActionMenu } from "@/components/ui/actions/ActionMenu";
 import { LogOut, Settings, User } from "lucide-react";
 
@@ -10,12 +10,10 @@ export function UserNav() {
     <ActionMenu
       trigger={
         <button className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground transition-colors hover:bg-secondary/80">
-          <Avatar
-            size="sm"
-            src="/avatars/user.png"
-            alt="User avatar"
-            fallback="U"
-          />
+          <Avatar className="h-8 w-8">
+            <AvatarImage src="/avatars/user.png" alt="User avatar" />
+            <AvatarFallback>U</AvatarFallback>
+          </Avatar>
         </button>
       }
       items={[
