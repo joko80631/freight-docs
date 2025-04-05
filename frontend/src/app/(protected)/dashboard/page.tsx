@@ -182,7 +182,7 @@ export default function DashboardPage() {
         {metrics.map((metric) => {
           const Icon = metric.icon;
           return (
-            <FreightCard key={metric.title} className="p-5">
+            <FreightCard key={metric.title} contentClassName="p-6">
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between text-sm text-gray-700">
                   <span className="font-medium">{metric.title}</span>
@@ -209,8 +209,8 @@ export default function DashboardPage() {
       {/* Actions + Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         {/* Quick Actions */}
-        <FreightCard header={{ title: "Quick Actions" }}>
-          <div className="p-5 space-y-4">
+        <FreightCard header={{ title: "Quick Actions" }} contentClassName="p-6">
+          <div className="space-y-4">
             {actions.map((action) => {
               const Icon = action.icon;
               return (
@@ -232,10 +232,8 @@ export default function DashboardPage() {
         </FreightCard>
 
         {/* Recent Activity */}
-        <FreightCard header={{ title: "Recent Activity" }} className="lg:col-span-2">
-          <div className="p-5">
-            <Timeline items={timelineItems} />
-          </div>
+        <FreightCard header={{ title: "Recent Activity" }} className="lg:col-span-2" contentClassName="p-6">
+          <Timeline items={timelineItems} />
         </FreightCard>
       </div>
     </section>

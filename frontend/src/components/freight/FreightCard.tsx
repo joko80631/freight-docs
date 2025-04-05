@@ -7,6 +7,7 @@ export interface FreightCardProps {
   children: React.ReactNode;
   variant?: 'default' | 'subtle' | 'filter';
   className?: string;
+  contentClassName?: string;
   onClick?: () => void;
   header?: {
     title: string;
@@ -19,6 +20,7 @@ export function FreightCard({
   children,
   variant = 'default',
   className,
+  contentClassName,
   onClick,
   header,
   footer,
@@ -28,7 +30,7 @@ export function FreightCard({
   return (
     <Component
       className={cn(
-        'rounded-md border border-gray-200 bg-white w-full',
+        'rounded-2xl border border-gray-200 bg-white w-full shadow-sm',
         variant === 'subtle' && 'bg-gray-50',
         variant === 'filter' && 'border-gray-200',
         onClick && 'cursor-pointer',
@@ -47,7 +49,7 @@ export function FreightCard({
           </div>
         </div>
       )}
-      <div className="p-4" data-testid="freight-card-content">{children}</div>
+      <div className={cn("p-4", contentClassName)} data-testid="freight-card-content">{children}</div>
       {footer && (
         <div className="border-t border-gray-200 p-4" data-testid="freight-card-footer">
           {footer}
