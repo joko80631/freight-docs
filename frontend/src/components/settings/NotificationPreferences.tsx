@@ -29,6 +29,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { toast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
 
 const CATEGORY_LABELS: Record<NotificationCategory, string> = {
   account: 'Account',
@@ -160,11 +161,37 @@ export function NotificationPreferences() {
   }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Loading Preferences...</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-2">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary"></div>
+            <span>Loading your notification preferences</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (!preferences) {
-    return <div>Failed to load preferences</div>;
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Error Loading Preferences</CardTitle>
+          <CardDescription>
+            We couldn't load your notification preferences. Please try refreshing the page.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={loadPreferences}>
+            Retry Loading
+          </Button>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

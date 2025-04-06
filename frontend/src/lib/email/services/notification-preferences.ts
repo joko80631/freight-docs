@@ -14,53 +14,65 @@ const supabase = createClient(
 );
 
 export async function getUserNotificationPreferences(userId: string): Promise<NotificationPreferences> {
-  const { data: preferences, error } = await supabase
-    .from('notification_preferences')
-    .select('*')
-    .eq('user_id', userId);
+  try {
+    const { data: preferences, error } = await supabase
+      .from('notification_preferences')
+      .select('*')
+      .eq('user_id', userId);
 
-  if (error) {
-    throw new Error(`Failed to fetch notification preferences: ${error.message}`);
-  }
+    if (error) {
+      throw new Error(`Failed to fetch notification preferences: ${error.message}`);
+    }
 
-  // Transform the flat preferences into a nested structure
-  const transformedPreferences: NotificationPreferences = {
-    global: {
-      enabled: true,
-      frequency: 'immediate',
-    },
-    categories: {} as NotificationPreferences['categories'],
-  };
-
-  // Initialize categories
-  const categories: NotificationCategory[] = ['account', 'documents', 'team', 'loads', 'system', 'marketing'];
-  categories.forEach(category => {
-    transformedPreferences.categories[category] = {
-      enabled: true,
-      frequency: 'immediate',
-      types: {},
+    // Initialize with default preferences
+    const defaultPreferences: NotificationPreferences = {
+      global: {
+        enabled: true,
+        frequency: 'immediate',
+      },
+      categories: {} as NotificationPreferences['categories'],
     };
-  });
 
-  // Populate with actual preferences
-  preferences.forEach(pref => {
-    const category = pref.category as NotificationCategory;
-    const type = pref.type as NotificationType;
-
-    if (!transformedPreferences.categories[category].types[type]) {
-      transformedPreferences.categories[category].types[type] = {
-        enabled: pref.enabled,
-        frequency: pref.frequency,
+    // Initialize all categories with default values
+    const categories: NotificationCategory[] = ['account', 'documents', 'team', 'loads', 'system', 'marketing'];
+    categories.forEach(category => {
+      defaultPreferences.categories[category] = {
+        enabled: true,
+        frequency: 'immediate',
+        types: {},
       };
+    });
+
+    // If no preferences exist yet, return default preferences
+    if (!preferences || preferences.length === 0) {
+      return defaultPreferences;
     }
 
-    // Update category settings based on type preferences
-    if (pref.enabled) {
-      transformedPreferences.categories[category].enabled = true;
-    }
-  });
+    // Merge existing preferences with defaults
+    const transformedPreferences = { ...defaultPreferences };
 
-  return transformedPreferences;
+    preferences.forEach(pref => {
+      const category = pref.category as NotificationCategory;
+      const type = pref.type as NotificationType;
+
+      if (!transformedPreferences.categories[category].types[type]) {
+        transformedPreferences.categories[category].types[type] = {
+          enabled: pref.enabled,
+          frequency: pref.frequency,
+        };
+      }
+
+      // Update category settings based on type preferences
+      if (pref.enabled) {
+        transformedPreferences.categories[category].enabled = true;
+      }
+    });
+
+    return transformedPreferences;
+  } catch (error) {
+    console.error('Error fetching notification preferences:', error);
+    throw error;
+  }
 }
 
 export async function updateNotificationPreference(
