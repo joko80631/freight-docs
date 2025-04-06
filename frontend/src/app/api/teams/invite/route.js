@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { generateInviteToken } from '@/lib/utils/invite-token';
-import { sendTeamInvite } from '@/lib/notifications';
+import { generateInviteToken } from '../../../lib/utils/invite-token';
+import { sendTeamInvite } from '../../../lib/notifications';
 
 const inviteSchema = z.object({
   email: z.string().email(),

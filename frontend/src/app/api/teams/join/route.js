@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { validateInviteToken } from '@/lib/utils/invite-token';
+import { validateInviteToken } from '../../../lib/utils/invite-token';
 
 export async function POST(req) {
   try {

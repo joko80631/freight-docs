@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { validateUnsubscribeToken } from '@/lib/utils/unsubscribe-token';
+import { validateUnsubscribeToken } from '../../../lib/utils/unsubscribe-token';
 
 export async function GET(req) {
   try {
