@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { useTeamStore } from '@/store/teamStore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,6 +13,8 @@ import { getErrorMessage } from '@/lib/errors';
 import { PageContainer } from '@/components/layout/page-container';
 import { NotificationPreferences } from '@/components/settings/NotificationPreferences';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { getSupabaseClient } from '@/lib/supabase/client';
+import { useAuth } from '@/providers/auth-provider';
 
 interface NotificationPreferences {
   email_updates: boolean;
@@ -35,6 +36,7 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 };
 
 function SettingsPage() {
+  const { user: authUser } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -45,24 +47,22 @@ function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const supabase = getSupabaseClient();
 
   useEffect(() => {
+    if (!authUser) {
+      router.push('/login');
+      return;
+    }
+
     async function loadProfile() {
       try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-
-        if (user) {
-          setProfile({
-            id: user.id,
-            email: user.email || '',
-            name: user.user_metadata?.name,
-            notification_preferences: user.user_metadata?.notification_preferences || DEFAULT_NOTIFICATION_PREFERENCES
-          });
-        } else {
-          throw new Error('No user found');
-        }
+        setProfile({
+          id: authUser.id,
+          email: authUser.email || '',
+          name: authUser.user_metadata?.name,
+          notification_preferences: authUser.user_metadata?.notification_preferences || DEFAULT_NOTIFICATION_PREFERENCES
+        });
       } catch (error) {
         console.error('Error loading profile:', error);
         setError(getErrorMessage(error));
@@ -72,7 +72,7 @@ function SettingsPage() {
     }
 
     loadProfile();
-  }, [supabase]);
+  }, [authUser, router]);
 
   async function handleUpdateProfile(e: React.FormEvent) {
     e.preventDefault();
