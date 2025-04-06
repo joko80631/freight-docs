@@ -1,0 +1,21 @@
+{
+  "name": "Freight Document Platform",
+  "short_name": "Freight",
+  "description": "A modern document management platform for freight and logistics companies.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0284C7",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "32x32",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "200x50",
+      "type": "image/svg+xml"
+    }
+  ]
+} 

@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
+import { generateInviteToken } from '@/lib/utils/invite-token';
+import { sendTeamInvite } from '@/lib/notifications';
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -32,7 +34,7 @@ export async function POST(req) {
     // Get the user's current team
     const { data: teamMember, error: teamError } = await supabase
       .from('team_members')
-      .select('team_id, role')
+      .select('team_id, role, teams (name)')
       .eq('user_id', session.user.id)
       .single();
 
@@ -45,55 +47,57 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    // Get the user by email
-    const { data: user, error: userError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('email', email)
+    // Get the inviter's profile
+    const { data: inviterProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', session.user.id)
       .single();
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (profileError || !inviterProfile) {
+      return NextResponse.json({ error: 'Failed to get inviter profile' }, { status: 500 });
     }
 
-    // Check if user is already a member
-    const { data: existingMember, error: memberError } = await supabase
-      .from('team_members')
-      .select('id')
-      .eq('team_id', teamMember.team_id)
-      .eq('user_id', user.id)
-      .single();
+    // Generate invite token
+    const inviteToken = generateInviteToken(teamMember.team_id, email);
 
-    if (existingMember) {
-      return NextResponse.json({ error: 'User is already a team member' }, { status: 400 });
-    }
-
-    // Add the user to the team
-    const { data: newMember, error: addError } = await supabase
-      .from('team_members')
+    // Store the invite in the database
+    const { data: invite, error: inviteError } = await supabase
+      .from('team_invites')
       .insert([{
         team_id: teamMember.team_id,
-        user_id: user.id,
-        role
-      }])
-      .select(`
-        user_id,
+        email,
         role,
-        users (
-          email
-        )
-      `)
+        token: inviteToken,
+        invited_by: session.user.id,
+        expires_at: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString() // 72 hours
+      }])
+      .select()
       .single();
 
-    if (addError) {
-      console.error('Error adding team member:', addError);
-      return NextResponse.json({ error: 'Failed to add team member' }, { status: 500 });
+    if (inviteError) {
+      console.error('Error creating invite:', inviteError);
+      return NextResponse.json({ error: 'Failed to create invitation' }, { status: 500 });
+    }
+
+    // Send the invitation email
+    try {
+      await sendTeamInvite({
+        email,
+        teamName: teamMember.teams.name,
+        inviterName: inviterProfile.full_name,
+        inviteUrl: `${process.env.NEXT_PUBLIC_APP_URL}/teams/join?token=${inviteToken}`,
+        role
+      });
+    } catch (emailError) {
+      console.error('Error sending invitation email:', emailError);
+      // Don't fail the request if email fails, but log it
     }
 
     return NextResponse.json({
-      user_id: newMember.user_id,
-      email: newMember.users[0]?.email,
-      role: newMember.role
+      email,
+      role,
+      expires_at: invite.expires_at
     });
   } catch (error) {
     console.error('Unexpected error:', error);

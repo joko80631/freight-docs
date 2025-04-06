@@ -43,6 +43,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useTeamStore } from '../store/teamStore';
 import { createTeamScopedApi } from '../utils/api';
 import { roleColors } from '@/lib/theme';
+import { toast } from "@/components/ui/use-toast";
 
 const ROLE_CONFIG = {
   ADMIN: {
@@ -120,10 +121,15 @@ export function TeamMembers() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to send invitation');
+        throw new Error(error.error || 'Failed to send invitation');
       }
 
-      await fetchMembers();
+      const data = await response.json();
+      toast({
+        title: 'Success',
+        description: `Invitation sent to ${data.email}`,
+      });
+
       setInviteEmail('');
       setIsInviteDialogOpen(false);
     } catch (error) {

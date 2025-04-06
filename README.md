@@ -1,81 +1,38 @@
-# Freight Document Tracking System
+# Freight Document Platform
 
-A modern web application for tracking freight documents and managing load information.
+A modern web application for managing freight documents and logistics operations.
 
 ## Features
 
-- User authentication with Supabase
-- Load management and tracking
-- Document upload and classification
-- Real-time status updates
-- Responsive UI with Tailwind CSS
+- Document Management
+  - Upload and organize freight documents
+  - Automatic document type detection
+  - Version control and history tracking
+  - Secure storage and access control
+
+- Email Notifications
+  - Automated document upload notifications
+  - Missing document reminders
+  - Customizable email templates
+  - Unsubscribe functionality
+  - Rate limiting and deduplication
+
+- User Management
+  - Role-based access control
+  - Team collaboration
+  - Email preferences
+  - Audit logging
 
 ## Tech Stack
 
-- Frontend: Next.js 14, React 18, Tailwind CSS
-- Backend: Node.js, Express
-- Database: Supabase
-- Authentication: Supabase Auth
-- File Storage: Supabase Storage
+- **Frontend**: Next.js 14, React, Tailwind CSS
+- **Backend**: Next.js API Routes, Supabase
+- **Email**: Resend
+- **Authentication**: Supabase Auth
+- **Storage**: Supabase Storage
+- **Database**: PostgreSQL (via Supabase)
 
-## Project Structure
-
-```
-freight/
-├── backend/
-│   ├── server.js          # Express server
-│   ├── uploads/           # File upload directory
-│   └── tests/            # Backend test files
-├── frontend/
-│   ├── src/
-│   │   ├── app/          # Next.js app directory
-│   │   ├── components/   # React components
-│   │   │   └── shared/   # Shared UI components
-│   │   └── tests/       # Frontend test files
-│   └── package.json
-└── README.md
-```
-
-## Environment Setup
-
-### Frontend Environment Variables
-
-1. Copy `frontend/.env.example` to `frontend/.env.local`:
-   ```bash
-   cp frontend/.env.example frontend/.env.local
-   ```
-
-2. Update the following variables in `frontend/.env.local`:
-   - `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
-   - `NEXT_PUBLIC_API_URL`: Your backend API URL
-   - `NEXT_PUBLIC_SITE_URL`: Your frontend URL
-   - `NEXT_PUBLIC_SITE_NAME`: Your site name
-   - Feature flags as needed
-
-### Backend Environment Variables
-
-1. Copy `backend/.env.example` to `backend/.env`:
-   ```bash
-   cp backend/.env.example backend/.env
-   ```
-
-2. Update the following variables in `backend/.env`:
-   - `SUPABASE_URL`: Your Supabase project URL
-   - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
-   - `OPENAI_API_KEY`: Your OpenAI API key
-   - `PORT`: Backend server port (default: 3001)
-   - `ALLOWED_ORIGINS`: Comma-separated list of allowed origins
-   - `MAX_FILE_SIZE`: Maximum file upload size in bytes
-   - `UPLOAD_DIR`: Directory for file uploads
-
-### Development vs Production
-
-- For local development, use the `.env.local` and `.env` files
-- For testing, use `.env.test` in the frontend
-- For production, set environment variables in your hosting platform (Vercel/Render)
-
-## Setup Instructions
+## Getting Started
 
 1. Clone the repository:
    ```bash
@@ -83,53 +40,56 @@ freight/
    cd freight
    ```
 
-2. Set up environment variables as described above
-
-3. Install dependencies:
+2. Install dependencies:
    ```bash
-   # Frontend
-   cd frontend
-   npm install
-
-   # Backend
-   cd ../backend
    npm install
    ```
 
-4. Start development servers:
+3. Set up environment variables:
    ```bash
-   # Frontend (in frontend directory)
-   npm run dev
+   cp .env.example .env.local
+   ```
+   Edit `.env.local` with your configuration values.
 
-   # Backend (in backend directory)
+4. Run the development server:
+   ```bash
    npm run dev
    ```
 
-5. Access the application:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:3001
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Development
+## Environment Variables
 
-- Frontend runs on port 3000
-- Backend API runs on port 3001
-- Use `npm run lint` to check code style
-- Use `npm run test` to run tests
+- `NEXT_PUBLIC_SUPABASE_URL`: Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+- `RESEND_API_KEY`: Your Resend API key
+- `NEXT_PUBLIC_APP_URL`: Your application URL
 
-## Deployment
+## Project Structure
 
-The application is deployed on Vercel:
-- Frontend: https://freight-docs-ten.vercel.app
-- Backend: [Your backend URL]
+```
+freight/
+├── app/                    # Next.js app directory
+│   ├── api/               # API routes
+│   ├── (auth)/            # Authentication pages
+│   └── (dashboard)/       # Dashboard pages
+├── components/            # React components
+├── lib/                   # Utility functions and libraries
+│   ├── email/            # Email system
+│   ├── supabase/         # Supabase client
+│   └── utils/            # Utility functions
+├── public/               # Static files
+└── styles/              # Global styles
+```
 
 ## Contributing
 
 1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 

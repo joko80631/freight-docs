@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="50" viewBox="0 0 200 50" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Rectangle -->
+  <rect width="200" height="50" rx="8" fill="#0284C7"/>
+  
+  <!-- Truck Icon -->
+  <path d="M30 15H40L45 25V35H40M30 35H20M20 35H15V15H30M20 35C20 37.2091 18.2091 39 16 39C13.7909 39 12 37.2091 12 35C12 32.7909 13.7909 31 16 31C18.2091 31 20 32.7909 20 35ZM40 35C40 37.2091 38.2091 39 36 39C33.7909 39 32 37.2091 32 35C32 32.7909 33.7909 31 36 31C38.2091 31 40 32.7909 40 35Z" stroke="white" stroke-width="2"/>
+  
+  <!-- Document Icon -->
+  <path d="M65 15H75V35H55V15H65M65 15V20H75M65 15V20H55" stroke="white" stroke-width="2"/>
+  
+  <!-- Text -->
+  <text x="90" y="32" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="white">FREIGHT</text>
+</svg> 
