@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
           
           // Filter recipients based on email preferences
           const eligibleRecipients = await Promise.all(
-            recipients.map(async (recipient) => {
+            recipients.map(async (recipient: any) => {
               if (!recipient || !recipient.email) return null;
               
               const { data: preferences } = await supabase

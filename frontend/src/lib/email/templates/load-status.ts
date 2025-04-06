@@ -1,4 +1,4 @@
-import { EmailTemplate, BaseTemplateData, TEMPLATE_VERSIONS } from './index';
+import { RenderedEmailTemplate, BaseTemplateData, TEMPLATE_VERSIONS } from './index';
 
 interface LoadStatusData extends BaseTemplateData {
   loadNumber: string;
@@ -8,7 +8,7 @@ interface LoadStatusData extends BaseTemplateData {
   loadUrl: string;
 }
 
-export async function loadStatusTemplate(data: LoadStatusData): Promise<EmailTemplate> {
+export async function loadStatusTemplate(data: LoadStatusData): Promise<RenderedEmailTemplate> {
   const {
     loadNumber,
     status,

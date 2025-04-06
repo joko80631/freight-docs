@@ -63,7 +63,7 @@ export async function sendTemplatedEmail({
       to,
       subject: renderedSubject,
       html: renderedContent,
-      reply_to: replyTo,
+      replyTo: replyTo,
       cc,
       bcc,
       attachments,

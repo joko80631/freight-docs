@@ -1,4 +1,4 @@
-import { EmailTemplate, BaseTemplateData, TEMPLATE_VERSIONS } from './index';
+import { RenderedEmailTemplate, BaseTemplateData, TEMPLATE_VERSIONS } from './index';
 
 interface TeamInviteData extends BaseTemplateData {
   teamName: string;
@@ -9,7 +9,7 @@ interface TeamInviteData extends BaseTemplateData {
   expiresIn?: string;
 }
 
-export async function teamInviteTemplate(data: TeamInviteData): Promise<EmailTemplate> {
+export async function teamInviteTemplate(data: TeamInviteData): Promise<RenderedEmailTemplate> {
   const {
     teamName,
     inviterName,

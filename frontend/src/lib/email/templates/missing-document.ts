@@ -1,4 +1,4 @@
-import { EmailTemplate, BaseTemplateData, TEMPLATE_VERSIONS } from './index';
+import { RenderedEmailTemplate, BaseTemplateData, TEMPLATE_VERSIONS } from './index';
 
 interface MissingDocumentData extends BaseTemplateData {
   documentType: string;
@@ -7,7 +7,7 @@ interface MissingDocumentData extends BaseTemplateData {
   uploadUrl: string;
 }
 
-export async function missingDocumentTemplate(data: MissingDocumentData): Promise<EmailTemplate> {
+export async function missingDocumentTemplate(data: MissingDocumentData): Promise<RenderedEmailTemplate> {
   const {
     documentType,
     dueDate,

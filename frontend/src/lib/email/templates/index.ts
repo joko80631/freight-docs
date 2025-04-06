@@ -64,14 +64,14 @@ export type TemplateData =
 
 export type TemplateName = keyof typeof TEMPLATE_VERSIONS;
 
-export interface EmailTemplate {
+export interface RenderedEmailTemplate {
   subject: string;
   html: string;
   version: string;
 }
 
 // Template function type with proper typing
-type TemplateFunction<T extends TemplateData> = (data: T) => Promise<EmailTemplate>;
+type TemplateFunction<T extends TemplateData> = (data: T) => Promise<RenderedEmailTemplate>;
 
 // Strongly typed template map
 const templates: Record<TemplateName, TemplateFunction<any>> = {
@@ -125,7 +125,7 @@ export function validateTemplateData(
 export async function renderTemplate(
   templateName: TemplateName,
   data: TemplateData
-): Promise<EmailTemplate> {
+): Promise<RenderedEmailTemplate> {
   const template = templates[templateName];
   if (!template) {
     throw new Error(`Template ${templateName} not found`);
