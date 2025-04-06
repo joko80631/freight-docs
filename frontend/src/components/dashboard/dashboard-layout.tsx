@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { cn } from "@/lib/utils";
+import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,45 +17,72 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     "sidebar-collapsed",
     false
   );
+  const [isMobile, setIsMobile] = useState(false);
+  const isMobileQuery = useMediaQuery("(max-width: 768px)");
+  const sidebarRef = useRef<HTMLDivElement>(null);
 
   // Prevent hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Update mobile state when media query changes
+  useEffect(() => {
+    setIsMobile(isMobileQuery);
+  }, [isMobileQuery]);
+
+  // Handle escape key to close sidebar on mobile
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isMobile && !sidebarCollapsed) {
+        setSidebarCollapsed(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isMobile, sidebarCollapsed, setSidebarCollapsed]);
+
   if (!mounted) {
     return null;
   }
 
+  // Determine if sidebar should be rendered on mobile
+  const shouldRenderSidebar = !isMobile || !sidebarCollapsed;
+
   return (
     <div className="min-h-screen bg-background" data-testid="dashboard-layout">
-      <div className="flex">
+      {/* Sidebar is conditionally rendered on mobile */}
+      {shouldRenderSidebar && (
         <Sidebar 
           collapsed={sidebarCollapsed}
-          setCollapsed={setSidebarCollapsed} 
+          setSidebarCollapsed={setSidebarCollapsed}
+          isMobile={isMobile}
+          ref={sidebarRef}
         />
-        {/* Mobile overlay - z-20 to be below sidebar (z-30) but above content */}
+      )}
+      
+      {/* Mobile overlay - only rendered when sidebar is expanded on mobile */}
+      {isMobile && !sidebarCollapsed && (
         <div 
           data-testid="mobile-overlay"
-          className={cn(
-            "fixed inset-0 z-20 bg-background/80 backdrop-blur-sm transition-opacity duration-300",
-            "md:hidden", // Only show on mobile
-            sidebarCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-          )}
+          className="fixed inset-0 z-20 bg-background/80 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setSidebarCollapsed(true)}
+          aria-hidden="true"
         />
-        <main 
-          data-testid="main-content"
-          className={cn(
-            "flex-1 transition-all duration-300 ease-in-out",
-            "min-h-screen",
-            sidebarCollapsed ? "ml-16" : "ml-64",
-            "md:ml-0" // On mobile, sidebar is absolute positioned
-          )}
-        >
-          {children}
-        </main>
-      </div>
+      )}
+      
+      {/* Main content area - clean and full-width */}
+      <main 
+        data-testid="main-content"
+        className={cn(
+          "min-h-screen w-full transition-all duration-300 ease-in-out",
+          // Desktop layout - push content based on sidebar width using padding
+          !isMobile && (sidebarCollapsed ? "pl-16" : "pl-64")
+        )}
+      >
+        {children}
+      </main>
     </div>
   );
 } 

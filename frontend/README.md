@@ -136,4 +136,67 @@ To learn more about the technologies used in this project:
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+# Freight Document Tracking System
+
+## Layout System Improvements
+
+The layout system has been refactored to address several issues:
+
+1. **Sidebar Animation and Visibility Logic**
+   - Sidebar is now conditionally rendered on mobile when collapsed
+   - Eliminates layout thrashing and improves performance
+
+2. **Overlay Visibility**
+   - Mobile overlay is only rendered when needed
+   - Prevents z-index and interaction bugs
+
+3. **Consistent Padding**
+   - Padding and layout logic is now unified
+   - Eliminates inconsistent horizontal spacing
+
+4. **Accessibility Improvements**
+   - Added keyboard navigation support
+   - Escape key closes sidebar on mobile
+   - Focus management when sidebar opens
+   - Trap focus within sidebar when open on mobile
+
+5. **Responsive Behavior**
+   - Validated across all breakpoints
+   - Consistent behavior on all screen sizes
+
+6. **Defensive Navigation**
+   - Added validation for navigation items
+   - Graceful handling of missing properties
+
+## Testing
+
+To run the tests, you'll need to install the following dependencies:
+
+```bash
+npm install --save-dev @testing-library/react @testing-library/jest-dom @types/jest jest
+```
+
+Then run the tests with:
+
+```bash
+npm test
+```
+
+## Responsive Breakpoints
+
+The layout system uses the following breakpoints:
+
+- Mobile: < 768px
+- Tablet: 768px - 1024px
+- Desktop: > 1024px
+
+## Accessibility
+
+The layout system is designed to be fully accessible:
+
+- Keyboard navigation support
+- Screen reader friendly
+- Focus management
+- ARIA attributes 

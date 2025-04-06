@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { getErrorMessage } from '@/lib/errors';
+import { PageContainer } from '@/components/layout/page-container';
 
 interface NotificationPreferences {
   email_updates: boolean;
@@ -152,7 +153,7 @@ function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">
@@ -344,7 +345,7 @@ function SettingsPage() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
 
