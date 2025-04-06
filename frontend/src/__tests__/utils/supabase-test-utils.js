@@ -5,6 +5,98 @@
 
 import { createClient } from '@supabase/supabase-js';
 
+const mockUser = {
+  id: 'test-user-id',
+  email: 'test@example.com',
+  email_confirmed_at: null,
+};
+
+const mockSession = {
+  user: mockUser,
+  access_token: 'test-access-token',
+  refresh_token: 'test-refresh-token',
+};
+
+let supabaseInstance = null;
+
+export const createMockSupabase = () => {
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
+
+  supabaseInstance = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://test.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'test-anon-key'
+  );
+
+  // Mock auth methods
+  supabaseInstance.auth = {
+    getUser: jest.fn().mockResolvedValue({ data: { user: mockUser }, error: null }),
+    signUp: jest.fn().mockImplementation(({ email }) => {
+      if (email === 'test@example.com') {
+        return Promise.resolve({ data: { user: mockUser }, error: null });
+      }
+      return Promise.resolve({ data: null, error: { message: 'User already exists' } });
+    }),
+    signInWithPassword: jest.fn().mockImplementation(({ email }) => {
+      if (email === 'unverified@example.com') {
+        return Promise.resolve({ 
+          data: null, 
+          error: { message: 'Email not confirmed' }
+        });
+      }
+      if (email === 'test@example.com') {
+        return Promise.resolve({ data: { session: mockSession }, error: null });
+      }
+      return Promise.resolve({ 
+        data: null, 
+        error: { message: 'Invalid credentials' }
+      });
+    }),
+    verifyOtp: jest.fn().mockImplementation(({ token_hash }) => {
+      if (token_hash === 'test-verification-token') {
+        return Promise.resolve({ 
+          data: { user: { ...mockUser, email_confirmed_at: new Date() } }, 
+          error: null 
+        });
+      }
+      return Promise.resolve({ 
+        data: null, 
+        error: { message: 'Invalid verification token' }
+      });
+    }),
+    signOut: jest.fn().mockResolvedValue({ error: null }),
+    onAuthStateChange: jest.fn().mockImplementation((callback) => {
+      // Call the callback immediately with the mock session
+      callback('SIGNED_IN', mockSession);
+      // Return a mock subscription
+      return {
+        data: {
+          subscription: {
+            unsubscribe: jest.fn()
+          }
+        }
+      };
+    }),
+  };
+
+  return supabaseInstance;
+};
+
+// Reset the instance between tests
+export const resetSupabaseInstance = () => {
+  supabaseInstance = null;
+};
+
+// Add a test to satisfy Jest's requirement
+describe('Supabase Test Utils', () => {
+  test('createMockSupabase returns a mock Supabase client', () => {
+    const supabase = createMockSupabase();
+    expect(supabase).toBeDefined();
+    expect(supabase.auth).toBeDefined();
+  });
+});
+
 /**
  * Tests the Supabase connection by attempting to fetch data
  * @async

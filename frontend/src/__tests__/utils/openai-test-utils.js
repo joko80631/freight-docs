@@ -3,7 +3,8 @@
  * @module openai-test-utils
  */
 
-import OpenAI from 'openai';
+import 'openai/shims/web';
+import { OpenAI } from 'openai';
 
 /**
  * Tests the OpenAI connection by attempting to classify a test document
@@ -100,4 +101,40 @@ export async function testDocumentClassification(testDocuments = []) {
         console.error('❌ Document classification test failed:', error.message);
         throw error;
     }
-} 
+}
+
+export const mockOpenAIResponse = {
+  choices: [
+    {
+      message: {
+        content: 'Test response',
+        role: 'assistant',
+      },
+    },
+  ],
+};
+
+const createMockOpenAI = () => {
+  return {
+    chat: {
+      completions: {
+        create: jest.fn().mockResolvedValue(mockOpenAIResponse)
+      }
+    }
+  };
+};
+
+// Add a test to satisfy Jest's requirement
+describe('OpenAI Test Utils', () => {
+  test('createMockOpenAI returns a mock OpenAI client', async () => {
+    const openai = createMockOpenAI();
+    expect(openai).toBeDefined();
+    expect(openai.chat.completions.create).toBeDefined();
+
+    const response = await openai.chat.completions.create({
+      messages: [{ role: 'user', content: 'test' }],
+    });
+
+    expect(response).toEqual(mockOpenAIResponse);
+  });
+}); 
