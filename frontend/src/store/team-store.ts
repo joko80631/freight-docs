@@ -52,12 +52,17 @@ export const useTeamStore = create<TeamStore>()(
       },
 
       fetchTeams: async () => {
+        const { isLoading } = get();
+        if (isLoading) return; // Prevent multiple simultaneous fetches
+
         set({ isLoading: true, error: null });
         try {
           const supabase = createClientComponentClient();
-          const { data: { user } } = await supabase.auth.getUser();
           
-          if (!user) throw new Error('No user found');
+          // Check authentication first
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
+          if (authError) throw new Error('Authentication required');
+          if (!user) throw new Error('No authenticated user');
 
           // Fetch teams where user is a member
           const { data: teamMemberships, error: membershipError } = await supabase
@@ -101,7 +106,15 @@ export const useTeamStore = create<TeamStore>()(
           }
         } catch (error) {
           console.error('Error fetching teams:', error);
-          set({ error: error instanceof Error ? error.message : 'Failed to fetch teams' });
+          set({ 
+            error: error instanceof Error ? error.message : 'Failed to fetch teams',
+            teams: [], // Clear teams on error
+            currentTeam: null // Clear current team on error
+          });
+          // Clear persisted team data on auth error
+          if (error instanceof Error && error.message === 'Authentication required') {
+            localStorage.removeItem('currentTeamId');
+          }
         } finally {
           set({ isLoading: false });
         }
@@ -110,9 +123,10 @@ export const useTeamStore = create<TeamStore>()(
       createTeam: async (name) => {
         try {
           const supabase = createClientComponentClient();
-          const { data: { user } } = await supabase.auth.getUser();
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
           
-          if (!user) throw new Error('No user found');
+          if (authError) throw new Error('Authentication required');
+          if (!user) throw new Error('No authenticated user');
 
           // Create the team
           const { data: team, error: teamError } = await supabase
