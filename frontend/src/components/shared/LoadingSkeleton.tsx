@@ -1,16 +1,15 @@
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
-interface LoadingSkeletonProps {
+interface LoadingSkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string;
 }
 
-export function LoadingSkeleton({ className }: LoadingSkeletonProps) {
+export function LoadingSkeleton({ className, ...props }: LoadingSkeletonProps) {
   return (
-    <div
-      className={cn(
-        'animate-pulse rounded-md bg-gray-200 dark:bg-gray-800',
-        className
-      )}
+    <Skeleton
+      className={cn('animate-pulse rounded-md bg-muted', className)}
+      {...props}
     />
   );
 }

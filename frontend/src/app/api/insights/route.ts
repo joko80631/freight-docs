@@ -1,54 +1,9 @@
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import OpenAI from 'openai';
-import { generatePrompt } from '@/lib/ai/generatePrompt';
-
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Simple in-memory rate limiter
-// In production, consider using Redis or another persistent store
-const rateLimiter = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT = 10; // requests per hour
-const RATE_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
 
 export async function POST(request: Request) {
   try {
-    // Get client IP for rate limiting
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0] : 'unknown';
-    
-    // Check rate limit
-    const now = Date.now();
-    const userRateLimit = rateLimiter.get(ip);
-    
-    if (userRateLimit) {
-      // Reset counter if the time window has passed
-      if (now > userRateLimit.resetTime) {
-        rateLimiter.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
-      } else if (userRateLimit.count >= RATE_LIMIT) {
-        // Rate limit exceeded
-        return NextResponse.json(
-          { error: 'Rate limit exceeded. Please try again later.' },
-          { status: 429 }
-        );
-      } else {
-        // Increment counter
-        userRateLimit.count += 1;
-      }
-    } else {
-      // First request from this IP
-      rateLimiter.set(ip, { count: 1, resetTime: now + RATE_WINDOW });
-    }
-    
-    // Get team ID from request body
     const { teamId } = await request.json();
     
     if (!teamId) {
@@ -57,66 +12,41 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
-    // Fetch metrics data for the team
-    const { data: metricsData, error: metricsError } = await supabase
+
+    const supabase = createRouteHandlerClient({ cookies });
+
+    // Get metrics data
+    const { data: metrics, error: metricsError } = await supabase
       .from('metrics')
       .select('*')
       .eq('team_id', teamId)
       .order('created_at', { ascending: false })
-      .limit(1);
+      .limit(1)
+      .single();
+
+    if (metricsError) throw metricsError;
+
+    // Generate a simple insight based on metrics
+    let insight = "Welcome to your dashboard! ";
+    
+    if (metrics) {
+      if (metrics.loads_trend > 0) {
+        insight += `Your total loads have increased by ${metrics.loads_trend}% compared to last month. `;
+      }
       
-    if (metricsError) {
-      console.error('Error fetching metrics:', metricsError);
-      return NextResponse.json(
-        { error: 'Failed to fetch metrics data' },
-        { status: 500 }
-      );
-    }
-    
-    // Fetch recent activities
-    const { data: activitiesData, error: activitiesError } = await supabase
-      .from('activities')
-      .select('*')
-      .eq('team_id', teamId)
-      .order('created_at', { ascending: false })
-      .limit(10);
+      if (metrics.on_time_delivery >= 95) {
+        insight += "Your on-time delivery rate is excellent! ";
+      } else if (metrics.on_time_delivery >= 85) {
+        insight += "Your on-time delivery rate is good, but there's room for improvement. ";
+      }
       
-    if (activitiesError) {
-      console.error('Error fetching activities:', activitiesError);
-      return NextResponse.json(
-        { error: 'Failed to fetch activities data' },
-        { status: 500 }
-      );
+      if (metrics.revenue_trend > 0) {
+        insight += `Revenue is trending up by ${metrics.revenue_trend}%. Keep up the great work!`;
+      }
+    } else {
+      insight += "Start adding loads to see insights about your freight operations.";
     }
-    
-    // Prepare data for OpenAI
-    const metrics = metricsData && metricsData.length > 0 ? metricsData[0] : null;
-    const activities = activitiesData || [];
-    
-    // Generate prompt for OpenAI
-    const prompt = generatePrompt(metrics, activities);
-    
-    // Call OpenAI API
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are a freight logistics expert AI assistant. Provide concise, actionable insights based on the data provided. Focus on trends, potential issues, and opportunities for improvement. Keep your response under 150 words."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
-      ],
-      max_tokens: 200,
-      temperature: 0.7,
-    });
-    
-    // Extract insight from OpenAI response
-    const insight = completion.choices[0]?.message?.content || "Unable to generate insights at this time.";
-    
+
     return NextResponse.json({ insight });
   } catch (error) {
     console.error('Error generating insights:', error);
