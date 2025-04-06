@@ -10,6 +10,7 @@ import { UserNav } from "@/components/dashboard/user-nav";
 import { forwardRef, useEffect, useRef } from "react";
 import { useTeamStore } from "@/store/team-store";
 import TeamSwitcher from "@/components/team/TeamSwitcher";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -27,7 +28,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
   const pathname = usePathname();
   const innerRef = useRef<HTMLDivElement>(null);
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
-  const { currentTeam, teams } = useTeamStore();
+  const { currentTeam, teams, isLoading } = useTeamStore();
   
   // Use the forwarded ref or the inner ref
   const sidebarRef = ref || innerRef;
@@ -113,7 +114,11 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
       {/* Team Switcher */}
       {!collapsed && (
         <div className="border-b p-4">
-          <TeamSwitcher />
+          {isLoading ? (
+            <Skeleton className="h-10 w-full" />
+          ) : (
+            <TeamSwitcher />
+          )}
         </div>
       )}
 

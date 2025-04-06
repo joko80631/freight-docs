@@ -7,15 +7,25 @@ interface Team {
   name: string;
   created_at: string;
   updated_at: string;
-  created_by: string;
-  role: 'admin' | 'member' | 'viewer';
+  role: 'owner' | 'admin' | 'member';
   member_count?: number;
 }
 
 interface TeamMembership {
   team_id: string;
-  role: 'admin' | 'member' | 'viewer';
+  role: 'owner' | 'admin' | 'member';
   teams: Omit<Team, 'role'>;
+}
+
+interface TeamMembershipResponse {
+  team_id: string;
+  role: 'owner' | 'admin' | 'member';
+  teams: {
+    id: string;
+    name: string;
+    created_at: string;
+    updated_at: string;
+  };
 }
 
 interface TeamStore {
@@ -64,6 +74,26 @@ export const useTeamStore = create<TeamStore>()(
           if (authError) throw new Error('Authentication required');
           if (!user) throw new Error('No authenticated user');
 
+          // First ensure the user has a profile
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (!profile) {
+            // Create profile if it doesn't exist
+            const { error: createProfileError } = await supabase
+              .from('profiles')
+              .insert([{
+                id: user.id,
+                email: user.email,
+                full_name: user.user_metadata?.full_name
+              }]);
+
+            if (createProfileError) throw createProfileError;
+          }
+
           // Fetch teams where user is a member
           const { data: teamMemberships, error: membershipError } = await supabase
             .from('team_members')
@@ -74,17 +104,49 @@ export const useTeamStore = create<TeamStore>()(
                 id,
                 name,
                 created_at,
-                updated_at,
-                created_by
+                updated_at
               )
             `)
             .eq('user_id', user.id)
-            .returns<TeamMembership[]>();
+            .returns<TeamMembershipResponse[]>();
 
           if (membershipError) throw membershipError;
 
+          if (!teamMemberships || teamMemberships.length === 0) {
+            // Create a default team for the user if they don't have any
+            const { data: defaultTeam, error: createTeamError } = await supabase
+              .from('teams')
+              .insert([{
+                name: 'My Team'
+              }])
+              .select()
+              .single();
+
+            if (createTeamError) throw createTeamError;
+
+            // Add the user as an owner of the default team
+            const { error: addMemberError } = await supabase
+              .from('team_members')
+              .insert([{
+                team_id: defaultTeam.id,
+                user_id: user.id,
+                role: 'owner'
+              }]);
+
+            if (addMemberError) throw addMemberError;
+
+            // Set the teams array with the default team
+            const teams: Team[] = [{
+              ...defaultTeam,
+              role: 'owner'
+            }];
+
+            set({ teams, currentTeam: teams[0], hasAttemptedLoad: true });
+            return;
+          }
+
           // Transform the data to match our Team interface
-          const teams: Team[] = (teamMemberships || []).map(membership => ({
+          const teams: Team[] = teamMemberships.map(membership => ({
             ...membership.teams,
             role: membership.role
           }));
@@ -131,25 +193,25 @@ export const useTeamStore = create<TeamStore>()(
           // Create the team
           const { data: team, error: teamError } = await supabase
             .from('teams')
-            .insert([{ name, created_by: user.id }])
+            .insert([{ name }])
             .select()
             .single();
 
           if (teamError) throw teamError;
 
-          // Add the creator as an admin member
+          // Add the creator as an owner member
           const { error: memberError } = await supabase
             .from('team_members')
             .insert([{
               team_id: team.id,
               user_id: user.id,
-              role: 'admin'
+              role: 'owner'
             }]);
 
           if (memberError) throw memberError;
 
           // Add role to the team object
-          const teamWithRole: Team = { ...team, role: 'admin' };
+          const teamWithRole: Team = { ...team, role: 'owner' };
           
           set((state) => ({
             teams: [...state.teams, teamWithRole],
