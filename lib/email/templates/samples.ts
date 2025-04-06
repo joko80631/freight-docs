@@ -3,7 +3,7 @@
  * This file contains realistic test data for each email template type
  */
 
-import { TemplateData } from './index';
+import { TemplateData, TemplateName } from './index';
 
 type SampleDataGenerator = (params: URLSearchParams) => Promise<TemplateData>;
 
@@ -126,4 +126,81 @@ export const sampleData = {
   },
 } as const;
 
-export type TemplateName = keyof typeof sampleData; 
+export type TemplateName = keyof typeof sampleData;
+
+/**
+ * Sample data for email templates
+ * Used for testing and preview
+ */
+export const SAMPLE_DATA: Record<TemplateName, Record<string, any>> = {
+  'document-upload': {
+    documentName: 'Bill of Lading',
+    documentType: 'BOL',
+    uploadDate: new Date().toISOString(),
+    status: 'pending',
+    loadNumber: 'LOAD-123',
+    carrierName: 'ABC Trucking',
+    documentUrl: 'https://example.com/documents/bol-123',
+  },
+  'missing-document': {
+    documentType: 'BOL',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    loadNumber: 'LOAD-123',
+    carrierName: 'ABC Trucking',
+    documentUrl: 'https://example.com/documents/upload/bol',
+  },
+  'load-status': {
+    loadNumber: 'LOAD-123',
+    status: 'in-transit',
+    estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    carrierName: 'ABC Trucking',
+    currentLocation: 'Chicago, IL',
+    trackingUrl: 'https://example.com/tracking/load-123',
+  },
+  'team-invite': {
+    inviterName: 'John Doe',
+    teamName: 'Freight Team',
+    inviteLink: 'https://example.com/invite/123',
+    role: 'Member',
+    expiresIn: '7 days',
+  },
+};
+
+/**
+ * Get sample data for a template
+ * @param templateName The name of the template
+ * @param overrides Optional overrides for the sample data
+ */
+export function getSampleData(
+  templateName: TemplateName,
+  overrides: Record<string, any> = {}
+): Record<string, any> {
+  const baseData = SAMPLE_DATA[templateName];
+  if (!baseData) {
+    throw new Error(`No sample data found for template: ${templateName}`);
+  }
+
+  return {
+    ...baseData,
+    ...overrides,
+  };
+}
+
+/**
+ * Get sample data for all templates
+ * @param overrides Optional overrides for the sample data
+ */
+export function getAllSampleData(
+  overrides: Partial<Record<TemplateName, Record<string, any>>> = {}
+): Record<TemplateName, Record<string, any>> {
+  return Object.entries(SAMPLE_DATA).reduce(
+    (acc, [templateName, data]) => ({
+      ...acc,
+      [templateName as TemplateName]: {
+        ...data,
+        ...(overrides[templateName as TemplateName] || {}),
+      },
+    }),
+    {} as Record<TemplateName, Record<string, any>>
+  );
+} 

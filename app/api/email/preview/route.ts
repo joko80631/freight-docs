@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getSampleData } from '@/lib/email/templates/samples';
-import { renderTemplate } from '@/lib/email/templates';
+import { renderTemplate, TemplateName } from '@/lib/email/templates';
+import { NextRequest } from 'next/server';
 
 export async function GET(req: Request) {
   try {
@@ -56,54 +57,28 @@ export async function GET(req: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    // Only allow in development
-    if (process.env.NODE_ENV !== 'production') {
-      // Get current user for authentication
-      const user = await getCurrentUser();
-      if (!user) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+    const { templateName, testData } = await request.json();
 
-      // Parse request body
-      const { templateName, data, format = 'html' } = await req.json();
-
-      if (!templateName) {
-        return NextResponse.json(
-          { error: 'Template name is required' },
-          { status: 400 }
-        );
-      }
-
-      // Render the template with provided data
-      const html = renderTemplate(templateName, data);
-
-      // Return based on requested format
-      if (format === 'json') {
-        return NextResponse.json({
-          template: templateName,
-          data,
-          html,
-        });
-      }
-
-      // Return the rendered HTML
-      return new NextResponse(html, {
-        headers: {
-          'Content-Type': 'text/html',
-        },
-      });
-    } else {
+    if (!templateName) {
       return NextResponse.json(
-        { error: 'Email preview only available in development' },
-        { status: 403 }
+        { error: 'Template name is required' },
+        { status: 400 }
       );
     }
+
+    // Render the template with test data
+    const renderedTemplate = await renderTemplate(
+      templateName as TemplateName,
+      testData || {}
+    );
+
+    return NextResponse.json(renderedTemplate);
   } catch (error) {
-    console.error('Error previewing email:', error);
+    console.error('Error previewing email template:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to preview email template' },
       { status: 500 }
     );
   }
