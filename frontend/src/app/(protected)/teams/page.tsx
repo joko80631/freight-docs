@@ -46,7 +46,7 @@ interface TeamMember {
   id: string;
   user_id: string;
   team_id: string;
-  role: 'admin' | 'member' | 'viewer';
+  role: 'owner' | 'admin' | 'member';
   email: string;
   name?: string;
   joined_at: string;
@@ -57,8 +57,7 @@ interface Team {
   name: string;
   created_at: string;
   updated_at: string;
-  created_by: string;
-  role: 'admin' | 'member' | 'viewer';
+  role: 'owner' | 'admin' | 'member';
   member_count?: number;
 }
 
@@ -68,7 +67,7 @@ function TeamsPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'member' | 'viewer'>('member');
+  const [inviteRole, setInviteRole] = useState<'owner' | 'admin' | 'member'>('member');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
   const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
@@ -100,7 +99,15 @@ function TeamsPage() {
 
         await fetchTeams();
         if (currentTeam) {
-          setTeam(currentTeam);
+          const teamData: Team = {
+            id: currentTeam.id,
+            name: currentTeam.name,
+            created_at: currentTeam.created_at,
+            updated_at: currentTeam.updated_at,
+            role: currentTeam.role,
+            member_count: currentTeam.member_count
+          };
+          setTeam(teamData);
           await loadTeamMembers(currentTeam.id);
         }
       } catch (error) {
@@ -127,7 +134,7 @@ function TeamsPage() {
     }
   }
 
-  async function handleRoleChange(memberId: string, newRole: 'admin' | 'member' | 'viewer') {
+  async function handleRoleChange(memberId: string, newRole: 'owner' | 'admin' | 'member') {
     try {
       const { error } = await supabase
         .from('team_members')
@@ -221,9 +228,8 @@ function TeamsPage() {
     try {
       const teamWithRole: Team = {
         ...team,
-        role: 'admin', // Default role for team creator
-        updated_at: team.updated_at || new Date().toISOString(),
-        created_by: team.created_by || currentUser?.id || ''
+        role: team.role || 'member', // Use existing role or default to member
+        updated_at: team.updated_at || new Date().toISOString()
       };
       await setCurrentTeam(teamWithRole);
       setTeam(teamWithRole);
@@ -411,14 +417,14 @@ function TeamsPage() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="role">Role</Label>
-                      <Select value={inviteRole} onValueChange={(value: 'admin' | 'member' | 'viewer') => setInviteRole(value)}>
+                      <Select value={inviteRole} onValueChange={(value: 'owner' | 'admin' | 'member') => setInviteRole(value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select role" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="admin">Admin</SelectItem>
                           <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="viewer">Viewer</SelectItem>
+                          <SelectItem value="owner">Owner</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -458,7 +464,7 @@ function TeamsPage() {
                       {isAdmin && member.user_id !== currentUser?.id ? (
                         <Select
                           value={member.role}
-                          onValueChange={(value: 'admin' | 'member' | 'viewer') => 
+                          onValueChange={(value: 'owner' | 'admin' | 'member') => 
                             handleRoleChange(member.id, value)
                           }
                         >
@@ -468,7 +474,7 @@ function TeamsPage() {
                           <SelectContent>
                             <SelectItem value="admin">Admin</SelectItem>
                             <SelectItem value="member">Member</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
+                            <SelectItem value="owner">Owner</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : (
