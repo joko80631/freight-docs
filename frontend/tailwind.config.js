@@ -98,78 +98,40 @@ module.exports = {
   	},
   	extend: {
   		colors: {
-  			border: 'hsl(var(--border))',
-  			input: 'hsl(var(--input))',
-  			ring: 'hsl(var(--ring))',
-  			background: 'hsl(var(--background))',
-  			foreground: 'hsl(var(--foreground))',
+  			// Base colors
+  			background: 'var(--background)',
+  			foreground: 'var(--foreground)',
+  			'text-primary': 'var(--text-primary)',
+  			'text-muted': 'var(--text-muted)',
+  			border: 'var(--border)',
+  			card: 'var(--card)',
+  			highlight: 'var(--highlight)',
+  			
+  			// Accent & Status colors
+  			accent: {
+  				DEFAULT: 'var(--accent)',
+  				hover: 'var(--cta)',
+  			},
+  			success: 'var(--success)',
+  			warning: 'var(--warning)',
+  			error: 'var(--error)',
+  			
+  			// Semantic UI colors
   			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))',
+  				DEFAULT: 'var(--accent)',
+  				foreground: 'var(--background)',
   			},
   			secondary: {
-  				DEFAULT: 'hsl(var(--secondary))',
-  				foreground: 'hsl(var(--secondary-foreground))'
-  			},
-  			destructive: {
-  				DEFAULT: 'hsl(var(--destructive))',
-  				foreground: 'hsl(var(--destructive-foreground))'
+  				DEFAULT: 'var(--highlight)',
+  				foreground: 'var(--text-primary)',
   			},
   			muted: {
-  				DEFAULT: 'hsl(var(--muted))',
-  				foreground: 'hsl(var(--muted-foreground))'
+  				DEFAULT: 'var(--highlight)',
+  				foreground: 'var(--text-muted)',
   			},
-  			accent: {
-  				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
-  			},
-  			popover: {
-  				DEFAULT: 'hsl(var(--popover))',
-  				foreground: 'hsl(var(--popover-foreground))'
-  			},
-  			card: {
-  				DEFAULT: 'hsl(var(--card))',
-  				foreground: 'hsl(var(--card-foreground))'
-  			},
-  			chart: {
-  				'1': 'hsl(var(--chart-1))',
-  				'2': 'hsl(var(--chart-2))',
-  				'3': 'hsl(var(--chart-3))',
-  				'4': 'hsl(var(--chart-4))',
-  				'5': 'hsl(var(--chart-5))'
-  			},
-  			neutral: {
-  				50: 'rgb(var(--color-neutral-50) / <alpha-value>)',
-  				100: 'rgb(var(--color-neutral-100) / <alpha-value>)',
-  				200: 'rgb(var(--color-neutral-200) / <alpha-value>)',
-  				300: 'rgb(var(--color-neutral-300) / <alpha-value>)',
-  				400: 'rgb(var(--color-neutral-400) / <alpha-value>)',
-  				500: 'rgb(var(--color-neutral-500) / <alpha-value>)',
-  				600: 'rgb(var(--color-neutral-600) / <alpha-value>)',
-  				700: 'rgb(var(--color-neutral-700) / <alpha-value>)',
-  				800: 'rgb(var(--color-neutral-800) / <alpha-value>)',
-  				900: 'rgb(var(--color-neutral-900) / <alpha-value>)',
-  				950: 'rgb(var(--color-neutral-950) / <alpha-value>)',
-  			},
-  			success: {
-  				100: 'rgb(var(--color-success-100) / <alpha-value>)',
-  				500: 'rgb(var(--color-success-500) / <alpha-value>)',
-  				600: 'rgb(var(--color-success-600) / <alpha-value>)',
-  			},
-  			warning: {
-  				100: 'rgb(var(--color-warning-100) / <alpha-value>)',
-  				500: 'rgb(var(--color-warning-500) / <alpha-value>)',
-  				600: 'rgb(var(--color-warning-600) / <alpha-value>)',
-  			},
-  			error: {
-  				100: 'rgb(var(--color-error-100) / <alpha-value>)',
-  				500: 'rgb(var(--color-error-500) / <alpha-value>)',
-  				600: 'rgb(var(--color-error-600) / <alpha-value>)',
-  			},
-  			info: {
-  				100: 'rgb(var(--color-info-100) / <alpha-value>)',
-  				500: 'rgb(var(--color-info-500) / <alpha-value>)',
-  				600: 'rgb(var(--color-info-600) / <alpha-value>)',
+  			destructive: {
+  				DEFAULT: 'var(--error)',
+  				foreground: 'var(--background)',
   			},
   		},
   		fontFamily: {

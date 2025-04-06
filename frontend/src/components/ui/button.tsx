@@ -6,20 +6,20 @@ import { cn } from "@/lib/utils"
 import { animationClasses } from "@/lib/animations"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90 active:scale-95 transition-transform duration-150 ease-in-out",
+          "bg-accent text-background shadow hover:bg-accent-hover active:scale-95 transition-transform duration-150 ease-in-out",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 active:scale-95 transition-transform duration-150 ease-in-out",
+          "bg-error text-background shadow-sm hover:bg-error/90 active:scale-95 transition-transform duration-150 ease-in-out",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:scale-95 transition-transform duration-150 ease-in-out",
+          "border border-border bg-background shadow-sm hover:bg-highlight hover:text-text-primary active:scale-95 transition-transform duration-150 ease-in-out",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:scale-95 transition-transform duration-150 ease-in-out",
-        ghost: "hover:bg-accent hover:text-accent-foreground active:scale-95 transition-transform duration-150 ease-in-out",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-highlight text-text-primary shadow-sm hover:bg-highlight/80 active:scale-95 transition-transform duration-150 ease-in-out",
+        ghost: "hover:bg-highlight hover:text-text-primary active:scale-95 transition-transform duration-150 ease-in-out",
+        link: "text-accent underline-offset-4 hover:underline",
       },
       size: {
         default: "h-9 px-4 py-2",
