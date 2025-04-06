@@ -1,57 +1,36 @@
 import React from 'react';
-import { cn } from '@/lib/utils';
+import { statusColors } from '@/lib/theme';
 
 interface ConfidenceBadgeProps {
   confidence: number;
-  showLabel?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-  className?: string;
+  showPercentage?: boolean;
 }
 
-export function ConfidenceBadge({
+export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({
   confidence,
-  showLabel = true,
-  size = 'md',
-  className
-}: ConfidenceBadgeProps) {
-  const confidencePercent = Math.round((confidence || 0) * 100);
-  
-  let colors = '';
-  let label = '';
-  
-  if (confidencePercent >= 85) {
-    colors = 'bg-green-100 text-green-800 border-green-200';
-    label = 'High';
-  } else if (confidencePercent >= 60) {
-    colors = 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    label = 'Medium';
+  showPercentage = true,
+}) => {
+  let status;
+  let colors;
+
+  if (confidence >= 0.8) {
+    status = 'success';
+    colors = statusColors.success;
+  } else if (confidence >= 0.5) {
+    status = 'warning';
+    colors = statusColors.warning;
   } else {
-    colors = 'bg-red-100 text-red-800 border-red-200';
-    label = 'Low';
+    status = 'error';
+    colors = statusColors.error;
   }
-  
-  const sizeClasses = {
-    sm: 'text-xs px-1.5 py-0.5',
-    md: 'text-sm px-2 py-1',
-    lg: 'text-base px-2.5 py-1.5'
-  };
-  
+
   return (
-    <span 
-      className={cn(
-        'inline-flex items-center rounded-full border font-medium',
-        colors,
-        sizeClasses[size],
-        className
+    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${colors.bg} ${colors.text} ${colors.border}`}>
+      {showPercentage && (
+        <span className="text-sm font-medium">
+          {Math.round(confidence * 100)}%
+        </span>
       )}
-    >
-      {showLabel ? (
-        <>
-          <span>{label}</span>
-          <span className="mx-1">•</span>
-        </>
-      ) : null}
-      <span>{confidencePercent}%</span>
-    </span>
+    </div>
   );
-} 
+}; 

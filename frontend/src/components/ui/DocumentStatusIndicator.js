@@ -1,4 +1,5 @@
-import { memo } from 'react';
+import React from 'react';
+import { statusColors } from '@/lib/theme';
 
 const DOCUMENT_TYPES = {
   BOL: 'Bill of Lading',
@@ -6,16 +7,19 @@ const DOCUMENT_TYPES = {
   INVOICE: 'Invoice'
 };
 
-const STATUS_COLORS = {
-  complete: 'bg-green-100 text-green-800',
-  partial: 'bg-yellow-100 text-yellow-800',
-  incomplete: 'bg-red-100 text-red-800'
-};
-
-const STATUS_ICONS = {
-  complete: '✅',
-  partial: '🟡',
-  incomplete: '🔴'
+const STATUS_CONFIG = {
+  complete: {
+    label: 'Complete',
+    ...statusColors.success,
+  },
+  partial: {
+    label: 'Partial',
+    ...statusColors.warning,
+  },
+  incomplete: {
+    label: 'Incomplete',
+    ...statusColors.error,
+  },
 };
 
 /**
@@ -25,53 +29,29 @@ const STATUS_ICONS = {
  * @param {boolean} props.showDetails - Whether to show detailed missing documents
  * @returns {JSX.Element} Document status indicator component
  */
-const DocumentStatusIndicator = memo(({ documents = [], showDetails = true }) => {
-  const requiredDocs = Object.keys(DOCUMENT_TYPES);
-  const completedDocs = documents.filter(doc => doc.status === 'completed');
-  const missingDocs = requiredDocs.filter(type => 
-    !completedDocs.some(doc => doc.type === type)
-  );
-
-  const completionPercentage = (completedDocs.length / requiredDocs.length) * 100;
-  
-  let status;
-  if (completionPercentage === 100) {
-    status = 'complete';
-  } else if (completionPercentage > 0) {
-    status = 'partial';
-  } else {
-    status = 'incomplete';
-  }
+export const DocumentStatusIndicator = ({ status, showLabel = true }) => {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.incomplete;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center space-x-2">
-        <span className={STATUS_ICONS[status]} />
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[status]}`}>
-          {completedDocs.length}/{requiredDocs.length} Documents
-        </span>
-      </div>
-      
-      {showDetails && missingDocs.length > 0 && (
-        <div className="text-xs text-gray-600">
-          Missing: {missingDocs.map(type => DOCUMENT_TYPES[type]).join(', ')}
-        </div>
-      )}
-      
-      <div className="w-full bg-gray-200 rounded-full h-1.5">
+    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${config.bg} ${config.text} ${config.border}`}>
+      {showLabel && <span className="text-sm font-medium">{config.label}</span>}
+    </div>
+  );
+};
+
+export const DocumentProgressBar = ({ status, progress }) => {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.incomplete;
+
+  return (
+    <div className="w-full">
+      <div className="w-full bg-highlight rounded-full h-1.5">
         <div
-          className={`h-1.5 rounded-full transition-all duration-300 ${
-            status === 'complete' ? 'bg-green-500' :
-            status === 'partial' ? 'bg-yellow-500' :
-            'bg-red-500'
-          }`}
-          style={{ width: `${completionPercentage}%` }}
+          className={`h-1.5 rounded-full ${config.bg}`}
+          style={{ width: `${progress}%` }}
         />
       </div>
     </div>
   );
-});
-
-DocumentStatusIndicator.displayName = 'DocumentStatusIndicator';
+};
 
 export default DocumentStatusIndicator; 

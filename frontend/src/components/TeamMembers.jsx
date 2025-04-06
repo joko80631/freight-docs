@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect } from 'react';
 import {
   Table,
@@ -41,11 +42,31 @@ import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
 import { useTeamStore } from '../store/teamStore';
 import { createTeamScopedApi } from '../utils/api';
+import { roleColors } from '@/lib/theme';
 
-const ROLE_BADGE_COLORS = {
-  ADMIN: 'bg-red-100 text-red-800',
-  MANAGER: 'bg-blue-100 text-blue-800',
-  USER: 'bg-gray-100 text-gray-800',
+const ROLE_CONFIG = {
+  ADMIN: {
+    label: 'Admin',
+    ...roleColors.admin,
+  },
+  MANAGER: {
+    label: 'Manager',
+    ...roleColors.manager,
+  },
+  USER: {
+    label: 'User',
+    ...roleColors.user,
+  },
+};
+
+export const TeamMemberBadge = ({ role }) => {
+  const config = ROLE_CONFIG[role] || ROLE_CONFIG.USER;
+
+  return (
+    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${config.bg} ${config.text} ${config.border}`}>
+      <span className="text-sm font-medium">{config.label}</span>
+    </div>
+  );
 };
 
 export function TeamMembers() {
@@ -210,9 +231,7 @@ export function TeamMembers() {
             <TableRow key={member.id}>
               <TableCell>{member.email}</TableCell>
               <TableCell>
-                <Badge className={ROLE_BADGE_COLORS[member.role]}>
-                  {member.role}
-                </Badge>
+                <TeamMemberBadge role={member.role} />
               </TableCell>
               <TableCell>
                 {new Date(member.created_at).toLocaleDateString()}

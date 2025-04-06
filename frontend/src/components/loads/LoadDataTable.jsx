@@ -18,18 +18,35 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from 'lucide-react';
+import { statusColors } from '@/lib/theme';
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'active':
-      return 'bg-green-100 text-green-800';
-    case 'completed':
-      return 'bg-blue-100 text-blue-800';
-    case 'cancelled':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
+const STATUS_CONFIG = {
+  active: {
+    label: 'Active',
+    ...statusColors.success,
+  },
+  pending: {
+    label: 'Pending',
+    ...statusColors.warning,
+  },
+  completed: {
+    label: 'Completed',
+    ...statusColors.info,
+  },
+  cancelled: {
+    label: 'Cancelled',
+    ...statusColors.error,
+  },
+};
+
+export const LoadStatusBadge = ({ status }) => {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+
+  return (
+    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${config.bg} ${config.text} ${config.border}`}>
+      <span className="text-sm font-medium">{config.label}</span>
+    </div>
+  );
 };
 
 const LoadDataTable = ({ loads, onView, onEdit, onDelete }) => {
@@ -64,9 +81,7 @@ const LoadDataTable = ({ loads, onView, onEdit, onDelete }) => {
               <TableCell>{load.origin}</TableCell>
               <TableCell>{load.destination}</TableCell>
               <TableCell>
-                <Badge className={getStatusColor(load.status)}>
-                  {load.status}
-                </Badge>
+                <LoadStatusBadge status={load.status} />
               </TableCell>
               <TableCell>
                 {format(new Date(load.created_at), 'MMM d, yyyy')}
