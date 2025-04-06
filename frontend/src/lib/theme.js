@@ -1,82 +1,95 @@
 /**
- * Centralized theme configuration and color tokens
+ * Minimal black and white theme configuration
  */
 
-// Status color configurations
+// Base colors
+export const colors = {
+  black: '#000000',
+  white: '#FFFFFF',
+  gray: {
+    100: '#F5F5F5',
+    200: '#EEEEEE',
+    300: '#E0E0E0',
+    400: '#BDBDBD',
+    500: '#9E9E9E',
+    600: '#757575',
+    700: '#616161',
+    800: '#424242',
+    900: '#212121',
+  }
+};
+
+// Status colors - using grayscale instead of colored variants
 export const statusColors = {
   success: {
-    bg: 'bg-success/10',
-    text: 'text-success',
-    border: 'border-success/20',
-    hover: 'hover:bg-success/20',
+    bg: 'bg-gray-100',
+    text: 'text-black',
+    border: 'border-gray-300',
   },
   warning: {
-    bg: 'bg-warning/10',
-    text: 'text-warning',
-    border: 'border-warning/20',
-    hover: 'hover:bg-warning/20',
+    bg: 'bg-gray-200',
+    text: 'text-black',
+    border: 'border-gray-400',
   },
   error: {
-    bg: 'bg-error/10',
-    text: 'text-error',
-    border: 'border-error/20',
-    hover: 'hover:bg-error/20',
+    bg: 'bg-gray-300',
+    text: 'text-black',
+    border: 'border-gray-500',
   },
   info: {
-    bg: 'bg-accent/10',
-    text: 'text-accent',
-    border: 'border-accent/20',
-    hover: 'hover:bg-accent/20',
+    bg: 'bg-gray-100',
+    text: 'text-black',
+    border: 'border-gray-300',
   },
 };
 
-// Role-based color configurations
+// Role colors - using grayscale instead of colored variants
 export const roleColors = {
   admin: {
-    bg: 'bg-error/10',
-    text: 'text-error',
-    border: 'border-error/20',
+    bg: 'bg-gray-300',
+    text: 'text-black',
+    border: 'border-gray-500',
   },
   manager: {
-    bg: 'bg-accent/10',
-    text: 'text-accent',
-    border: 'border-accent/20',
+    bg: 'bg-gray-200',
+    text: 'text-black',
+    border: 'border-gray-400',
   },
   user: {
-    bg: 'bg-highlight',
-    text: 'text-text-primary',
-    border: 'border-border',
+    bg: 'bg-gray-100',
+    text: 'text-black',
+    border: 'border-gray-300',
   },
 };
 
-// Common layout color combinations
+// Layout colors
 export const layoutColors = {
-  card: 'bg-background border border-border text-text-primary',
-  panel: 'bg-background border border-border',
-  overlay: 'bg-background/80 backdrop-blur-sm',
-  modal: 'bg-background border border-border shadow-lg',
+  card: 'bg-white border border-gray-300 text-black',
+  panel: 'bg-white border border-gray-300',
+  overlay: 'bg-white/90 backdrop-blur-sm',
+  modal: 'bg-white border border-gray-300 shadow-sm',
 };
 
-// Text color combinations
+// Text colors
 export const textColors = {
-  primary: 'text-text-primary',
-  muted: 'text-text-muted',
-  accent: 'text-accent',
-  success: 'text-success',
-  warning: 'text-warning',
-  error: 'text-error',
+  primary: 'text-black',
+  muted: 'text-gray-600',
+  accent: 'text-black',
+  success: 'text-black',
+  warning: 'text-black',
+  error: 'text-black',
 };
 
 // Interactive state colors
 export const interactiveColors = {
   button: {
-    primary: 'bg-accent text-background hover:bg-accent-hover',
-    secondary: 'bg-highlight text-text-primary hover:bg-highlight/80',
-    outline: 'border border-border bg-background hover:bg-highlight',
-    ghost: 'hover:bg-highlight hover:text-text-primary',
-    link: 'text-accent hover:underline',
+    primary: 'bg-black text-white hover:bg-gray-800',
+    secondary: 'bg-gray-100 text-black hover:bg-gray-200',
+    outline: 'border border-gray-300 bg-white hover:bg-gray-100',
+    ghost: 'hover:bg-gray-100 hover:text-black',
+    link: 'text-black hover:underline',
   },
   input: {
-    base: 'bg-background border border-border focus:border-accent focus:ring-accent/20',
+    base: 'bg-white border border-gray-300 focus:border-black focus:ring-gray-200',
   },
 }; 

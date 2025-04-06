@@ -44,7 +44,7 @@ export const DocumentProgressBar = ({ status, progress }) => {
 
   return (
     <div className="w-full">
-      <div className="w-full bg-highlight rounded-full h-1.5">
+      <div className="w-full bg-gray-100 rounded-full h-1.5">
         <div
           className={`h-1.5 rounded-full ${config.bg}`}
           style={{ width: `${progress}%` }}

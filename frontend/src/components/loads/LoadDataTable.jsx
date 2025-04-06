@@ -59,66 +59,53 @@ const LoadDataTable = ({ loads, onView, onEdit, onDelete }) => {
   }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Load ID</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Origin</TableHead>
-            <TableHead>Destination</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Documents</TableHead>
-            <TableHead className="w-[100px]">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-300">
+        <thead className="bg-gray-100">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+              Load ID
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+              Status
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+              Origin
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+              Destination
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-black uppercase tracking-wider">
+              Created At
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-300">
           {loads.map((load) => (
-            <TableRow key={load.id}>
-              <TableCell className="font-medium">{load.id}</TableCell>
-              <TableCell>{load.customer_name}</TableCell>
-              <TableCell>{load.origin}</TableCell>
-              <TableCell>{load.destination}</TableCell>
-              <TableCell>
+            <tr
+              key={load.id}
+              onClick={() => onView(load)}
+              className="hover:bg-gray-100 cursor-pointer"
+            >
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                {load.id}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
                 <LoadStatusBadge status={load.status} />
-              </TableCell>
-              <TableCell>
-                {format(new Date(load.created_at), 'MMM d, yyyy')}
-              </TableCell>
-              <TableCell>
-                {load.document_count || 0} / {load.required_documents || 0}
-              </TableCell>
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onView(load)}>
-                      <Eye className="mr-2 h-4 w-4" />
-                      View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onEdit(load)}>
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => onDelete(load)}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                {load.origin}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                {load.destination}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                {new Date(load.createdAt).toLocaleDateString()}
+              </td>
+            </tr>
           ))}
-        </TableBody>
-      </Table>
+        </tbody>
+      </table>
     </div>
   );
 };
