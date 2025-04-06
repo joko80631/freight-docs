@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { navigationConfig } from "@/config/navigation";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { UserNav } from "@/components/dashboard/user-nav";
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -21,7 +22,7 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(collapsed);
-  
+
   const handleToggle = () => {
     const newState = !isCollapsed;
     setIsCollapsed(newState);
@@ -32,9 +33,14 @@ export function Sidebar({
 
   return (
     <aside
+      data-testid="sidebar"
       className={cn(
         "fixed inset-y-0 left-0 z-30 flex h-full flex-col border-r border-border/80 bg-background/95 transition-all duration-300 ease-in-out",
+        "md:translate-x-0", // Always visible on desktop
         isCollapsed ? "w-16" : "w-64",
+        // Mobile behavior
+        "translate-x-0 md:translate-x-0", // Default state
+        isCollapsed && "-translate-x-full md:translate-x-0", // Collapsed state
         className
       )}
     >
@@ -49,6 +55,7 @@ export function Sidebar({
           size="sm"
           className="ml-auto"
           onClick={handleToggle}
+          data-testid="sidebar-toggle"
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -108,6 +115,13 @@ export function Sidebar({
           </div>
         </div>
       )}
+      
+      <div className="border-t p-4">
+        <div className="flex items-center justify-between">
+          {!isCollapsed && <span className="text-sm font-medium">Account</span>}
+          <UserNav />
+        </div>
+      </div>
     </aside>
   );
 } 

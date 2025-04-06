@@ -1,6 +1,5 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
-    darkMode: ['class'],
     content: [
     './src/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
@@ -98,40 +97,40 @@ module.exports = {
   	},
   	extend: {
   		colors: {
-  			// Base colors
-  			background: 'var(--background)',
-  			foreground: 'var(--foreground)',
-  			'text-primary': 'var(--text-primary)',
-  			'text-muted': 'var(--text-muted)',
-  			border: 'var(--border)',
-  			card: 'var(--card)',
-  			highlight: 'var(--highlight)',
+  			// Base colors - Strict Black/White/Gray
+  			background: '#ffffff',
+  			foreground: '#000000',
+  			'text-primary': '#000000',
+  			'text-muted': '#666666',
+  			border: '#e5e5e5',
+  			card: '#f9f9f9',
+  			highlight: '#f0f0f0',
   			
   			// Accent & Status colors
   			accent: {
-  				DEFAULT: 'var(--accent)',
-  				hover: 'var(--cta)',
+  				DEFAULT: '#0070f3',
+  				hover: '#0051a3',
   			},
-  			success: 'var(--success)',
-  			warning: 'var(--warning)',
-  			error: 'var(--error)',
+  			success: '#22c55e',
+  			warning: '#ffcc00',
+  			error: '#ef4444',
   			
-  			// Semantic UI colors
+  			// Semantic UI colors - Mapped to strict values
   			primary: {
-  				DEFAULT: 'var(--accent)',
-  				foreground: 'var(--background)',
+  				DEFAULT: '#0070f3',
+  				foreground: '#ffffff',
   			},
   			secondary: {
-  				DEFAULT: 'var(--highlight)',
-  				foreground: 'var(--text-primary)',
+  				DEFAULT: '#f0f0f0',
+  				foreground: '#000000',
   			},
   			muted: {
-  				DEFAULT: 'var(--highlight)',
-  				foreground: 'var(--text-muted)',
+  				DEFAULT: '#f0f0f0',
+  				foreground: '#666666',
   			},
   			destructive: {
-  				DEFAULT: 'var(--error)',
-  				foreground: 'var(--background)',
+  				DEFAULT: '#ef4444',
+  				foreground: '#ffffff',
   			},
   		},
   		fontFamily: {
@@ -144,12 +143,12 @@ module.exports = {
   			container: '800px'
   		},
   		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)',
-  			xl: 'var(--radius-xl)',
-  			'2xl': 'var(--radius-2xl)',
-  			full: 'var(--radius-full)',
+  			lg: '0.375rem',
+  			md: '0.25rem',
+  			sm: '0.125rem',
+  			xl: '0.75rem',
+  			'2xl': '1rem',
+  			full: '9999px',
   		},
   		spacing: {
   			'2': '0.5rem',    /* 8px */
@@ -161,15 +160,15 @@ module.exports = {
   			'24': '6rem',     /* 96px */
   		},
   		boxShadow: {
-  			sm: 'var(--shadow-sm)',
-  			md: 'var(--shadow-md)',
-  			lg: 'var(--shadow-lg)',
-  			xl: 'var(--shadow-xl)',
+  			sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  			md: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+  			lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+  			xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
   		},
   		transitionDuration: {
-  			fast: 'var(--transition-fast)',
-  			normal: 'var(--transition-normal)',
-  			slow: 'var(--transition-slow)',
+  			fast: '150ms',
+  			normal: '250ms',
+  			slow: '350ms',
   		},
   		keyframes: {
   			'accordion-down': {

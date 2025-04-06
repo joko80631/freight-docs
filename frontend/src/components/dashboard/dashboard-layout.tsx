@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Suspense, useEffect, useState } from "react";
 import { useLocalStorage } from "@/lib/useLocalStorage";
-import { TopBar } from "@/components/dashboard/top-bar";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { cn } from "@/lib/utils";
 
@@ -28,18 +27,31 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <TopBar />
+    <div className="min-h-screen bg-background" data-testid="dashboard-layout">
       <div className="flex">
         <Sidebar 
           collapsed={sidebarCollapsed}
           setCollapsed={setSidebarCollapsed} 
         />
-        <main className={cn(
-          "flex-1 transition-all duration-300 ease-in-out",
-          sidebarCollapsed ? "ml-16" : "ml-64",
-          "md:ml-0" // On mobile, sidebar is absolute positioned
-        )}>
+        {/* Mobile overlay - z-20 to be below sidebar (z-30) but above content */}
+        <div 
+          data-testid="mobile-overlay"
+          className={cn(
+            "fixed inset-0 z-20 bg-background/80 backdrop-blur-sm transition-opacity duration-300",
+            "md:hidden", // Only show on mobile
+            sidebarCollapsed ? "opacity-0 pointer-events-none" : "opacity-100"
+          )}
+          onClick={() => setSidebarCollapsed(true)}
+        />
+        <main 
+          data-testid="main-content"
+          className={cn(
+            "flex-1 transition-all duration-300 ease-in-out",
+            "min-h-screen",
+            sidebarCollapsed ? "ml-16" : "ml-64",
+            "md:ml-0" // On mobile, sidebar is absolute positioned
+          )}
+        >
           {children}
         </main>
       </div>

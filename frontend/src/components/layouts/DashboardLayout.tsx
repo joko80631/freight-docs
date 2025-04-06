@@ -1,86 +1,64 @@
 "use client";
 
 import * as React from "react";
-import { Suspense } from "react";
-import { useLocalStorage } from "@/hooks/useLocalStorage";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
-import { PageSkeleton } from "@/components/ui/page-skeleton";
-import { SideNav } from "@/components/layouts/SideNav";
-import { TopBar } from "@/components/layouts/TopBar";
+import { Suspense, useEffect, useState } from "react";
+import { useLocalStorage } from "@/lib/useLocalStorage";
+import { Sidebar } from "@/components/dashboard/sidebar";
 import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  className?: string;
 }
 
-export function DashboardLayout({
-  children,
-  className,
-}: DashboardLayoutProps) {
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useLocalStorage(
+export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const [mounted, setMounted] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useLocalStorage(
     "sidebar-collapsed",
     false
   );
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = React.useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
-  const handleSidebarToggle = React.useCallback(() => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  }, [isSidebarCollapsed, setIsSidebarCollapsed]);
-
-  const handleMobileSidebarToggle = React.useCallback(() => {
-    setIsMobileSidebarOpen(!isMobileSidebarOpen);
-  }, [isMobileSidebarOpen]);
-
-  // Close mobile sidebar when screen size changes to desktop
-  React.useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) {
-        setIsMobileSidebarOpen(false);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <div className="relative min-h-screen flex flex-col bg-background text-foreground">
-      <TopBar 
-        className="border-b border-border/40 backdrop-blur-sm"
-        onSidebarToggle={handleMobileSidebarToggle} 
-        sidebarOpen={isMobileSidebarOpen} 
-      />
-      
-      <div className="flex-1 flex">
-        {/* Mobile overlay */}
-        {isMobileSidebarOpen && (
+    <div className="min-h-screen bg-background">
+      <div className="flex">
+        <Sidebar 
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed} 
+        />
+        {isMobile && !sidebarCollapsed && (
           <div 
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-20 md:hidden"
-            onClick={handleMobileSidebarToggle}
-            aria-hidden="true"
+            className="fixed inset-0 z-20 bg-background/80 backdrop-blur-sm"
+            onClick={() => setSidebarCollapsed(true)}
           />
         )}
-        
-        <SideNav 
-          className={cn(
-            "border-r border-border/80 bg-background/95",
-            "md:translate-x-0 transition-transform duration-300 ease-in-out",
-            isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-          )}
-          collapsed={isSidebarCollapsed} 
-        />
-        
         <main className={cn(
           "flex-1 transition-all duration-300 ease-in-out",
-          isSidebarCollapsed ? "md:pl-16" : "md:pl-64",
-          className
+          sidebarCollapsed ? "ml-16" : "ml-64",
+          isMobile && "ml-0" // On mobile, sidebar is absolute positioned
         )}>
-          <ErrorBoundary>
-            <Suspense fallback={<PageSkeleton />}>
-              {children}
-            </Suspense>
-          </ErrorBoundary>
+          {children}
         </main>
       </div>
     </div>
