@@ -45,7 +45,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex">
         <Sidebar 
           collapsed={sidebarCollapsed}
-          setCollapsed={setSidebarCollapsed} 
+          setSidebarCollapsed={setSidebarCollapsed} 
         />
         {isMobile && !sidebarCollapsed && (
           <div 
