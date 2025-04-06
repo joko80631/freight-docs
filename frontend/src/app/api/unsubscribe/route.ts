@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { validateUnsubscribeToken } from '../../../lib/utils/unsubscribe-token';
+import { validateUnsubscribeToken } from '@/lib/unsubscribe-token';
 
-export async function GET(req) {
+interface EmailCategories {
+  [key: string]: boolean;
+}
+
+export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const token = searchParams.get('token');
@@ -14,7 +18,7 @@ export async function GET(req) {
 
     // Validate the unsubscribe token
     const validationResult = validateUnsubscribeToken(token);
-    if (!validationResult.valid) {
+    if (!validationResult.valid || !validationResult.email || !validationResult.scope) {
       return NextResponse.json({ 
         error: validationResult.error || 'Invalid unsubscribe token',
         expired: validationResult.expired 
@@ -56,7 +60,7 @@ export async function GET(req) {
       }
 
       // Initialize email categories if not exists
-      const emailCategories = preferences?.email_categories || {};
+      const emailCategories: EmailCategories = preferences?.email_categories || {};
       
       // Set the specific category to false
       emailCategories[scope] = false;

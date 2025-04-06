@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
-import { validateInviteToken } from '../../../lib/utils/invite-token';
+import { validateInviteToken } from '@/lib/invite-token';
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
 
     // Get the current user's session
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session) {
+    if (sessionError || !session || !session.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -22,7 +22,7 @@ export async function POST(req) {
 
     // Validate the invite token
     const validationResult = validateInviteToken(token);
-    if (!validationResult.valid) {
+    if (!validationResult.valid || !validationResult.email) {
       return NextResponse.json({ 
         error: validationResult.error || 'Invalid invite token',
         expired: validationResult.expired 

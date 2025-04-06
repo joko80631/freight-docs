@@ -2,15 +2,25 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { generateInviteToken } from '../../../lib/utils/invite-token';
-import { sendTeamInvite } from '../../../lib/notifications';
+import { generateInviteToken } from '@/lib/invite-token';
+import { sendTeamInvite } from '@/lib/notifications';
+
+interface Team {
+  name: string;
+}
+
+interface TeamMember {
+  team_id: string;
+  role: string;
+  teams: Team;
+}
 
 const inviteSchema = z.object({
   email: z.string().email(),
   role: z.enum(['ADMIN', 'MANAGER', 'USER']),
 });
 
-export async function POST(req) {
+export async function POST(req: Request) {
   try {
     const cookieStore = cookies();
     const supabase = createClient(cookieStore);
@@ -36,7 +46,7 @@ export async function POST(req) {
       .from('team_members')
       .select('team_id, role, teams (name)')
       .eq('user_id', session.user.id)
-      .single();
+      .single() as { data: TeamMember | null, error: any };
 
     if (teamError || !teamMember) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
@@ -82,13 +92,13 @@ export async function POST(req) {
 
     // Send the invitation email
     try {
-      await sendTeamInvite({
+      await sendTeamInvite(
         email,
-        teamName: teamMember.teams.name,
-        inviterName: inviterProfile.full_name,
-        inviteUrl: `${process.env.NEXT_PUBLIC_APP_URL}/teams/join?token=${inviteToken}`,
-        role
-      });
+        inviterProfile.full_name,
+        teamMember.teams.name,
+        inviteToken,
+        session.user.id
+      );
     } catch (emailError) {
       console.error('Error sending invitation email:', emailError);
       // Don't fail the request if email fails, but log it

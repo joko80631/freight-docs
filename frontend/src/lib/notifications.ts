@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { sendTemplatedEmail } from './email';
 import { EmailRecipient } from './email/types';
+import { TemplateName, TemplateData } from './email/templates';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -50,14 +51,13 @@ export async function sendTeamInvite(
     
     // Send the email using the template
     await sendTemplatedEmail(
-      'team-invite',
+      'team-invite' as TemplateName,
       {
         inviterName,
         teamName,
         inviteUrl,
         recipientName,
-        title: `You've been invited to join ${teamName}`
-      },
+      } as TemplateData,
       { email: recipientEmail, name: recipientName },
       {
         userId: inviterId,
@@ -124,14 +124,14 @@ export async function sendMissingDocumentReminder(
     
     // Send the email using the template
     await sendTemplatedEmail(
-      'missing-document',
+      'missing-document' as TemplateName,
       {
         documentType,
         dueDate,
         recipientName,
-        documentUrl,
-        title: `Missing Document: ${documentType} for Load ${load.reference_number}`
-      },
+        uploadUrl: documentUrl,
+        loadNumber: load.reference_number,
+      } as TemplateData,
       { email: recipientEmail, name: recipientName },
       {
         userId,
@@ -180,15 +180,13 @@ export async function sendClassificationResult(
     
     // Send the email using the template
     await sendTemplatedEmail(
-      'classification-result',
+      'document-upload' as TemplateName,
       {
-        documentName: classificationResult.documentName,
-        classification: classificationResult.classification,
-        confidence: classificationResult.confidence,
-        recipientName,
+        documentType: classificationResult.classification,
+        uploadedBy: 'AI Classification',
         documentUrl,
-        title: `Document Classified: ${classificationResult.documentName}`
-      },
+        recipientName,
+      } as TemplateData,
       { email: recipientEmail, name: recipientName },
       {
         userId,
@@ -268,11 +266,11 @@ export async function sendTeamNotification(
         };
         
         return sendTemplatedEmail(
-          templateName,
+          templateName as TemplateName,
           {
             ...data,
             recipientName: profile.full_name
-          },
+          } as TemplateData,
           recipient,
           {
             subject: options.subject,
