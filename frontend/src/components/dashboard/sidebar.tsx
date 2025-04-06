@@ -68,6 +68,11 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
     }
   };
 
+  // Split navigation items into active and secondary sections
+  const activePages = navigationConfig.filter(item => item.featureFlag !== false).slice(0, 3); // First 3 active items
+  const secondaryPages = navigationConfig.filter(item => item.featureFlag !== false).slice(3); // Remaining active items
+  const disabledPages = navigationConfig.filter(item => item.featureFlag === false); // Disabled items
+
   return (
     <aside
       ref={sidebarRef}
@@ -112,63 +117,145 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
         </Button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-4" role="navigation">
-        <ul className="space-y-1 px-2">
-          {navigationConfig.map((item) => {
-            // Defensive check for required properties
-            if (!item.href || !item.label) {
-              console.error("Navigation item missing required properties:", item);
-              return null;
-            }
-            
+      <nav className="flex-1 overflow-y-auto">
+        {/* Active Pages Section */}
+        <div className="space-y-1 px-2 py-4">
+          {activePages.map((item) => {
             const isActive = pathname === item.href;
             return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                    collapsed && "justify-center"
-                  )}
-                  aria-current={isActive ? "page" : undefined}
-                >
-                  {item.icon ? (
-                    <item.icon
-                      className={cn(
-                        "h-5 w-5",
-                        collapsed ? "mr-0" : "mr-3"
-                      )}
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <span className="h-5 w-5 mr-3" aria-hidden="true" />
-                  )}
-                  {!collapsed && <span>{item.label}</span>}
-                  {collapsed && (
-                    <span className="sr-only">{item.label}</span>
-                  )}
-                </Link>
-              </li>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  collapsed && "justify-center"
+                )}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {item.icon ? (
+                  <item.icon
+                    className={cn(
+                      "h-5 w-5",
+                      collapsed ? "mr-0" : "mr-3"
+                    )}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span className="h-5 w-5 mr-3" aria-hidden="true" />
+                )}
+                {!collapsed && <span>{item.label}</span>}
+                {collapsed && (
+                  <span className="sr-only">{item.label}</span>
+                )}
+              </Link>
             );
           })}
-        </ul>
-      </nav>
-
-      {!collapsed && (
-        <div className="border-t p-4">
-          <div className="flex items-center space-x-4">
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-medium">Freight SaaS</p>
-              <p className="text-xs text-muted-foreground">
-                Version 1.0.0
-              </p>
-            </div>
-          </div>
         </div>
-      )}
+
+        {/* Divider */}
+        {!collapsed && (
+          <div className="px-4 py-2">
+            <div className="h-px bg-border" />
+          </div>
+        )}
+
+        {/* Secondary Pages Section */}
+        <div className="space-y-1 px-2 py-4">
+          {secondaryPages.map((item) => {
+            const isActive = pathname === item.href;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  collapsed && "justify-center"
+                )}
+                aria-current={isActive ? "page" : undefined}
+              >
+                {item.icon ? (
+                  <item.icon
+                    className={cn(
+                      "h-5 w-5",
+                      collapsed ? "mr-0" : "mr-3"
+                    )}
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <span className="h-5 w-5 mr-3" aria-hidden="true" />
+                )}
+                {!collapsed && <span>{item.label}</span>}
+                {collapsed && (
+                  <span className="sr-only">{item.label}</span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Disabled/Coming Soon Pages Section */}
+        {disabledPages.length > 0 && (
+          <>
+            {/* Divider */}
+            {!collapsed && (
+              <div className="px-4 py-2">
+                <div className="h-px bg-border" />
+              </div>
+            )}
+
+            <div className="space-y-1 px-2 py-4">
+              {disabledPages.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      isActive
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                      collapsed && "justify-center",
+                      "opacity-50 cursor-not-allowed"
+                    )}
+                    aria-current={isActive ? "page" : undefined}
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    {item.icon ? (
+                      <item.icon
+                        className={cn(
+                          "h-5 w-5",
+                          collapsed ? "mr-0" : "mr-3"
+                        )}
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <span className="h-5 w-5 mr-3" aria-hidden="true" />
+                    )}
+                    {!collapsed && (
+                      <div className="flex items-center justify-between w-full">
+                        <span>{item.label}</span>
+                        {item.comingSoon && (
+                          <span className="text-xs text-muted-foreground">Coming Soon</span>
+                        )}
+                      </div>
+                    )}
+                    {collapsed && (
+                      <span className="sr-only">{item.label}</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          </>
+        )}
+      </nav>
       
       <div className="border-t p-4">
         <div className="flex items-center justify-between">
