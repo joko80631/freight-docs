@@ -35,7 +35,7 @@ export class ResendProvider implements EmailProvider {
           bcc: options.bcc ? this.normalizeRecipients(options.bcc) : undefined,
           subject: options.subject,
           html: options.content,
-          reply_to: options.replyTo?.email,
+          replyTo: options.replyTo?.email,
           attachments: options.attachments?.map(attachment => ({
             filename: attachment.filename,
             content: attachment.content,

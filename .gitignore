@@ -76,4 +76,7 @@ temp/
 # Cache
 .cache/
 .npm/
-.eslintcache 
+.eslintcache
+
+# Package lock
+/package-lock.json 

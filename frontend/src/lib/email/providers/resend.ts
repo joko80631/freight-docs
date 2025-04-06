@@ -168,7 +168,7 @@ export class ResendProvider implements EmailProvider {
           bcc: options.bcc ? this.formatRecipients(options.bcc) : undefined,
           subject: options.subject,
           html: options.content,
-          reply_to: options.replyTo ? this.formatRecipient(options.replyTo) : undefined,
+          replyTo: options.replyTo ? this.formatRecipient(options.replyTo) : undefined,
           attachments: options.attachments?.map(attachment => ({
             filename: attachment.filename,
             content: attachment.content,
