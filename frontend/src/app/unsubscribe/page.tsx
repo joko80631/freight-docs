@@ -1,116 +1,87 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSearchParams } from 'next/navigation';
+import { processUnsubscribe } from '@/lib/email/utils/unsubscribe';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, CheckCircle, XCircle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function UnsubscribePage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const router = useRouter();
   const searchParams = useSearchParams();
-
   const token = searchParams.get('token');
+  const [status, setStatus] = useState<{
+    loading: boolean;
+    success: boolean;
+    message: string;
+  }>({
+    loading: true,
+    success: false,
+    message: '',
+  });
 
   useEffect(() => {
-    if (!token) {
-      setError('No unsubscribe token provided');
-      setIsLoading(false);
-      return;
-    }
-
-    const handleUnsubscribe = async () => {
-      try {
-        const response = await fetch(`/api/unsubscribe?token=${token}`);
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to unsubscribe');
-        }
-
-        setSuccess(true);
-        setMessage(data.message);
-      } catch (error) {
-        console.error('Error unsubscribing:', error);
-        setError(error instanceof Error ? error.message : 'Failed to unsubscribe');
-      } finally {
-        setIsLoading(false);
+    async function handleUnsubscribe() {
+      if (!token) {
+        setStatus({
+          loading: false,
+          success: false,
+          message: 'No unsubscribe token provided',
+        });
+        return;
       }
-    };
+
+      try {
+        const result = await processUnsubscribe(token);
+        setStatus({
+          loading: false,
+          success: result.success,
+          message: result.message,
+        });
+      } catch (error) {
+        setStatus({
+          loading: false,
+          success: false,
+          message: 'An error occurred while processing your request',
+        });
+      }
+    }
 
     handleUnsubscribe();
   }, [token]);
 
-  if (isLoading) {
-    return (
-      <div className="container max-w-lg mx-auto py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Processing Unsubscribe Request</CardTitle>
-            <CardDescription>
-              Please wait while we process your request...
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center py-6">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container max-w-lg mx-auto py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-red-600">
-              <XCircle className="h-6 w-6" />
-              Unsubscribe Failed
-            </CardTitle>
-            <CardDescription>
-              {error}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button
-              onClick={() => router.push('/')}
-              variant="outline"
-            >
-              Return to Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="container max-w-lg mx-auto py-8">
-      <Card>
+    <div className="container mx-auto py-12 flex justify-center">
+      <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-600">
-            <CheckCircle className="h-6 w-6" />
-            Unsubscribed Successfully
-          </CardTitle>
-          <CardDescription>
-            {message || 'You have been successfully unsubscribed.'}
-          </CardDescription>
+          <CardTitle>Email Preferences</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-gray-500">
-            If you change your mind, you can update your email preferences in your account settings.
-          </p>
-          <Button
-            onClick={() => router.push('/')}
-            variant="outline"
-          >
-            Return to Home
-          </Button>
+        <CardContent>
+          {status.loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+              <p className="mt-4">Processing your request...</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className={`p-4 rounded-md ${status.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                <p>{status.message}</p>
+              </div>
+
+              <div className="text-center">
+                <p className="mb-4">
+                  {status.success
+                    ? 'You can always update your email preferences in your account settings.'
+                    : 'If you believe this is an error, please contact support.'}
+                </p>
+                <Button asChild>
+                  <Link href="/settings">
+                    {status.success ? 'Go to Settings' : 'Contact Support'}
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

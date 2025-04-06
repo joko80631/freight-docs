@@ -1,0 +1,6 @@
+{
+  "name": "process-notification-digests",
+  "schedule": "*/15 * * * *",
+  "function": "process-notification-digests",
+  "payload": {}
+} 

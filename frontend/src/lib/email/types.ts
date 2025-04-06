@@ -9,6 +9,18 @@ export interface EmailAttachment {
   contentType?: string;
 }
 
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  category: string;
+  description: string;
+  variables: string[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface EmailOptions {
   to: EmailRecipient | EmailRecipient[];
   cc?: EmailRecipient | EmailRecipient[];
@@ -53,4 +65,90 @@ export interface EmailPreferences {
    * Example: { "digest": "daily", "alerts": "immediate" }
    */
   frequency?: Record<string, "immediate" | "daily" | "weekly" | "never">;
+}
+
+export type NotificationCategory = 
+  | 'account'
+  | 'documents'
+  | 'team'
+  | 'loads'
+  | 'system'
+  | 'marketing';
+
+export type NotificationType =
+  | 'account_updates'
+  | 'password_changes'
+  | 'security_alerts'
+  | 'document_uploads'
+  | 'document_updates'
+  | 'document_deletions'
+  | 'document_classifications'
+  | 'missing_documents'
+  | 'team_invites'
+  | 'team_role_changes'
+  | 'team_member_changes'
+  | 'load_created'
+  | 'load_updated'
+  | 'load_status_changed'
+  | 'load_completed'
+  | 'system_maintenance'
+  | 'system_updates'
+  | 'marketing_newsletter'
+  | 'marketing_promotions';
+
+export type NotificationFrequency = 'immediate' | 'daily' | 'weekly' | 'never';
+
+export interface NotificationPreference {
+  id: string;
+  userId: string;
+  category: NotificationCategory;
+  type: NotificationType;
+  enabled: boolean;
+  frequency: NotificationFrequency;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationDigest {
+  id: string;
+  userId: string;
+  category: NotificationCategory;
+  frequency: NotificationFrequency;
+  lastSentAt: string | null;
+  nextScheduledAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PendingNotification {
+  id: string;
+  userId: string;
+  category: NotificationCategory;
+  type: NotificationType;
+  data: Record<string, any>;
+  createdAt: string;
+  processedAt: string | null;
+  sentAt: string | null;
+  error: Record<string, any> | null;
+}
+
+type CategoryPreferences = {
+  enabled: boolean;
+  frequency: NotificationFrequency;
+  types: Partial<Record<NotificationType, {
+    enabled: boolean;
+    frequency: NotificationFrequency;
+  }>>;
+};
+
+export interface NotificationPreferences {
+  global: {
+    enabled: boolean;
+    frequency: NotificationFrequency;
+  };
+  categories: Record<NotificationCategory, CategoryPreferences>;
+}
+
+export interface NotificationDigestPreferences {
+  categories: Partial<Record<NotificationCategory, NotificationFrequency>>;
 } 

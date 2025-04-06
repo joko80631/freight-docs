@@ -12,6 +12,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { getErrorMessage } from '@/lib/errors';
 import { PageContainer } from '@/components/layout/page-container';
+import { NotificationPreferences } from '@/components/settings/NotificationPreferences';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface NotificationPreferences {
   email_updates: boolean;
@@ -153,199 +155,29 @@ function SettingsPage() {
   }
 
   return (
-    <PageContainer>
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your account settings and preferences
-        </p>
-      </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {success && (
-        <Alert>
-          <AlertTitle>Success</AlertTitle>
-          <AlertDescription>{success}</AlertDescription>
-        </Alert>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Settings</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={profile?.name || ''}
-                onChange={(e) => setProfile(prev => prev ? { ...prev, name: e.target.value } : null)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={profile?.email || ''}
-                disabled
-              />
-            </div>
-            <Button type="submit" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Email Updates</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive updates about your account and system changes
-                </p>
-              </div>
-              <Switch
-                checked={profile?.notification_preferences?.email_updates}
-                onCheckedChange={(checked) => 
-                  setProfile(prev => prev ? {
-                    ...prev,
-                    notification_preferences: {
-                      ...prev.notification_preferences,
-                      email_updates: checked
-                    }
-                  } : null)
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Document Alerts</Label>
-                <p className="text-sm text-muted-foreground">
-                  Get notified when documents are shared or updated
-                </p>
-              </div>
-              <Switch
-                checked={profile?.notification_preferences?.document_alerts}
-                onCheckedChange={(checked) => 
-                  setProfile(prev => prev ? {
-                    ...prev,
-                    notification_preferences: {
-                      ...prev.notification_preferences,
-                      document_alerts: checked
-                    }
-                  } : null)
-                }
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Team Changes</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receive notifications about team member changes
-                </p>
-              </div>
-              <Switch
-                checked={profile?.notification_preferences?.team_changes}
-                onCheckedChange={(checked) => 
-                  setProfile(prev => prev ? {
-                    ...prev,
-                    notification_preferences: {
-                      ...prev.notification_preferences,
-                      team_changes: checked
-                    }
-                  } : null)
-                }
-              />
-            </div>
-            <Button type="submit" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Preferences'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Change Password</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdatePassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-            </div>
-            <Button type="submit" disabled={saving}>
-              {saving ? 'Updating...' : 'Update Password'}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Danger Zone</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-destructive">Delete Account</h3>
-              <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all associated data
-              </p>
-            </div>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteAccount}
-              disabled={saving}
-            >
-              {saving ? 'Deleting...' : deleteConfirm ? 'Confirm Delete Account' : 'Delete Account'}
-            </Button>
-            {deleteConfirm && (
-              <p className="text-sm text-destructive">
-                Warning: This action cannot be undone. All your data will be permanently deleted.
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </PageContainer>
+    <div className="container mx-auto py-6">
+      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      
+      <Tabs defaultValue="notifications" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="notifications" className="space-y-4">
+          <NotificationPreferences />
+        </TabsContent>
+        
+        <TabsContent value="profile">
+          <div>Profile settings coming soon...</div>
+        </TabsContent>
+        
+        <TabsContent value="security">
+          <div>Security settings coming soon...</div>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
 
