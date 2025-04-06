@@ -1,3 +1,5 @@
+"use client";
+
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
@@ -20,44 +22,60 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
+  // Handle auth state changes
+  const handleAuthStateChange = async (session: any) => {
+    try {
+      if (session) {
+        setUser(session.user);
+        // If we're on the login page, redirect to dashboard
+        if (window.location.pathname.includes('/login')) {
+          await router.push('/dashboard');
+        }
+      } else {
+        setUser(null);
+        // Only redirect to login if we're not already there and not in auth callback
+        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/auth/callback')) {
+          await router.push('/login');
+        }
+      }
+    } catch (error) {
+      console.error('Error handling auth state change:', error);
+    }
+  };
+
   useEffect(() => {
-    const checkUser = async () => {
+    let mounted = true;
+
+    const initialize = async () => {
       try {
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
         
-        if (!session) {
-          // Only redirect to login if we're not already on the login page
-          if (!window.location.pathname.includes('/login')) {
-            router.push('/login');
-          }
-        } else {
-          setUser(session.user);
+        if (mounted) {
+          await handleAuthStateChange(session);
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
       } finally {
-        setIsLoading(false);
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    // Initial check
-    checkUser();
+    initialize();
 
     // Subscribe to auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        setUser(session.user);
-      } else {
-        setUser(null);
-        if (!window.location.pathname.includes('/login')) {
-          router.push('/login');
-        }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
+      if (mounted) {
+        await handleAuthStateChange(session);
+        setIsLoading(false);
       }
-      setIsLoading(false);
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [router, supabase]);
