@@ -1,89 +1,95 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { processUnsubscribe } from '@/lib/email/utils/unsubscribe';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useToast } from '@/components/ui/use-toast';
 
-export default function UnsubscribePage() {
+function UnsubscribeContent() {
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
-  const [status, setStatus] = useState<{
-    loading: boolean;
-    success: boolean;
-    message: string;
-  }>({
-    loading: true,
-    success: false,
-    message: '',
-  });
+  const { toast } = useToast();
+  const supabase = createClientComponentClient();
+  const email = searchParams.get('email');
+  const type = searchParams.get('type');
 
-  useEffect(() => {
-    async function handleUnsubscribe() {
-      if (!token) {
-        setStatus({
-          loading: false,
-          success: false,
-          message: 'No unsubscribe token provided',
-        });
-        return;
-      }
-
-      try {
-        const result = await processUnsubscribe(token);
-        setStatus({
-          loading: false,
-          success: result.success,
-          message: result.message,
-        });
-      } catch (error) {
-        setStatus({
-          loading: false,
-          success: false,
-          message: 'An error occurred while processing your request',
-        });
-      }
+  const handleUnsubscribe = async () => {
+    if (!email || !type) {
+      toast({
+        title: 'Error',
+        description: 'Invalid unsubscribe link',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    handleUnsubscribe();
-  }, [token]);
+    try {
+      const { error } = await supabase
+        .from('email_preferences')
+        .update({ [type]: false })
+        .eq('email', email);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Successfully unsubscribed from emails',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to unsubscribe. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (!email || !type) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Invalid Link</CardTitle>
+          <CardDescription>
+            This unsubscribe link appears to be invalid or expired.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-12 flex justify-center">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Email Preferences</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {status.loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-              <p className="mt-4">Processing your request...</p>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className={`p-4 rounded-md ${status.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-                <p>{status.message}</p>
-              </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Unsubscribe from Emails</CardTitle>
+        <CardDescription>
+          You are about to unsubscribe {email} from {type} emails.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={handleUnsubscribe}>
+          Confirm Unsubscribe
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
-              <div className="text-center">
-                <p className="mb-4">
-                  {status.success
-                    ? 'You can always update your email preferences in your account settings.'
-                    : 'If you believe this is an error, please contact support.'}
-                </p>
-                <Button asChild>
-                  <Link href="/settings">
-                    {status.success ? 'Go to Settings' : 'Contact Support'}
-                  </Link>
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+export default function UnsubscribePage() {
+  return (
+    <div className="container mx-auto py-10">
+      <Suspense fallback={
+        <Card>
+          <CardHeader>
+            <CardTitle>Loading...</CardTitle>
+            <CardDescription>
+              Please wait while we process your request.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      }>
+        <UnsubscribeContent />
+      </Suspense>
     </div>
   );
 } 

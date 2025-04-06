@@ -3,6 +3,8 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { useTeamStore } from '@/store/teamStore';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
