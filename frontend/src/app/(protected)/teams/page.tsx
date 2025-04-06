@@ -40,6 +40,7 @@ import { Plus, Settings, Users } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { cn } from '@/lib/utils';
 
 interface TeamMember {
   id: string;
@@ -86,6 +87,8 @@ function TeamsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const supabase = createClientComponentClient();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newTeamName, setNewTeamName] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -195,8 +198,22 @@ function TeamsPage() {
     }
   }
 
-  const handleCreateTeam = () => {
-    router?.push('/teams/new');
+  const handleCreateTeam = async () => {
+    try {
+      await createTeam(newTeamName);
+      setIsCreateDialogOpen(false);
+      setNewTeamName("");
+      toast({
+        title: "Team created",
+        description: "Your new team has been created successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create team. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSwitchTeam = async (team: Team) => {
@@ -253,7 +270,7 @@ function TeamsPage() {
           description="You haven't joined or created any teams yet."
           cta={{
             label: 'Create Team',
-            onClick: handleCreateTeam
+            onClick: () => setIsCreateDialogOpen(true)
           }}
           secondaryCta={null}
           className=""
@@ -276,10 +293,42 @@ function TeamsPage() {
             Manage your teams and team members
           </p>
         </div>
-        <Button onClick={handleCreateTeam}>
-          <Plus className="mr-2 h-4 w-4" />
-          New Team
-        </Button>
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Create Team
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create a new team</DialogTitle>
+              <DialogDescription>
+                Add a new team to collaborate with others.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Team name</Label>
+                <Input
+                  id="name"
+                  placeholder="Enter team name"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateTeam}>Create Team</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {error && (
@@ -321,9 +370,9 @@ function TeamsPage() {
                   <Button 
                     variant="ghost" 
                     size="sm"
-                    onClick={() => handleSwitchTeam(t)}
+                    onClick={() => router.push(`/teams/${t?.id}/members`)}
                   >
-                    <Settings className="h-4 w-4 mr-2" />
+                    <Users className="h-4 w-4 mr-2" />
                     Manage
                   </Button>
                 </div>

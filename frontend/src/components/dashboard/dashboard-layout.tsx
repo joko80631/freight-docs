@@ -6,6 +6,8 @@ import { useLocalStorage } from "@/lib/useLocalStorage";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { cn } from "@/lib/utils";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useTeamInitializer } from "@/hooks/useTeamInitializer";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,6 +22,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isMobile, setIsMobile] = useState(false);
   const isMobileQuery = useMediaQuery("(max-width: 768px)");
   const sidebarRef = useRef<HTMLDivElement>(null);
+  const { isLoading, error, hasTeams, currentTeam } = useTeamInitializer();
 
   // Prevent hydration mismatch
   useEffect(() => {
@@ -45,6 +48,37 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (!mounted) {
     return null;
+  }
+
+  // Show loading state while teams are being fetched
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="space-y-4 w-full max-w-md p-4">
+          <Skeleton className="h-8 w-3/4" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-8 w-1/2" />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if team loading failed
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4 p-4">
+          <h1 className="text-2xl font-bold text-destructive">Error Loading Teams</h1>
+          <p className="text-muted-foreground">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-primary hover:underline"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Determine if sidebar should be rendered on mobile

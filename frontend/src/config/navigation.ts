@@ -6,6 +6,7 @@ import {
   BarChart3,
   Settings,
   HelpCircle,
+  Building2,
 } from "lucide-react";
 
 export interface NavigationItem {
@@ -14,6 +15,7 @@ export interface NavigationItem {
   icon: React.ComponentType<{ className?: string }>;
   featureFlag?: boolean;
   comingSoon?: boolean;
+  badge?: string | number;
 }
 
 export const navigationConfig: NavigationItem[] = [
@@ -33,6 +35,12 @@ export const navigationConfig: NavigationItem[] = [
     label: "Documents",
     href: "/documents",
     icon: FileText,
+    featureFlag: true,
+  },
+  {
+    label: "Teams",
+    href: "/teams",
+    icon: Building2,
     featureFlag: true,
   },
   {
