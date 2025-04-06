@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "node tests/run-integration-tests.js",
+    "test:auth": "node tests/integration/auth.test.js",
+    "test:documents": "node tests/integration/documents.test.js",
     "test:watch": "jest --watch",
     "dev": "cd frontend && npm run dev"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Freight document management system",
+  "type": "module",
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
     "@types/react": "^19.1.0",

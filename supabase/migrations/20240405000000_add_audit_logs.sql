@@ -44,9 +44,9 @@ WITH CHECK (
 -- Create function for transactional audit logging
 CREATE OR REPLACE FUNCTION create_audit_log(
   p_action TEXT,
-  p_document_ids UUID[] DEFAULT '{}',
   p_team_id UUID,
   p_user_id UUID,
+  p_document_ids UUID[] DEFAULT '{}',
   p_metadata JSONB DEFAULT '{}'
 )
 RETURNS UUID

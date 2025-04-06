@@ -1,41 +1,56 @@
-require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-async function createExecSqlFunction() {
+dotenv.config();
+
+async function createExecSql() {
+  console.log('Creating exec_sql function...\n');
+
+  const sql = `
+    -- Create the exec_sql function
+    CREATE OR REPLACE FUNCTION public.exec_sql(query text)
+    RETURNS void
+    LANGUAGE plpgsql
+    SECURITY DEFINER
+    AS $$
+    BEGIN
+      EXECUTE query;
+    END;
+    $$;
+
+    -- Grant execute permission to authenticated users
+    GRANT EXECUTE ON FUNCTION public.exec_sql TO authenticated;
+  `;
+
   try {
-    const { data, error } = await supabase
-      .from('_sql')
-      .insert([{
-        query: `
-          CREATE OR REPLACE FUNCTION exec_sql(sql_query text)
-          RETURNS void AS $$
-          BEGIN
-            EXECUTE sql_query;
-          END;
-          $$ LANGUAGE plpgsql SECURITY DEFINER;
+    // Extract project reference from Supabase URL
+    const projectRef = process.env.SUPABASE_URL.split('.')[0].split('//')[1];
+    
+    const response = await fetch(`https://api.supabase.com/v1/projects/${projectRef}/sql`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`
+      },
+      body: JSON.stringify({
+        query: sql
+      })
+    });
 
-          GRANT EXECUTE ON FUNCTION exec_sql(text) TO authenticated;
-          GRANT EXECUTE ON FUNCTION exec_sql(text) TO service_role;
-        `
-      }])
-      .select();
-
-    if (error) {
-      console.error('Error creating exec_sql function:', error);
-      process.exit(1);
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Failed to create exec_sql function: ${error}`);
     }
 
-    console.log('Successfully created exec_sql function');
-    process.exit(0);
-  } catch (err) {
-    console.error('Unexpected error:', err);
-    process.exit(1);
+    console.log('✅ Exec SQL function created successfully!');
+  } catch (error) {
+    console.error('❌ Error:', error.message);
   }
 }
 
-createExecSqlFunction(); 
+createExecSql(); 

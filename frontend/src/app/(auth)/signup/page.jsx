@@ -39,11 +39,21 @@ export default function SignupPage() {
         email: formData.email,
         password: formData.password,
         options: {
+          data: {
+            full_name: formData.email.split('@')[0], // Default name from email
+          },
           emailRedirectTo: `${window.location.origin}/verify-email`,
         },
       });
       
       if (error) throw error;
+      
+      // Create profile after successful signup
+      const { error: profileError } = await supabase.rpc('create_profile_for_user', {
+        user_id: data.user.id
+      });
+
+      if (profileError) throw profileError;
       
       showSuccess(
         "Check your email",
