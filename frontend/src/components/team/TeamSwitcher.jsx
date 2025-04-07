@@ -12,12 +12,22 @@ import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const TeamSwitcher = () => {
-  const { teams, currentTeam, setCurrentTeam } = useTeamStore();
+  const { teams, currentTeam, setCurrentTeam, isLoading, hasAttemptedLoad } = useTeamStore();
   const router = useRouter();
 
+  // Don't render anything while initial load is happening
+  if (!hasAttemptedLoad) {
+    return null;
+  }
+
+  // Show create team button if no teams exist
   if (!teams?.length) {
     return (
-      <Button onClick={() => router.push('/teams/new')}>
+      <Button 
+        onClick={() => router.push('/teams/new')}
+        variant="outline"
+        className="w-full justify-start"
+      >
         <Plus className="mr-2 h-4 w-4" />
         Create Team
       </Button>
@@ -36,7 +46,9 @@ const TeamSwitcher = () => {
         }}
       >
         <SelectTrigger className="w-[200px]">
-          <SelectValue placeholder="Select team" />
+          <SelectValue placeholder="Select team">
+            {currentTeam?.name || 'Select team'}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {teams.map((team) => (
@@ -50,6 +62,7 @@ const TeamSwitcher = () => {
         variant="outline"
         size="icon"
         onClick={() => router.push('/teams/new')}
+        title="Create new team"
       >
         <Plus className="h-4 w-4" />
       </Button>

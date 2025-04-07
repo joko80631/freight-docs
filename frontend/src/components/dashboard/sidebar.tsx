@@ -121,11 +121,7 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
       {/* Team Switcher */}
       {!collapsed && (
         <div className="border-b p-4">
-          {isLoading ? (
-            <Skeleton className="h-10 w-full" />
-          ) : (
-            <TeamSwitcher />
-          )}
+          <TeamSwitcher />
         </div>
       )}
 
