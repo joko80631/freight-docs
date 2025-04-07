@@ -72,10 +72,10 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
     }
   };
 
-  // Split navigation items into active and secondary sections
-  const activePages = navigationConfig.filter(item => item.featureFlag !== false).slice(0, 3); // First 3 active items
-  const secondaryPages = navigationConfig.filter(item => item.featureFlag !== false).slice(3); // Remaining active items
-  const disabledPages = navigationConfig.filter(item => item.featureFlag === false); // Disabled items
+  // Split navigation items into three groups
+  const mainGroup = navigationConfig.slice(0, 3); // Dashboard, Loads, Documents
+  const systemGroup = navigationConfig.slice(3, 6); // Teams, Settings, Help
+  const comingSoonGroup = navigationConfig.slice(6); // Customers, Analytics, Fleet
 
   return (
     <aside
@@ -85,7 +85,6 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
       className={cn(
         "fixed inset-y-0 left-0 z-30 flex h-full flex-col border-r border-border/80 bg-background/95 transition-all duration-300 ease-in-out",
         collapsed ? "w-16" : "w-64",
-        // Mobile behavior - no transform, just conditional rendering
         isMobile ? "translate-x-0" : "",
         className
       )}
@@ -122,82 +121,82 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
         </div>
       )}
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-2">
-        {/* Active Pages */}
-        <div className="space-y-1">
-          {activePages.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                  collapsed && "justify-center"
-                )}
-              >
-                <item.icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
-                {!collapsed && <span>{item.label}</span>}
-              </Link>
-            );
-          })}
+      <nav className="flex-1 py-4">
+        {/* Main Group */}
+        <div className="space-y-1 px-2">
+          {mainGroup.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                pathname === item.href
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                collapsed && "justify-center"
+              )}
+            >
+              <item.icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
+              {!collapsed && <span>{item.label}</span>}
+            </Link>
+          ))}
         </div>
 
-        {/* Secondary Pages */}
-        {secondaryPages.length > 0 && (
-          <div className="space-y-1 pt-4">
-            {secondaryPages.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                    collapsed && "justify-center"
-                  )}
-                >
-                  <item.icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
-                  {!collapsed && <span>{item.label}</span>}
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        {/* Separator */}
+        <div className="my-4 px-2">
+          <div className="h-px bg-border/60" />
+        </div>
 
-        {/* Disabled Pages */}
-        {disabledPages.length > 0 && (
-          <div className="space-y-1 pt-4">
-            {disabledPages.map((item) => (
-              <div
-                key={item.href}
-                className={cn(
-                  "flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground/50 cursor-not-allowed",
-                  collapsed && "justify-center"
-                )}
-                title={item.comingSoon ? "Coming soon" : "Not available"}
-              >
-                <item.icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
-                {!collapsed && (
-                  <span className="flex items-center">
-                    {item.label}
-                    {item.comingSoon && (
-                      <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
-                        Soon
-                      </span>
-                    )}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        {/* System Group */}
+        <div className="space-y-1 px-2">
+          {systemGroup.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                pathname === item.href
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                collapsed && "justify-center"
+              )}
+            >
+              <item.icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
+              {!collapsed && <span>{item.label}</span>}
+            </Link>
+          ))}
+        </div>
+
+        {/* Separator */}
+        <div className="my-4 px-2">
+          <div className="h-px bg-border/60" />
+        </div>
+
+        {/* Coming Soon Group */}
+        <div className="space-y-1 px-2">
+          {comingSoonGroup.map((item) => (
+            <div
+              key={item.href}
+              className={cn(
+                "flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground/50 cursor-not-allowed",
+                collapsed && "justify-center"
+              )}
+              title={item.comingSoon ? "Coming soon" : "Not available"}
+            >
+              <item.icon className={cn("h-4 w-4", collapsed ? "mr-0" : "mr-2")} />
+              {!collapsed && (
+                <span className="flex items-center">
+                  {item.label}
+                  {item.comingSoon && (
+                    <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary">
+                      Soon
+                    </span>
+                  )}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </nav>
 
       <div className="border-t p-4">
