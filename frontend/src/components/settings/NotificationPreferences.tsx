@@ -209,14 +209,43 @@ export function NotificationPreferences() {
             <Switch
               id="global-enabled"
               checked={preferences.global.enabled}
-              onCheckedChange={(checked) => {
-                setPreferences(prev => {
-                  if (!prev) return prev;
-                  return {
-                    ...prev,
-                    global: { ...prev.global, enabled: checked },
-                  };
-                });
+              onCheckedChange={async (checked) => {
+                try {
+                  setPreferences(prev => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      global: { ...prev.global, enabled: checked },
+                    };
+                  });
+
+                  await updateNotificationPreference(
+                    user!.id,
+                    'account',
+                    'account_updates',
+                    checked,
+                    preferences.global.frequency
+                  );
+
+                  toast({
+                    title: 'Success',
+                    description: 'Global notification settings updated',
+                  });
+                } catch (error) {
+                  setPreferences(prev => {
+                    if (!prev) return prev;
+                    return {
+                      ...prev,
+                      global: { ...prev.global, enabled: !checked },
+                    };
+                  });
+
+                  toast({
+                    title: 'Error',
+                    description: 'Failed to update global notification settings',
+                    variant: 'destructive',
+                  });
+                }
               }}
             />
           </div>
@@ -267,11 +296,64 @@ export function NotificationPreferences() {
                   <Switch
                     id={`category-${category}-enabled`}
                     checked={categoryPrefs.enabled}
-                    onCheckedChange={(checked) => {
-                      handleDigestChange(
-                        category as NotificationCategory,
-                        checked ? categoryPrefs.frequency : 'never'
-                      );
+                    onCheckedChange={async (checked) => {
+                      if (!user || !preferences) return;
+                      const typedCategory = category as NotificationCategory;
+
+                      try {
+                        setPreferences(prev => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            categories: {
+                              ...prev.categories,
+                              [typedCategory]: {
+                                ...prev.categories[typedCategory],
+                                enabled: checked,
+                              },
+                            },
+                          };
+                        });
+
+                        await handleDigestChange(typedCategory, checked ? categoryPrefs.frequency : 'never');
+
+                        const updatePromises = Object.entries(categoryPrefs.types).map(([type, typePrefs]) =>
+                          updateNotificationPreference(
+                            user.id,
+                            typedCategory,
+                            type as NotificationType,
+                            checked,
+                            typePrefs.frequency
+                          )
+                        );
+
+                        await Promise.all(updatePromises);
+
+                        toast({
+                          title: 'Success',
+                          description: `${CATEGORY_LABELS[typedCategory]} notifications ${checked ? 'enabled' : 'disabled'}`,
+                        });
+                      } catch (error) {
+                        setPreferences(prev => {
+                          if (!prev) return prev;
+                          return {
+                            ...prev,
+                            categories: {
+                              ...prev.categories,
+                              [typedCategory]: {
+                                ...prev.categories[typedCategory],
+                                enabled: !checked,
+                              },
+                            },
+                          };
+                        });
+
+                        toast({
+                          title: 'Error',
+                          description: 'Failed to update notification preferences',
+                          variant: 'destructive',
+                        });
+                      }
                     }}
                   />
                 </div>
@@ -288,13 +370,47 @@ export function NotificationPreferences() {
                             <Switch
                               id={`type-${type}-enabled`}
                               checked={typePrefs.enabled}
-                              onCheckedChange={(checked) => {
-                                handlePreferenceChange(
-                                  category as NotificationCategory,
-                                  type as NotificationType,
-                                  checked,
-                                  typePrefs.frequency
-                                );
+                              onCheckedChange={async (checked) => {
+                                if (!user || !preferences) return;
+                                const typedCategory = category as NotificationCategory;
+                                const typedType = type as NotificationType;
+
+                                try {
+                                  setPreferences(prev => {
+                                    if (!prev) return prev;
+                                    const newPrefs = { ...prev };
+                                    if (!newPrefs.categories[typedCategory].types[typedType]) {
+                                      newPrefs.categories[typedCategory].types[typedType] = { enabled: checked, frequency: typePrefs.frequency };
+                                    } else {
+                                      newPrefs.categories[typedCategory].types[typedType]!.enabled = checked;
+                                    }
+                                    return newPrefs;
+                                  });
+
+                                  await handlePreferenceChange(
+                                    typedCategory,
+                                    typedType,
+                                    checked,
+                                    typePrefs.frequency
+                                  );
+                                } catch (error) {
+                                  setPreferences(prev => {
+                                    if (!prev) return prev;
+                                    const newPrefs = { ...prev };
+                                    if (!newPrefs.categories[typedCategory].types[typedType]) {
+                                      newPrefs.categories[typedCategory].types[typedType] = { enabled: !checked, frequency: typePrefs.frequency };
+                                    } else {
+                                      newPrefs.categories[typedCategory].types[typedType]!.enabled = !checked;
+                                    }
+                                    return newPrefs;
+                                  });
+
+                                  toast({
+                                    title: 'Error',
+                                    description: 'Failed to update notification preference',
+                                    variant: 'destructive',
+                                  });
+                                }
                               }}
                             />
                           </div>
