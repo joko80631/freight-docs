@@ -7,29 +7,40 @@ import {
   FreightButton,
   DocumentConfidenceLegend,
   Timeline,
-  ClassificationDisplay
+  ClassificationDisplay,
+  Column
 } from '@/components/freight';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { Plus, Trash, Edit, Search, Filter, ArrowRight } from 'lucide-react';
 
+interface TableRow {
+  id: string;
+  reference: string;
+  client: string;
+  route: string;
+  created: string;
+  status: string;
+  documents: number;
+}
+
 export default function PlaygroundPage() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const sampleTableData = [
+  const sampleTableData: TableRow[] = [
     { id: '1', reference: 'REF-001', client: 'Acme Corp', route: 'LA → NY', created: '2023-04-01', status: 'In Transit', documents: 75 },
     { id: '2', reference: 'REF-002', client: 'Globex Inc', route: 'CHI → MIA', created: '2023-04-02', status: 'Delivered', documents: 100 },
     { id: '3', reference: 'REF-003', client: 'Initech', route: 'SEA → DAL', created: '2023-04-03', status: 'Pending', documents: 25 },
   ];
 
-  const sampleTableColumns = [
-    { header: 'Reference', accessorKey: 'reference' as const },
-    { header: 'Client', accessorKey: 'client' as const },
-    { header: 'Route', accessorKey: 'route' as const },
-    { header: 'Created', accessorKey: 'created' as const },
+  const sampleTableColumns: Column<TableRow>[] = [
+    { header: 'Reference', accessorKey: 'reference' },
+    { header: 'Client', accessorKey: 'client' },
+    { header: 'Route', accessorKey: 'route' },
+    { header: 'Created', accessorKey: 'created' },
     { 
       header: 'Status', 
-      accessorKey: 'status' as const,
-      cell: (value: string | number, row: typeof sampleTableData[0]) => (
+      accessorKey: 'status',
+      cell: (value: string | number, row: TableRow) => (
         <FreightBadge 
           variant={
             String(value) === 'Delivered' ? 'success' : 
@@ -43,9 +54,9 @@ export default function PlaygroundPage() {
     },
     { 
       header: 'Documents', 
-      accessorKey: 'documents' as const,
-      align: 'right' as const,
-      cell: (value: string | number, row: typeof sampleTableData[0]) => (
+      accessorKey: 'documents',
+      align: 'right',
+      cell: (value: string | number, row: TableRow) => (
         <div className="flex items-center justify-end">
           <div className="w-16 bg-gray-200 rounded-full h-2">
             <div 
@@ -189,7 +200,7 @@ export default function PlaygroundPage() {
           
           <div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Loading State</h3>
-            <FreightTable isLoading />
+            <FreightTable data={[]} isLoading />
           </div>
           
           <div>

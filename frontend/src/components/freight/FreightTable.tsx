@@ -10,14 +10,14 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-import { safeArray } from '@/lib/array-utils'
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 
-interface Column<T> {
+export interface Column<T> {
   header: string;
   accessorKey: keyof T;
-  cell?: (value: string) => React.ReactNode;
+  cell?: (value: string | number, row: T) => React.ReactNode;
+  align?: 'left' | 'center' | 'right';
 }
 
 interface PaginationProps {
@@ -28,7 +28,7 @@ interface PaginationProps {
 
 interface FreightTableProps<T> {
   data: T[];
-  columns: Column<T>[];
+  columns?: Column<T>[];
   pagination?: PaginationProps;
   children?: React.ReactNode;
   className?: string;
@@ -68,7 +68,12 @@ export function FreightTable<T>({
           <TableHeader>
             <TableRow>
               {columns.map((column) => (
-                <TableHead key={String(column.accessorKey)}>{column.header}</TableHead>
+                <TableHead 
+                  key={String(column.accessorKey)}
+                  className={cn(column.align && `text-${column.align}`)}
+                >
+                  {column.header}
+                </TableHead>
               ))}
               {showChevron && <TableHead className="w-10" data-testid="freight-table-header-chevron" />}
             </TableRow>
@@ -85,17 +90,18 @@ export function FreightTable<T>({
                 data-testid={`freight-table-row-${rowIndex}`}
               >
                 {columns.map((column) => {
-                  const value = String(row[column.accessorKey]);
+                  const value = row[column.accessorKey];
                   return (
                     <TableCell
                       key={String(column.accessorKey)}
                       className={cn(
                         'px-3 py-2 align-middle text-gray-900',
+                        column.align && `text-${column.align}`,
                         '[&:has([role=checkbox])]:pr-0'
                       )}
                       data-testid={`freight-table-cell-${rowIndex}-${String(column.accessorKey)}`}
                     >
-                      {column.cell ? column.cell(value) : value}
+                      {column.cell ? column.cell(String(value), row) : String(value)}
                     </TableCell>
                   );
                 })}
