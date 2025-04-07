@@ -97,18 +97,8 @@ export const useTeamStore = create<TeamStore>()(
           // Fetch teams where user is a member
           const { data: teamMemberships, error: membershipError } = await supabase
             .from('team_members')
-            .select(`
-              team_id,
-              role,
-              teams (
-                id,
-                name,
-                created_at,
-                updated_at
-              )
-            `)
-            .eq('user_id', user.id)
-            .returns<TeamMembershipResponse[]>();
+            .select('team_id, role')
+            .eq('user_id', user.id);
 
           if (membershipError) throw membershipError;
 
@@ -145,10 +135,18 @@ export const useTeamStore = create<TeamStore>()(
             return;
           }
 
+          // Fetch team details in a separate query
+          const { data: teamsData, error: teamsError } = await supabase
+            .from('teams')
+            .select('id, name, created_at, updated_at')
+            .in('id', teamMemberships.map(tm => tm.team_id));
+
+          if (teamsError) throw teamsError;
+
           // Transform the data to match our Team interface
-          const teams: Team[] = teamMemberships.map(membership => ({
-            ...membership.teams,
-            role: membership.role
+          const teams: Team[] = teamsData.map(team => ({
+            ...team,
+            role: teamMemberships.find(tm => tm.team_id === team.id)?.role || 'member'
           }));
 
           set({ teams, hasAttemptedLoad: true });

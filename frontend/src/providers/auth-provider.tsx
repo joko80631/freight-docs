@@ -3,22 +3,30 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { User } from '@supabase/auth-helpers-nextjs';
 
 interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
-  user: any | null;
+  user: User | null;
+  error: Error | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isAuthenticated: false,
   user: null,
+  error: null,
+  signIn: async () => {},
+  signOut: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -40,6 +48,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error('Error handling auth state change:', error);
+      setError(error instanceof Error ? error : new Error(String(error)));
+    }
+  };
+
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error(String(error)));
+      throw error;
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      setUser(null);
+      router.push('/login');
+    } catch (error) {
+      setError(error instanceof Error ? error : new Error(String(error)));
+      throw error;
     }
   };
 
@@ -57,6 +91,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error checking auth status:', error);
+        if (mounted) {
+          setError(error instanceof Error ? error : new Error(String(error)));
+        }
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -86,6 +123,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         user,
+        error,
+        signIn,
+        signOut,
       }}
     >
       {children}

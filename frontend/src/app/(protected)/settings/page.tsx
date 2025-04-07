@@ -35,8 +35,17 @@ const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   team_changes: true
 };
 
+async function loadUserProfile(authUser: any) {
+  return {
+    id: authUser.id,
+    email: authUser.email || '',
+    name: authUser.user_metadata?.name,
+    notification_preferences: authUser.user_metadata?.notification_preferences || DEFAULT_NOTIFICATION_PREFERENCES
+  };
+}
+
 function SettingsPage() {
-  const { user: authUser } = useAuth();
+  const { user: authUser, isLoading: authLoading, error: authError } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -50,29 +59,27 @@ function SettingsPage() {
   const supabase = getSupabaseClient();
 
   useEffect(() => {
-    if (!authUser) {
+    if (!authLoading && !authUser) {
       router.push('/login');
       return;
     }
 
-    async function loadProfile() {
-      try {
-        setProfile({
-          id: authUser.id,
-          email: authUser.email || '',
-          name: authUser.user_metadata?.name,
-          notification_preferences: authUser.user_metadata?.notification_preferences || DEFAULT_NOTIFICATION_PREFERENCES
-        });
-      } catch (error) {
-        console.error('Error loading profile:', error);
-        setError(getErrorMessage(error));
-      } finally {
-        setLoading(false);
-      }
-    }
+    if (authUser) {
+      const initializeProfile = async () => {
+        try {
+          const userProfile = await loadUserProfile(authUser);
+          setProfile(userProfile);
+        } catch (error) {
+          console.error('Error loading profile:', error);
+          setError(getErrorMessage(error));
+        } finally {
+          setLoading(false);
+        }
+      };
 
-    loadProfile();
-  }, [authUser, router]);
+      initializeProfile();
+    }
+  }, [authUser, authLoading, router]);
 
   async function handleUpdateProfile(e: React.FormEvent) {
     e.preventDefault();
