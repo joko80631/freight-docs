@@ -72,10 +72,18 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
     }
   };
 
-  // Split navigation items into three groups
-  const mainGroup = navigationConfig.slice(0, 3); // Dashboard, Loads, Documents
-  const systemGroup = navigationConfig.slice(3, 6); // Teams, Settings, Help
-  const comingSoonGroup = navigationConfig.slice(6); // Customers, Analytics, Fleet
+  // Split navigation items into three groups with correct categorization
+  const mainGroup = navigationConfig.filter(item => 
+    ['Dashboard', 'Loads', 'Documents'].includes(item.label)
+  );
+
+  const systemGroup = navigationConfig.filter(item => 
+    ['Teams', 'Settings', 'Help'].includes(item.label)
+  );
+
+  const comingSoonGroup = navigationConfig.filter(item => 
+    ['Fleet', 'Customers', 'Analytics'].includes(item.label)
+  );
 
   return (
     <aside
