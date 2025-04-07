@@ -10,7 +10,7 @@ import {
   updateNotificationPreference,
   updateNotificationDigest,
 } from '@/lib/email/services/notification-preferences';
-import { useAuth } from '@/lib/auth/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import {
   Card,
   CardContent,
