@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useTeamStore } from '@/store/team-store';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Search, Filter, Plus, Package } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { PageContainer } from '@/components/layout/PageContainer';
+import { EmptyState } from '@/components/ui/empty-state';
 import { FreightTable } from '@/components/freight/FreightTable';
 import { FreightBadge } from '@/components/freight/FreightBadge';
-import { FreightButton } from '@/components/freight/FreightButton';
-import { EmptyState } from '@/components/freight/EmptyState';
-import { Search, Filter, ChevronDown, Package } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Load {
   id: string;
@@ -23,6 +25,7 @@ interface Load {
 export default function LoadsPage() {
   const [loads, setLoads] = useState<Load[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<Load['status'] | ''>('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,15 +33,19 @@ export default function LoadsPage() {
   const supabase = createClientComponentClient();
   const { currentTeam } = useTeamStore();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
-    fetchLoads();
-  }, [currentTeam?.id, currentPage, statusFilter]);
+    if (currentTeam?.id) {
+      fetchLoads();
+    }
+  }, [currentTeam?.id, currentPage, statusFilter, searchQuery]);
 
   const fetchLoads = async () => {
     if (!currentTeam?.id) return;
 
     setIsLoading(true);
+    setError(null);
     try {
       let query = supabase
         .from('loads')
@@ -63,6 +70,12 @@ export default function LoadsPage() {
       setTotalPages(Math.ceil((count || 0) / 10));
     } catch (error) {
       console.error('Error fetching loads:', error);
+      setError('Failed to load data. Please try again.');
+      toast({
+        title: 'Error',
+        description: 'Failed to load loads',
+        variant: 'destructive'
+      });
     } finally {
       setIsLoading(false);
     }
@@ -103,130 +116,73 @@ export default function LoadsPage() {
     },
   ];
 
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-
-    return pages;
-  };
-
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 py-6 space-y-6" data-testid="loads-page" data-debug="layout">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4" data-testid="loads-header">
-        <h1 className="text-2xl font-bold text-gray-900">Loads</h1>
-        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-          <div className="relative flex-1 md:flex-initial">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search loads..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full"
-              data-testid="loads-search"
-            />
-          </div>
-          <div className="relative">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as Load['status'] | '')}
-              className="appearance-none pl-4 pr-10 py-2 border border-gray-300 rounded-lg bg-white"
-              data-testid="loads-status-filter"
-            >
-              <option value="">All Statuses</option>
-              <option value="pending">Pending</option>
-              <option value="in_transit">In Transit</option>
-              <option value="delivered">Delivered</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+    <PageContainer
+      title="Loads"
+      description="Manage your freight loads"
+      isLoading={isLoading}
+      error={error}
+      isEmpty={!isLoading && loads.length === 0}
+      emptyState={
+        <EmptyState
+          icon={Package}
+          title="No loads found"
+          description="Create your first load to get started tracking your shipments"
+          action={{
+            label: "Create Load",
+            onClick: () => router.push('/loads/new')
+          }}
+        />
+      }
+      headerAction={
+        <Button onClick={() => router.push('/loads/new')}>
+          <Plus className="mr-2 h-4 w-4" /> Create Load
+        </Button>
+      }
+    >
+      <Card>
+        <div className="p-4 border-b">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Search loads..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg w-full"
+                data-testid="loads-search"
+              />
+            </div>
+            <div className="relative">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as Load['status'] | '')}
+                className="appearance-none pl-4 pr-10 py-2 border border-gray-300 rounded-lg bg-white"
+                data-testid="loads-status-filter"
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="in_transit">In Transit</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <Filter className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            </div>
           </div>
         </div>
-      </div>
-
-      <Card className="border border-border/40 shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-0">
           <FreightTable
             data={loads}
             columns={columns}
-            isLoading={isLoading}
-            data-testid="loads-table"
-            emptyState={
-              <EmptyState
-                icon={Package}
-                title="No loads found"
-                description="Try adjusting your filters or create a new load"
-                action={{
-                  label: "Create Load",
-                  onClick: () => router.push('/loads/new')
-                }}
-              />
-            }
+            pagination={{
+              page: currentPage,
+              pageCount: totalPages,
+              onPageChange: setCurrentPage
+            }}
           />
         </CardContent>
       </Card>
-
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-6" data-testid="loads-pagination">
-          <FreightButton
-            variant="secondary"
-            size="small"
-            onClick={() => setCurrentPage(1)}
-            disabled={currentPage === 1}
-            data-testid="loads-pagination-first"
-          >
-            First
-          </FreightButton>
-          <FreightButton
-            variant="secondary"
-            size="small"
-            onClick={() => setCurrentPage(currentPage - 1)}
-            disabled={currentPage === 1}
-            data-testid="loads-pagination-prev"
-          >
-            Previous
-          </FreightButton>
-          {getPageNumbers().map((page) => (
-            <FreightButton
-              key={page}
-              variant={currentPage === page ? 'primary' : 'secondary'}
-              size="small"
-              onClick={() => setCurrentPage(page)}
-              data-testid={`loads-pagination-page-${page}`}
-            >
-              {page}
-            </FreightButton>
-          ))}
-          <FreightButton
-            variant="secondary"
-            size="small"
-            onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            data-testid="loads-pagination-next"
-          >
-            Next
-          </FreightButton>
-          <FreightButton
-            variant="secondary"
-            size="small"
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage === totalPages}
-            data-testid="loads-pagination-last"
-          >
-            Last
-          </FreightButton>
-        </div>
-      )}
-    </div>
+    </PageContainer>
   );
 } 

@@ -28,6 +28,24 @@ interface TeamMembershipResponse {
   };
 }
 
+interface TeamMember {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'owner' | 'admin' | 'member';
+}
+
+interface Profile {
+  email: string;
+  full_name: string;
+}
+
+interface TeamMemberWithProfile {
+  id: string;
+  role: 'owner' | 'admin' | 'member';
+  profiles: Profile;
+}
+
 interface TeamStore {
   currentTeam: Team | null;
   teams: Team[];
@@ -40,6 +58,9 @@ interface TeamStore {
   updateTeam: (teamId: string, updates: Partial<Team>) => Promise<void>;
   deleteTeam: (teamId: string) => Promise<void>;
   reset: () => void;
+  fetchTeamMembers: (teamId: string) => Promise<TeamMember[]>;
+  updateTeamMemberRole: (teamId: string, memberId: string, role: 'owner' | 'admin' | 'member') => Promise<void>;
+  removeTeamMember: (teamId: string, memberId: string) => Promise<void>;
 }
 
 export const useTeamStore = create<TeamStore>()(
@@ -274,7 +295,56 @@ export const useTeamStore = create<TeamStore>()(
           hasAttemptedLoad: false
         });
         localStorage.removeItem('currentTeamId');
-      }
+      },
+
+      fetchTeamMembers: async (teamId: string) => {
+        const supabase = createClientComponentClient();
+        const { data: rawData, error } = await supabase
+          .from('team_members')
+          .select(`
+            id,
+            role,
+            profiles:user_id (
+              email,
+              full_name
+            )
+          `)
+          .eq('team_id', teamId);
+
+        if (error) throw error;
+
+        // Ensure the data matches our expected type
+        const data = rawData as unknown as TeamMemberWithProfile[];
+
+        return data.map(member => ({
+          id: member.id,
+          email: member.profiles.email,
+          full_name: member.profiles.full_name,
+          role: member.role,
+        }));
+      },
+
+      updateTeamMemberRole: async (teamId: string, memberId: string, role: 'owner' | 'admin' | 'member') => {
+        const supabase = createClientComponentClient();
+        const { error } = await supabase
+          .from('team_members')
+          .update({ role })
+          .eq('id', memberId)
+          .eq('team_id', teamId);
+
+        if (error) throw error;
+      },
+
+      removeTeamMember: async (teamId: string, memberId: string) => {
+        const supabase = createClientComponentClient();
+        const { error } = await supabase
+          .from('team_members')
+          .delete()
+          .eq('id', memberId)
+          .eq('team_id', teamId);
+
+        if (error) throw error;
+      },
     }),
     {
       name: 'team-storage',

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   Table,
   TableBody,
@@ -10,15 +11,25 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 import { safeArray } from '@/lib/array-utils'
+import { Button } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react"
 
-interface FreightTableProps<T = any> {
-  data?: T[];
-  columns?: {
-    header: string;
-    accessorKey: keyof T;
-    cell?: (value: T[keyof T], row: T) => React.ReactNode;
-    align?: 'left' | 'right' | 'center';
-  }[];
+interface Column<T> {
+  header: string;
+  accessorKey: keyof T;
+  cell?: (value: string) => React.ReactNode;
+}
+
+interface PaginationProps {
+  page: number;
+  pageCount: number;
+  onPageChange: (page: number) => void;
+}
+
+interface FreightTableProps<T> {
+  data: T[];
+  columns: Column<T>[];
+  pagination?: PaginationProps;
   children?: React.ReactNode;
   className?: string;
   onRowClick?: (row: T) => void;
@@ -27,9 +38,10 @@ interface FreightTableProps<T = any> {
   showChevron?: boolean;
 }
 
-export function FreightTable<T = any>({
+export function FreightTable<T>({
   data,
   columns,
+  pagination,
   children,
   className,
   onRowClick,
@@ -52,29 +64,18 @@ export function FreightTable<T = any>({
   if (data && columns) {
     return (
       <div className={cn('w-full overflow-auto rounded-md border border-gray-200', className)} data-testid="freight-table">
-        <table className="w-full caption-bottom text-sm">
-          <thead className="bg-gray-50" data-testid="freight-table-header">
-            <tr>
-              {safeArray(columns).map((column, index) => (
-                <th
-                  key={index}
-                  className={cn(
-                    'h-12 px-3 py-2 text-left align-middle font-medium text-gray-500 tracking-wide',
-                    column.align === 'right' && 'text-right',
-                    column.align === 'center' && 'text-center',
-                    '[&:has([role=checkbox])]:pr-0'
-                  )}
-                  data-testid={`freight-table-header-cell-${index}`}
-                >
-                  {column.header}
-                </th>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {columns.map((column) => (
+                <TableHead key={String(column.accessorKey)}>{column.header}</TableHead>
               ))}
-              {showChevron && <th className="w-10" data-testid="freight-table-header-chevron" />}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100" data-testid="freight-table-body">
-            {safeArray(data).map((row, rowIndex) => (
-              <tr
+              {showChevron && <TableHead className="w-10" data-testid="freight-table-header-chevron" />}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {data.map((row, rowIndex) => (
+              <TableRow
                 key={rowIndex}
                 className={cn(
                   'transition-colors hover:bg-gray-50',
@@ -83,24 +84,23 @@ export function FreightTable<T = any>({
                 onClick={() => onRowClick?.(row)}
                 data-testid={`freight-table-row-${rowIndex}`}
               >
-                {safeArray(columns).map((column, colIndex) => (
-                  <td
-                    key={colIndex}
-                    className={cn(
-                      'px-3 py-2 align-middle text-gray-900',
-                      column.align === 'right' && 'text-right',
-                      column.align === 'center' && 'text-center',
-                      '[&:has([role=checkbox])]:pr-0'
-                    )}
-                    data-testid={`freight-table-cell-${rowIndex}-${colIndex}`}
-                  >
-                    {column.cell
-                      ? column.cell(row[column.accessorKey], row)
-                      : row[column.accessorKey]?.toString()}
-                  </td>
-                ))}
+                {columns.map((column) => {
+                  const value = String(row[column.accessorKey]);
+                  return (
+                    <TableCell
+                      key={String(column.accessorKey)}
+                      className={cn(
+                        'px-3 py-2 align-middle text-gray-900',
+                        '[&:has([role=checkbox])]:pr-0'
+                      )}
+                      data-testid={`freight-table-cell-${rowIndex}-${String(column.accessorKey)}`}
+                    >
+                      {column.cell ? column.cell(value) : value}
+                    </TableCell>
+                  );
+                })}
                 {showChevron && (
-                  <td className="w-10 px-3 py-2 text-gray-400" data-testid={`freight-table-chevron-${rowIndex}`}>
+                  <TableCell className="w-10 px-3 py-2 text-gray-400" data-testid={`freight-table-chevron-${rowIndex}`}>
                     <svg
                       className="h-4 w-4"
                       fill="none"
@@ -114,21 +114,63 @@ export function FreightTable<T = any>({
                         d="M9 5l7 7-7 7"
                       />
                     </svg>
-                  </td>
+                  </TableCell>
                 )}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
+
+        {pagination && pagination.pageCount > 1 && (
+          <div className="flex items-center justify-between px-4 py-4 border-t">
+            <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+              Page {pagination.page} of {pagination.pageCount}
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => pagination.onPageChange(1)}
+                disabled={pagination.page === 1}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => pagination.onPageChange(pagination.page - 1)}
+                disabled={pagination.page === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => pagination.onPageChange(pagination.page + 1)}
+                disabled={pagination.page === pagination.pageCount}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => pagination.onPageChange(pagination.pageCount)}
+                disabled={pagination.page === pagination.pageCount}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
   return (
     <div className={cn('w-full overflow-auto rounded-md border border-gray-200', className)} data-testid="freight-table-custom">
-      <table className="w-full caption-bottom text-sm">
+      <Table>
         {children}
-      </table>
+      </Table>
     </div>
   );
 } 
