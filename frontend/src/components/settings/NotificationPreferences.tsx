@@ -249,115 +249,94 @@ export function NotificationPreferences() {
         </CardContent>
       </Card>
 
-      {Object.entries(preferences.categories).map(([category, categoryPrefs]) => (
-        <Card key={category}>
-          <CardHeader>
-            <CardTitle>{CATEGORY_LABELS[category as NotificationCategory]}</CardTitle>
-            <CardDescription>
-              Manage notifications for {CATEGORY_LABELS[category as NotificationCategory].toLowerCase()}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor={`category-${category}-enabled`}>
-                  Enable {CATEGORY_LABELS[category as NotificationCategory]} Notifications
-                </Label>
-                <Switch
-                  id={`category-${category}-enabled`}
-                  checked={categoryPrefs.enabled}
-                  onCheckedChange={(checked) => {
-                    setPreferences(prev => {
-                      if (!prev) return prev;
-                      return {
-                        ...prev,
-                        categories: {
-                          ...prev.categories,
-                          [category]: {
-                            ...prev.categories[category as NotificationCategory],
-                            enabled: checked,
-                          },
-                        },
-                      };
-                    });
-                  }}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor={`category-${category}-frequency`}>Digest Frequency</Label>
-                <Select
-                  value={categoryPrefs.frequency}
-                  onValueChange={(value: NotificationFrequency) => {
-                    handleDigestChange(category as NotificationCategory, value);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(FREQUENCY_LABELS).map(([value, label]) => (
-                      <SelectItem key={value} value={value}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Separator />
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {Object.entries(preferences.categories).map(([category, categoryPrefs]) => (
+          <Card key={category} className="h-full">
+            <CardHeader>
+              <CardTitle>{CATEGORY_LABELS[category as NotificationCategory]}</CardTitle>
+              <CardDescription>
+                Manage your {CATEGORY_LABELS[category as NotificationCategory].toLowerCase()} notifications
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-4">
-                {Object.entries(categoryPrefs.types).map(([type, typePrefs]) => (
-                  <div key={type} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor={`type-${type}-enabled`}>
-                        {TYPE_LABELS[type as NotificationType]}
-                      </Label>
-                      <Switch
-                        id={`type-${type}-enabled`}
-                        checked={typePrefs.enabled}
-                        onCheckedChange={(checked) => {
-                          handlePreferenceChange(
-                            category as NotificationCategory,
-                            type as NotificationType,
-                            checked,
-                            typePrefs.frequency
-                          );
-                        }}
-                      />
+                <div className="flex items-center justify-between">
+                  <Label htmlFor={`category-${category}-enabled`}>
+                    Enable all {CATEGORY_LABELS[category as NotificationCategory]} notifications
+                  </Label>
+                  <Switch
+                    id={`category-${category}-enabled`}
+                    checked={categoryPrefs.enabled}
+                    onCheckedChange={(checked) => {
+                      handleDigestChange(
+                        category as NotificationCategory,
+                        checked ? categoryPrefs.frequency : 'never'
+                      );
+                    }}
+                  />
+                </div>
+                {categoryPrefs.enabled && (
+                  <>
+                    <Separator />
+                    <div className="space-y-4">
+                      {Object.entries(categoryPrefs.types).map(([type, typePrefs]) => (
+                        <div key={type} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor={`type-${type}-enabled`}>
+                              {TYPE_LABELS[type as NotificationType]}
+                            </Label>
+                            <Switch
+                              id={`type-${type}-enabled`}
+                              checked={typePrefs.enabled}
+                              onCheckedChange={(checked) => {
+                                handlePreferenceChange(
+                                  category as NotificationCategory,
+                                  type as NotificationType,
+                                  checked,
+                                  typePrefs.frequency
+                                );
+                              }}
+                            />
+                          </div>
+                          {typePrefs.enabled && (
+                            <div className="flex items-center justify-between pl-4">
+                              <Label htmlFor={`type-${type}-frequency`}>
+                                Frequency
+                              </Label>
+                              <Select
+                                value={typePrefs.frequency}
+                                onValueChange={(value: NotificationFrequency) => {
+                                  handlePreferenceChange(
+                                    category as NotificationCategory,
+                                    type as NotificationType,
+                                    typePrefs.enabled,
+                                    value
+                                  );
+                                }}
+                              >
+                                <SelectTrigger className="w-[140px]">
+                                  <SelectValue placeholder="Select frequency" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-white shadow-lg z-50">
+                                  {Object.entries(FREQUENCY_LABELS).map(([value, label]) => (
+                                    <SelectItem key={value} value={value}>
+                                      {label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <Select
-                        value={typePrefs.frequency}
-                        onValueChange={(value: NotificationFrequency) => {
-                          handlePreferenceChange(
-                            category as NotificationCategory,
-                            type as NotificationType,
-                            typePrefs.enabled,
-                            value
-                          );
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(FREQUENCY_LABELS).map(([value, label]) => (
-                            <SelectItem key={value} value={value}>
-                              {label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                ))}
+                  </>
+                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 } 
