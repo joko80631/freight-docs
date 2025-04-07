@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTeamStore } from '@/store/teamStore';
 import {
   Select,
@@ -10,14 +10,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TeamSwitcher = () => {
-  const { teams, currentTeam, setCurrentTeam, isLoading, hasAttemptedLoad } = useTeamStore();
+  const { teams, currentTeam, setCurrentTeam, isLoading, hasAttemptedLoad, fetchTeams } = useTeamStore();
   const router = useRouter();
 
-  // Don't render anything while initial load is happening
-  if (!hasAttemptedLoad) {
-    return null;
+  useEffect(() => {
+    if (!hasAttemptedLoad) {
+      fetchTeams();
+    }
+  }, [hasAttemptedLoad, fetchTeams]);
+
+  // Show loading state
+  if (isLoading) {
+    return <Skeleton className="h-10 w-full" />;
   }
 
   // Show create team button if no teams exist

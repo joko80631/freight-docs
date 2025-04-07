@@ -119,11 +119,9 @@ export const Sidebar = forwardRef<HTMLDivElement, SidebarProps>(({
       </div>
 
       {/* Team Switcher */}
-      {!collapsed && (
-        <div className="border-b p-4">
-          <TeamSwitcher />
-        </div>
-      )}
+      <div className="border-b p-4">
+        {!collapsed ? <TeamSwitcher /> : null}
+      </div>
 
       <nav className="flex-1 py-4">
         {/* Main Group */}
