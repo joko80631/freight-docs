@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Search, Filter, Plus, Truck, Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,13 +13,22 @@ import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton"
 // Force dynamic rendering to prevent caching issues
 export const dynamic = 'force-dynamic';
 
+// Define the Load type
+interface Load {
+  id: string;
+  status: string;
+  origin: string;
+  destination: string;
+  createdAt: string;
+}
+
 export default function LoadsPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [loads, setLoads] = useState([]);
+  const [loads, setLoads] = useState<Load[]>([]);
   
   // Simulate loading data
-  useState(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1500);
