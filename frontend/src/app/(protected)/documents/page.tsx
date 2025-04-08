@@ -1,170 +1,179 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Search, Filter, Plus, FileText, Loader2, Calendar } from "lucide-react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { EmptyState } from "@/components/ui/empty-state"
-import { cn } from "@/lib/utils"
-import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton"
+import { useEffect, useState } from 'react';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useToast } from '@/components/ui/use-toast';
+import { DocumentUpload } from '@/components/documents/DocumentUpload';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, FileText, Download, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useTeamStore } from '@/store/teamStore';
+import { formatDistanceToNow } from 'date-fns';
 
 // Force dynamic rendering to prevent caching issues
 export const dynamic = 'force-dynamic';
 
-// Define the Document type
 interface Document {
   id: string;
-  name: string;
-  type: string;
+  original_filename: string;
+  file_url: string;
+  file_path: string;
+  created_at: string;
   status: string;
-  uploadedAt: string;
-  size: string;
+  file_size: number;
 }
 
 export default function DocumentsPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
   const [documents, setDocuments] = useState<Document[]>([]);
-  
-  // Simulate loading data
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const supabase = createClientComponentClient();
+  const { currentTeam } = useTeamStore();
+
+  const fetchDocuments = async () => {
+    if (!currentTeam?.id) return;
     
-    return () => clearTimeout(timer);
-  }, []);
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('team_id', currentTeam.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setDocuments(data || []);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch documents",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (documentId: string, filePath: string) => {
+    try {
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from('documents')
+        .remove([filePath]);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (dbError) throw dbError;
+
+      setDocuments(documents.filter(doc => doc.id !== documentId));
+      toast({
+        title: "Success",
+        description: "Document deleted successfully",
+      });
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  useEffect(() => {
+    fetchDocuments();
+  }, [currentTeam?.id]);
+
+  if (!currentTeam?.id) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-center text-muted-foreground">
+              Please select a team to view documents
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-gray-50/50">
-      <main className="flex-1 p-6 md:p-8 lg:p-10">
-        {/* Header Section with Primary CTA */}
-        <section className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold md:text-2xl">Documents</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Manage BOLs, PODs, and invoices easily</p>
-          </div>
-          <Button 
-            size="lg" 
-            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
-            onClick={() => router.push('/documents/upload')}
-          >
-            <Plus className="h-4 w-4" />
-            Upload Document
-          </Button>
-        </section>
+    <div className="container mx-auto p-6 space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Upload Document</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <DocumentUpload onUploadComplete={() => fetchDocuments()} />
+        </CardContent>
+      </Card>
 
-        {/* Search and Filter Section */}
-        <section className="mb-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input 
-                placeholder="Search documents by name or type..." 
-                className="pl-9"
-                disabled={isLoading}
-              />
+      <Card>
+        <CardHeader>
+          <CardTitle>Documents</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center p-6">
+              <Loader2 className="h-6 w-6 animate-spin" />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" disabled={isLoading} className="gap-2">
-                <Filter className="h-4 w-4" />
-                Type
-              </Button>
-              <Button variant="outline" disabled={isLoading} className="gap-2">
-                <Calendar className="h-4 w-4" />
-                Date Uploaded
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center py-6">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="mt-2 text-sm text-muted-foreground">Loading your documents...</p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {!isLoading && documents.length === 0 && (
-          <EmptyState
-            icon={FileText}
-            title="No Documents Uploaded"
-            description="Upload your shipment documents like BOLs, invoices, or PODs to get started."
-            action={{
-              label: "Upload Document",
-              onClick: () => router.push('/documents/upload')
-            }}
-          />
-        )}
-
-        {/* Documents Grid */}
-        {!isLoading && documents.length > 0 && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {documents.map((doc, index) => (
-              <Card 
-                key={index}
-                className="overflow-hidden border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
-                onClick={() => router.push(`/documents/${doc.id}`)}
-              >
-                <CardHeader className="pb-3 border-b">
-                  <CardTitle className="text-lg font-semibold truncate">{doc.name}</CardTitle>
-                  <CardDescription>{doc.type}</CardDescription>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Status</span>
-                      <span className="text-sm font-medium">{doc.status}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Size</span>
-                      <span className="text-sm font-medium">{doc.size}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Uploaded</span>
-                      <span className="text-sm font-medium">{doc.uploadedAt}</span>
+          ) : documents.length === 0 ? (
+            <p className="text-center text-muted-foreground py-6">
+              No documents uploaded yet
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                >
+                  <div className="flex items-center space-x-4">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                    <div>
+                      <p className="font-medium">{doc.original_filename}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {formatFileSize(doc.file_size)} • Uploaded {formatDistanceToNow(new Date(doc.created_at))} ago
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Loading Skeletons (shown during initial load) */}
-        {isLoading && (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array(8).fill(0).map((_, index) => (
-              <Card key={index} className="overflow-hidden border border-border/40 shadow-sm">
-                <CardHeader className="pb-3 border-b">
-                  <LoadingSkeleton className="h-6 w-32" />
-                  <LoadingSkeleton className="mt-2 h-4 w-20" />
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <LoadingSkeleton className="h-4 w-16" />
-                      <LoadingSkeleton className="h-4 w-20" />
-                    </div>
-                    <div className="flex justify-between">
-                      <LoadingSkeleton className="h-4 w-12" />
-                      <LoadingSkeleton className="h-4 w-16" />
-                    </div>
-                    <div className="flex justify-between">
-                      <LoadingSkeleton className="h-4 w-20" />
-                      <LoadingSkeleton className="h-4 w-24" />
-                    </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => window.open(doc.file_url, '_blank')}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleDelete(doc.id, doc.file_path)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-      </main>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 } 
