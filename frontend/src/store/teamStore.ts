@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { persist } from 'zustand/middleware';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/use-toast';
 import {
   Team,
   TeamMember,
@@ -107,7 +107,11 @@ export const useTeamStore = create<TeamState>()(
           }
         } catch (error) {
           set({ error: 'Failed to fetch teams' });
-          toast.error('Failed to fetch teams');
+          toast({
+            title: "Error",
+            description: "Failed to fetch teams",
+            variant: "destructive",
+          });
         } finally {
           set({ isFetching: false });
         }
@@ -131,11 +135,18 @@ export const useTeamStore = create<TeamState>()(
           // The trigger will automatically add the creator as admin
           await get().fetchTeams();
           
-          toast.success('Team created successfully');
+          toast({
+            title: "Success",
+            description: "Team created successfully",
+          });
           return team as TeamWithRole;
         } catch (error) {
           set({ error: 'Failed to create team' });
-          toast.error('Failed to create team');
+          toast({
+            title: "Error",
+            description: "Failed to create team",
+            variant: "destructive",
+          });
           return null;
         } finally {
           set({ isCreating: false });
@@ -161,11 +172,18 @@ export const useTeamStore = create<TeamState>()(
 
           await get().fetchTeams();
           
-          toast.success('Team updated successfully');
+          toast({
+            title: "Success",
+            description: "Team updated successfully",
+          });
           return team as TeamWithRole;
         } catch (error) {
           set({ error: 'Failed to update team' });
-          toast.error('Failed to update team');
+          toast({
+            title: "Error",
+            description: "Failed to update team",
+            variant: "destructive",
+          });
           return null;
         } finally {
           set({ isUpdating: false });
@@ -189,11 +207,18 @@ export const useTeamStore = create<TeamState>()(
             currentTeam: state.currentTeam?.id === teamId ? null : state.currentTeam,
           }));
 
-          toast.success('Team deleted successfully');
+          toast({
+            title: "Success",
+            description: "Team deleted successfully",
+          });
           return true;
         } catch (error) {
           set({ error: 'Failed to delete team' });
-          toast.error('Failed to delete team');
+          toast({
+            title: "Error",
+            description: "Failed to delete team",
+            variant: "destructive",
+          });
           return false;
         } finally {
           set({ isUpdating: false });
@@ -248,7 +273,11 @@ export const useTeamStore = create<TeamState>()(
           set({ members: teamMembers });
         } catch (error) {
           set({ error: 'Failed to fetch team members' });
-          toast.error('Failed to fetch team members');
+          toast({
+            title: "Error",
+            description: "Failed to fetch team members",
+            variant: "destructive",
+          });
         } finally {
           set({ isFetching: false });
         }
@@ -294,12 +323,19 @@ export const useTeamStore = create<TeamState>()(
 
           await get().fetchTeamMembers(teamId);
           
-          toast.success('Team member added successfully');
+          toast({
+            title: "Success",
+            description: "Team member added successfully",
+          });
           return true;
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to add team member';
           set({ error: message });
-          toast.error(message);
+          toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+          });
           return false;
         } finally {
           set({ isCreating: false });
@@ -339,12 +375,19 @@ export const useTeamStore = create<TeamState>()(
 
           await get().fetchTeamMembers(teamId);
           
-          toast.success('Team member updated successfully');
+          toast({
+            title: "Success",
+            description: "Team member updated successfully",
+          });
           return true;
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to update team member';
           set({ error: message });
-          toast.error(message);
+          toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+          });
           return false;
         } finally {
           set({ isUpdating: false });
@@ -390,12 +433,19 @@ export const useTeamStore = create<TeamState>()(
 
           await get().fetchTeamMembers(teamId);
           
-          toast.success('Team member removed successfully');
+          toast({
+            title: "Success",
+            description: "Team member removed successfully",
+          });
           return true;
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Failed to remove team member';
           set({ error: message });
-          toast.error(message);
+          toast({
+            title: "Error",
+            description: message,
+            variant: "destructive",
+          });
           return false;
         } finally {
           set({ isUpdating: false });
