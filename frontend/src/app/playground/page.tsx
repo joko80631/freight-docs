@@ -114,7 +114,7 @@ export default function PlaygroundPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <h3 className="text-lg font-semibold">Card with Header</h3>
-              <FreightButton size="small" variant="secondary">Action</FreightButton>
+              <FreightButton size="small" variant="outline">Action</FreightButton>
             </CardHeader>
             <CardContent className="p-6">
               <p>Card with header and action button</p>
@@ -156,15 +156,15 @@ export default function PlaygroundPage() {
         <div className="space-y-4">
           <div className="flex flex-wrap gap-4">
             <FreightButton>Primary Button</FreightButton>
-            <FreightButton variant="secondary">Secondary Button</FreightButton>
-            <FreightButton variant="danger">Danger Button</FreightButton>
+            <FreightButton variant="outline">Secondary Button</FreightButton>
+            <FreightButton variant="outline">Danger Button</FreightButton>
             <FreightButton variant="icon"><Plus /></FreightButton>
           </div>
           
           <div className="flex flex-wrap gap-4">
             <FreightButton size="small">Small Primary</FreightButton>
-            <FreightButton size="small" variant="secondary">Small Secondary</FreightButton>
-            <FreightButton size="small" variant="danger">Small Danger</FreightButton>
+            <FreightButton size="small" variant="outline">Small Secondary</FreightButton>
+            <FreightButton size="small" variant="outline">Small Danger</FreightButton>
             <FreightButton size="small" variant="icon"><Trash /></FreightButton>
           </div>
           
