@@ -49,20 +49,13 @@ export function ReclassifyForm({ document, onReclassify }: ReclassifyFormProps) 
 
       const updatedDocument = await response.json();
 
-      toast({
-        title: 'Success',
-        description: 'Document reclassified successfully',
-      });
+      toast.success('Document reclassified successfully');
 
       onReclassify(updatedDocument);
       setNewType('');
       setReason('');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: getErrorMessage(error),
-        variant: 'destructive',
-      });
+      toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
