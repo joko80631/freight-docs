@@ -9,7 +9,7 @@ import { Search, Filter, Plus, Package } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { EmptyState } from '@/components/ui/empty-state';
-import { FreightTable } from '@/components/freight/FreightTable';
+import { FreightTable, Column } from '@/components/freight/FreightTable';
 import { FreightBadge } from '@/components/freight/FreightBadge';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -81,7 +81,7 @@ export default function LoadsPage() {
     }
   };
 
-  const columns = [
+  const columns: Column<Load>[] = [
     {
       header: 'Reference',
       accessorKey: 'reference_number' as keyof Load,
@@ -93,7 +93,7 @@ export default function LoadsPage() {
     {
       header: 'Status',
       accessorKey: 'status' as keyof Load,
-      cell: (value: string) => (
+      cell: (value: string | number, row: Load) => (
         <FreightBadge variant={
           value === 'delivered' ? 'success' : 
           value === 'in_transit' ? 'warning' : 
@@ -107,12 +107,12 @@ export default function LoadsPage() {
     {
       header: 'Created',
       accessorKey: 'created_at' as keyof Load,
-      cell: (value: string) => new Date(value).toLocaleDateString(),
+      cell: (value: string | number, row: Load) => new Date(String(value)).toLocaleDateString(),
     },
     {
       header: 'Updated',
       accessorKey: 'updated_at' as keyof Load,
-      cell: (value: string) => new Date(value).toLocaleDateString(),
+      cell: (value: string | number, row: Load) => new Date(String(value)).toLocaleDateString(),
     },
   ];
 
