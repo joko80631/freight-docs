@@ -1,29 +1,21 @@
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from 'sonner';
 
 export function useToastNotification() {
-  const { toast } = useToast();
-
   const showSuccess = (title, description) => {
-    toast({
-      title,
-      description,
-      variant: "default",
+    toast.success(title, {
+      description
     });
   };
 
   const showError = (title, description) => {
-    toast({
-      title,
-      description,
-      variant: "destructive",
+    toast.error(title, {
+      description
     });
   };
 
   const showLoading = (title, description) => {
-    toast({
-      title,
-      description,
-      variant: "default",
+    toast.loading(title, {
+      description
     });
   };
 

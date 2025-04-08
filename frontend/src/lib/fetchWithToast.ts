@@ -1,4 +1,4 @@
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { getErrorMessage } from '@/lib/errors';
 
 interface FetchWithToastOptions extends RequestInit {
@@ -22,18 +22,13 @@ export async function fetchWithToast<T>(
     const data = await response.json();
 
     if (successMessage) {
-      toast({
-        title: successMessage,
-        variant: 'default',
-      });
+      toast.success(successMessage);
     }
 
     return data as T;
   } catch (error) {
-    toast({
-      title: 'Error',
-      description: getErrorMessage(error),
-      variant: 'destructive',
+    toast.error('Error', {
+      description: getErrorMessage(error)
     });
     throw error;
   }
