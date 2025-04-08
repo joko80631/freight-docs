@@ -1,31 +1,24 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useTeamStore } from '@/store/team-store';
-import { Upload, X } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
 
 interface DocumentUploadProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUploadComplete: () => void;
+  onUploadComplete?: () => void;
 }
 
 export function DocumentUpload({ open, onOpenChange, onUploadComplete }: DocumentUploadProps) {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { currentTeam } = useTeamStore();
   const { toast } = useToast();
   const supabase = createClientComponentClient();
+  const { currentTeam } = useTeamStore();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -41,41 +34,26 @@ export function DocumentUpload({ open, onOpenChange, onUploadComplete }: Documen
     setProgress(0);
 
     try {
-      // Upload file to storage
-      const fileExt = selectedFile.name.split('.').pop();
-      const filePath = `${currentTeam.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError, data } = await supabase.storage
+      const filePath = `${currentTeam.id}/${selectedFile.name}`;
+      
+      const { error } = await supabase.storage
         .from('documents')
         .upload(filePath, selectedFile, {
-          onUploadProgress: (progress) => {
-            const percent = (progress.loaded / progress.total) * 100;
-            setProgress(percent);
-          },
+          cacheControl: '3600',
+          upsert: false
         });
 
-      if (uploadError) throw uploadError;
+      if (error) throw error;
 
-      // Create document record
-      const { error: dbError } = await supabase
-        .from('documents')
-        .insert({
-          team_id: currentTeam.id,
-          name: selectedFile.name,
-          storage_path: filePath,
-          type: 'pending',
-          confidence_score: 0,
-          uploaded_at: new Date().toISOString(),
-        });
+      toast({
+        title: 'Success',
+        description: 'Document uploaded successfully',
+      });
 
-      if (dbError) throw dbError;
-
-      onUploadComplete();
+      onUploadComplete?.();
       onOpenChange(false);
-      setSelectedFile(null);
-      setProgress(0);
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error('Error uploading document:', error);
       toast({
         title: 'Error',
         description: 'Failed to upload document',
@@ -83,6 +61,8 @@ export function DocumentUpload({ open, onOpenChange, onUploadComplete }: Documen
       });
     } finally {
       setIsUploading(false);
+      setProgress(0);
+      setSelectedFile(null);
     }
   };
 
@@ -91,59 +71,45 @@ export function DocumentUpload({ open, onOpenChange, onUploadComplete }: Documen
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Upload Document</DialogTitle>
-          <DialogDescription>
-            Upload a document to be processed and classified by our AI
-          </DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4">
-          <div className="flex items-center justify-center w-full">
-            <label
-              htmlFor="dropzone-file"
-              className={`flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer
-                ${isUploading ? 'bg-gray-50' : 'hover:bg-gray-50'} 
-                ${selectedFile ? 'border-primary' : 'border-gray-300'}`}
-            >
-              <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                {selectedFile ? (
-                  <>
-                    <Upload className="w-8 h-8 mb-4 text-primary" />
-                    <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">{selectedFile.name}</span>
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                    </p>
-                    {isUploading && (
-                      <div className="w-full max-w-xs mt-4">
-                        <Progress value={progress} className="w-full" />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-8 h-8 mb-4 text-gray-500" />
-                    <p className="mb-2 text-sm text-gray-500">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      PDF, PNG, JPG or TIFF (MAX. 10MB)
-                    </p>
-                  </>
-                )}
-              </div>
+          {!selectedFile ? (
+            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg">
               <input
-                id="dropzone-file"
                 type="file"
-                className="hidden"
-                accept=".pdf,.png,.jpg,.jpeg,.tiff"
                 onChange={handleFileSelect}
-                disabled={isUploading}
+                className="hidden"
+                id="file-upload"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
               />
-            </label>
-          </div>
-
-          <div className="flex justify-end gap-3">
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer text-center"
+              >
+                <div className="text-sm text-gray-500">
+                  Click to select a file or drag and drop
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  PDF, DOC, DOCX, XLS, XLSX, CSV
+                </div>
+              </label>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-sm">
+                Selected file: {selectedFile.name}
+              </div>
+              {isUploading && (
+                <div className="space-y-2">
+                  <Progress value={progress} />
+                  <div className="text-xs text-gray-500 text-center">
+                    Uploading... {Math.round(progress)}%
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div className="flex justify-end space-x-2">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
