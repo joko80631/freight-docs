@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useTeamStore } from '@/store/teamStore';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -11,35 +13,29 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useTeamStore, TeamWithRole } from '@/store/teamStore';
 
 interface CreateTeamDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onTeamCreated?: (team: TeamWithRole | null) => void;
 }
 
-export function CreateTeamDialog({ open, onOpenChange }: CreateTeamDialogProps) {
+export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTeamDialogProps) {
   const [teamName, setTeamName] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { createTeam } = useTeamStore();
-  const router = useRouter();
+  const { createTeam, isLoading } = useTeamStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamName) return;
+    if (!teamName.trim()) {
+      return;
+    }
 
-    setIsSubmitting(true);
-    try {
-      const team = await createTeam({ name: teamName });
-      if (team) {
-        setTeamName('');
-        onOpenChange(false);
-        router.push(`/teams/${team.id}`);
-      }
-    } finally {
-      setIsSubmitting(false);
+    const team = await createTeam(teamName);
+    if (team) {
+      setTeamName('');
+      onOpenChange(false);
+      onTeamCreated?.(team);
     }
   };
 
@@ -47,36 +43,36 @@ export function CreateTeamDialog({ open, onOpenChange }: CreateTeamDialogProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create Team</DialogTitle>
+          <DialogTitle>Create New Team</DialogTitle>
           <DialogDescription>
             Create a new team to collaborate with others.
           </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Team Name</Label>
-            <Input
-              id="name"
-              placeholder="Enter team name"
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
-              disabled={isSubmitting}
-              required
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Team Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter team name"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
           </div>
-
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Team'}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Create Team
             </Button>
           </DialogFooter>
         </form>

@@ -1,143 +1,94 @@
+'use client';
+
 import { useState } from 'react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { MoreVertical, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal } from 'lucide-react';
-import { useTeamStore } from '@/store/team-store';
-
-interface TeamMember {
-  id: string;
-  email: string;
-  full_name: string;
-  role: 'owner' | 'admin' | 'member';
-}
+import { useTeamStore, TeamMember } from '@/store/teamStore';
+import { AddTeamMemberDialog } from './AddTeamMemberDialog';
 
 interface TeamMemberListProps {
   teamId: string;
-  members: TeamMember[];
-  currentUserRole: 'owner' | 'admin' | 'member';
-  onMemberUpdate: () => void;
 }
 
-export function TeamMemberList({ teamId, members, currentUserRole, onMemberUpdate }: TeamMemberListProps) {
-  const [isLoading, setIsLoading] = useState(false);
-  const { updateTeamMemberRole, removeTeamMember } = useTeamStore();
-  const { toast } = useToast();
+export function TeamMemberList({ teamId }: TeamMemberListProps) {
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const { teams, currentTeam } = useTeamStore();
+  const team = teams.find(t => t.id === teamId);
 
-  const handleRoleUpdate = async (memberId: string, newRole: 'owner' | 'admin' | 'member') => {
-    setIsLoading(true);
-    try {
-      await updateTeamMemberRole(teamId, memberId, newRole);
-      onMemberUpdate();
-      toast({
-        title: 'Success',
-        description: 'Member role updated successfully',
-      });
-    } catch (error) {
-      console.error('Error updating member role:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to update member role',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRemoveMember = async (memberId: string) => {
-    setIsLoading(true);
-    try {
-      await removeTeamMember(teamId, memberId);
-      onMemberUpdate();
-      toast({
-        title: 'Success',
-        description: 'Member removed successfully',
-      });
-    } catch (error) {
-      console.error('Error removing member:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to remove member',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const canManageMembers = currentUserRole === 'owner' || currentUserRole === 'admin';
+  if (!team) {
+    return null;
+  }
 
   return (
-    <div className="rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Email</TableHead>
-            <TableHead>Role</TableHead>
-            {canManageMembers && <TableHead className="w-[100px]">Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {members.map((member) => (
-            <TableRow key={member.id}>
-              <TableCell>{member.full_name}</TableCell>
-              <TableCell>{member.email}</TableCell>
-              <TableCell className="capitalize">{member.role}</TableCell>
-              {canManageMembers && (
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {member.role !== 'owner' && (
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => handleRoleUpdate(member.id, 'admin')}
-                            disabled={isLoading}
-                          >
-                            Make Admin
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleRoleUpdate(member.id, 'member')}
-                            disabled={isLoading}
-                          >
-                            Make Member
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleRemoveMember(member.id)}
-                            disabled={isLoading}
-                            className="text-red-600"
-                          >
-                            Remove
-                          </DropdownMenuItem>
-                        </>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Team Members</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsAddMemberOpen(true)}
+        >
+          <UserPlus className="mr-2 h-4 w-4" />
+          Add Member
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        {team.members?.map((member: TeamMember) => (
+          <div
+            key={member.user_id}
+            className="flex items-center justify-between rounded-lg border p-4"
+          >
+            <div className="flex items-center space-x-4">
+              <div className="flex-1 space-y-1">
+                <p className="text-sm font-medium leading-none">
+                  {member.profile.full_name}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {member.profile.email}
+                </p>
+              </div>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    // TODO: Implement role change
+                  }}
+                >
+                  Change Role
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-red-600"
+                  onClick={() => {
+                    // TODO: Implement remove member
+                  }}
+                >
+                  Remove Member
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        ))}
+      </div>
+
+      <AddTeamMemberDialog
+        open={isAddMemberOpen}
+        onOpenChange={setIsAddMemberOpen}
+        teamId={teamId}
+      />
     </div>
   );
 } 

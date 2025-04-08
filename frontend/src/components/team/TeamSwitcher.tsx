@@ -1,105 +1,79 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ChevronsUpDown, PlusCircle } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { ChevronDown, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-} from '@/components/ui/command';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { useTeamStore } from '@/store/teamStore';
+import { useTeamStore, TeamWithRole } from '@/store/teamStore';
 import { CreateTeamDialog } from './CreateTeamDialog';
 
-export default function TeamSwitcher() {
-  const [open, setOpen] = useState(false);
-  const [showCreateTeam, setShowCreateTeam] = useState(false);
+export function TeamSwitcher() {
   const router = useRouter();
-  const { teams, currentTeam, setCurrentTeam } = useTeamStore();
+  const { teams, currentTeam, setCurrentTeam, fetchTeams } = useTeamStore();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const handleSelectTeam = (teamId: string) => {
-    const team = teams.find(t => t.id === teamId);
-    if (team) {
-      setCurrentTeam(teamId);
-      router.push(`/teams/${teamId}`);
-      setOpen(false);
-    }
+  useEffect(() => {
+    fetchTeams();
+  }, [fetchTeams]);
+
+  const handleTeamSelect = (team: TeamWithRole) => {
+    setCurrentTeam(team);
+    router.push(`/teams/${team.id}`);
   };
 
   return (
-    <>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            aria-label="Select a team"
-            className="w-[200px] justify-between"
-          >
-            <div className="flex items-center gap-2 truncate">
-              <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border bg-muted text-xs font-medium">
-                {currentTeam?.name?.charAt(0).toUpperCase() || '?'}
-              </div>
-              <span className="truncate">{currentTeam?.name || 'Select team'}</span>
-            </div>
-            <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0">
-          <Command>
-            <CommandInput placeholder="Search team..." />
-            <CommandList>
-              <CommandEmpty>No team found.</CommandEmpty>
-              <CommandGroup heading="Teams">
-                {teams.map((team) => (
-                  <CommandItem
-                    key={team.id}
-                    onSelect={() => handleSelectTeam(team.id)}
-                    className="text-sm"
-                  >
-                    <div className="flex h-5 w-5 items-center justify-center rounded-md border bg-muted text-xs font-medium">
-                      {team.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="ml-2">{team.name}</span>
-                    {currentTeam?.id === team.id && (
-                      <Check className="ml-auto h-4 w-4" />
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-              <CommandSeparator />
-              <CommandGroup>
-                <CommandItem
-                  onSelect={() => {
-                    setOpen(false);
-                    setShowCreateTeam(true);
-                  }}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create Team
-                </CommandItem>
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+    <div className="flex items-center gap-2">
+      <div className="relative">
+        <Button
+          variant="outline"
+          className="flex items-center gap-2"
+          onClick={() => setIsCreateDialogOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+          New Team
+        </Button>
+      </div>
+
+      <div className="relative">
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2"
+          onClick={() => {
+            const dropdown = document.getElementById('team-dropdown');
+            dropdown?.classList.toggle('hidden');
+          }}
+        >
+          {currentTeam?.name || 'Select Team'}
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+
+        <div
+          id="team-dropdown"
+          className="hidden absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+        >
+          <div className="py-1">
+            {teams.map((team) => (
+              <button
+                key={team.id}
+                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => handleTeamSelect(team)}
+              >
+                {team.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <CreateTeamDialog
-        open={showCreateTeam}
-        onOpenChange={setShowCreateTeam}
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onTeamCreated={(team) => {
+          if (team) {
+            handleTeamSelect(team);
+          }
+        }}
       />
-    </>
+    </div>
   );
 } 

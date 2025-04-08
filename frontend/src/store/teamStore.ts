@@ -2,42 +2,31 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { persist } from 'zustand/middleware';
 import { toast } from '@/components/ui/use-toast';
-import {
-  Team,
-  TeamMember,
-  TeamRole,
-  TeamWithRole,
-  CreateTeamPayload,
-  UpdateTeamPayload,
-  AddTeamMemberPayload,
-  UpdateTeamMemberPayload,
-} from '@/types/team';
 
-interface TeamState {
-  teams: TeamWithRole[];
-  currentTeam: TeamWithRole | null;
-  members: TeamMember[];
-  isLoading: boolean;
-  isCreating: boolean;
-  isUpdating: boolean;
-  isFetching: boolean;
-  error: string | null;
-  
-  // Team actions
-  fetchTeams: () => Promise<void>;
-  createTeam: (payload: CreateTeamPayload) => Promise<TeamWithRole | null>;
-  updateTeam: (teamId: string, payload: UpdateTeamPayload) => Promise<TeamWithRole | null>;
-  deleteTeam: (teamId: string) => Promise<boolean>;
-  setCurrentTeam: (teamId: string | null) => void;
-  
-  // Team member actions
-  fetchTeamMembers: (teamId: string) => Promise<void>;
-  addTeamMember: (teamId: string, payload: AddTeamMemberPayload) => Promise<boolean>;
-  updateTeamMember: (teamId: string, userId: string, payload: UpdateTeamMemberPayload) => Promise<boolean>;
-  removeTeamMember: (teamId: string, userId: string) => Promise<boolean>;
+export type TeamRole = 'ADMIN' | 'MEMBER';
+
+export interface Team {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string;
 }
 
-const supabase = createClientComponentClient();
+export interface TeamMember {
+  user_id: string;
+  role: TeamRole;
+  profile: {
+    full_name: string;
+    email: string;
+    avatar_url?: string;
+  };
+}
+
+export interface TeamWithRole extends Team {
+  role: TeamRole;
+  members?: TeamMember[];
+}
 
 interface TeamMembershipResponse {
   team_id: string;
@@ -45,419 +34,157 @@ interface TeamMembershipResponse {
   teams: Team;
 }
 
-interface TeamMemberResponse {
-  team_id: string;
-  user_id: string;
-  role: TeamRole;
-  created_at: string;
-  updated_at: string;
-  profiles: {
-    full_name: string;
-    email: string;
-    avatar_url?: string;
-  };
+interface TeamState {
+  teams: TeamWithRole[];
+  currentTeam: TeamWithRole | null;
+  isLoading: boolean;
+  error: string | null;
+  fetchTeams: () => Promise<void>;
+  createTeam: (name: string) => Promise<TeamWithRole | null>;
+  setCurrentTeam: (team: TeamWithRole | null) => void;
+  deleteTeam: (teamId: string) => Promise<void>;
 }
 
 export const useTeamStore = create<TeamState>()(
   persist(
-    (set, get) => ({
-      teams: [],
-      currentTeam: null,
-      members: [],
-      isLoading: false,
-      isCreating: false,
-      isUpdating: false,
-      isFetching: false,
-      error: null,
+    (set, get) => {
+      const supabase = createClientComponentClient();
 
-      fetchTeams: async () => {
-        try {
-          set({ isFetching: true, error: null });
-          
-          const { data: memberships, error: membershipError } = await supabase
-            .from('team_members')
-            .select(`
-              team_id,
-              role,
-              teams:team_id (
-                id,
-                name,
-                created_at,
-                updated_at,
-                created_by
-              )
-            `)
-            .returns<TeamMembershipResponse[]>()
-            .throwOnError();
+      return {
+        teams: [],
+        currentTeam: null,
+        isLoading: false,
+        error: null,
 
-          if (membershipError) throw membershipError;
+        fetchTeams: async () => {
+          set({ isLoading: true, error: null });
+          try {
+            const { data: teamMemberships, error } = await supabase
+              .from('team_members')
+              .select(`
+                team_id,
+                role,
+                teams (
+                  id,
+                  name,
+                  created_at,
+                  updated_at,
+                  created_by
+                )
+              `)
+              .returns<TeamMembershipResponse[]>();
 
-          const teamsWithRoles: TeamWithRole[] = memberships
-            .filter(m => m.teams) // Filter out null teams
-            .map(m => ({
-              ...m.teams,
-              role: m.role
+            if (error) throw error;
+
+            const teams = teamMemberships
+              .filter(membership => membership.teams)
+              .map(membership => ({
+                ...membership.teams,
+                role: membership.role
+              }));
+
+            set({ teams, isLoading: false });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams';
+            set({ error: errorMessage, isLoading: false });
+            toast({
+              title: "Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
+          }
+        },
+
+        createTeam: async (name: string) => {
+          set({ isLoading: true, error: null });
+          try {
+            if (!name.trim()) {
+              throw new Error('Team name is required');
+            }
+
+            const { data: team, error: teamError } = await supabase
+              .from('teams')
+              .insert([{ name: name.trim() }])
+              .select()
+              .single();
+
+            if (teamError) throw teamError;
+
+            const { error: memberError } = await supabase
+              .from('team_members')
+              .insert([{
+                team_id: team.id,
+                role: 'ADMIN'
+              }]);
+
+            if (memberError) throw memberError;
+
+            const newTeam: TeamWithRole = {
+              ...team,
+              role: 'ADMIN'
+            };
+
+            set(state => ({
+              teams: [...state.teams, newTeam],
+              currentTeam: newTeam,
+              isLoading: false
             }));
 
-          set({ teams: teamsWithRoles });
-          
-          // Set first team as current if none selected
-          if (!get().currentTeam && teamsWithRoles.length > 0) {
-            set({ currentTeam: teamsWithRoles[0] });
+            toast({
+              title: "Success",
+              description: "Team created successfully",
+            });
+            return newTeam;
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to create team';
+            set({ error: errorMessage, isLoading: false });
+            toast({
+              title: "Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
+            return null;
           }
-        } catch (error) {
-          set({ error: 'Failed to fetch teams' });
-          toast({
-            title: "Error",
-            description: "Failed to fetch teams",
-            variant: "destructive",
-          });
-        } finally {
-          set({ isFetching: false });
-        }
-      },
+        },
 
-      createTeam: async (payload) => {
-        try {
-          set({ isCreating: true, error: null });
-
-          const { data: team, error: teamError } = await supabase
-            .from('teams')
-            .insert({
-              name: payload.name,
-            })
-            .select()
-            .single()
-            .throwOnError();
-
-          if (teamError) throw teamError;
-
-          // The trigger will automatically add the creator as admin
-          await get().fetchTeams();
-          
-          toast({
-            title: "Success",
-            description: "Team created successfully",
-          });
-          return team as TeamWithRole;
-        } catch (error) {
-          set({ error: 'Failed to create team' });
-          toast({
-            title: "Error",
-            description: "Failed to create team",
-            variant: "destructive",
-          });
-          return null;
-        } finally {
-          set({ isCreating: false });
-        }
-      },
-
-      updateTeam: async (teamId, payload) => {
-        try {
-          set({ isUpdating: true, error: null });
-
-          const { data: team, error: teamError } = await supabase
-            .from('teams')
-            .update({
-              name: payload.name,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', teamId)
-            .select()
-            .single()
-            .throwOnError();
-
-          if (teamError) throw teamError;
-
-          await get().fetchTeams();
-          
-          toast({
-            title: "Success",
-            description: "Team updated successfully",
-          });
-          return team as TeamWithRole;
-        } catch (error) {
-          set({ error: 'Failed to update team' });
-          toast({
-            title: "Error",
-            description: "Failed to update team",
-            variant: "destructive",
-          });
-          return null;
-        } finally {
-          set({ isUpdating: false });
-        }
-      },
-
-      deleteTeam: async (teamId) => {
-        try {
-          set({ isUpdating: true, error: null });
-
-          const { error } = await supabase
-            .from('teams')
-            .delete()
-            .eq('id', teamId)
-            .throwOnError();
-
-          if (error) throw error;
-
-          set(state => ({
-            teams: state.teams.filter(t => t.id !== teamId),
-            currentTeam: state.currentTeam?.id === teamId ? null : state.currentTeam,
-          }));
-
-          toast({
-            title: "Success",
-            description: "Team deleted successfully",
-          });
-          return true;
-        } catch (error) {
-          set({ error: 'Failed to delete team' });
-          toast({
-            title: "Error",
-            description: "Failed to delete team",
-            variant: "destructive",
-          });
-          return false;
-        } finally {
-          set({ isUpdating: false });
-        }
-      },
-
-      setCurrentTeam: (teamId) => {
-        if (!teamId) {
-          set({ currentTeam: null });
-          return;
-        }
-
-        const team = get().teams.find(t => t.id === teamId);
-        if (team) {
+        setCurrentTeam: (team: TeamWithRole | null) => {
           set({ currentTeam: team });
-        }
-      },
+        },
 
-      fetchTeamMembers: async (teamId) => {
-        try {
-          set({ isFetching: true, error: null });
+        deleteTeam: async (teamId: string) => {
+          set({ isLoading: true, error: null });
+          try {
+            const { error } = await supabase
+              .from('teams')
+              .delete()
+              .eq('id', teamId);
 
-          const { data: members, error: membersError } = await supabase
-            .from('team_members')
-            .select(`
-              team_id,
-              user_id,
-              role,
-              created_at,
-              updated_at,
-              profiles:user_id (
-                full_name,
-                email,
-                avatar_url
-              )
-            `)
-            .returns<TeamMemberResponse[]>()
-            .eq('team_id', teamId)
-            .throwOnError();
+            if (error) throw error;
 
-          if (membersError) throw membersError;
+            set(state => ({
+              teams: state.teams.filter(team => team.id !== teamId),
+              currentTeam: state.currentTeam?.id === teamId ? null : state.currentTeam,
+              isLoading: false
+            }));
 
-          const teamMembers: TeamMember[] = members.map(m => ({
-            team_id: m.team_id,
-            user_id: m.user_id,
-            role: m.role,
-            created_at: m.created_at,
-            updated_at: m.updated_at,
-            profile: m.profiles
-          }));
-
-          set({ members: teamMembers });
-        } catch (error) {
-          set({ error: 'Failed to fetch team members' });
-          toast({
-            title: "Error",
-            description: "Failed to fetch team members",
-            variant: "destructive",
-          });
-        } finally {
-          set({ isFetching: false });
-        }
-      },
-
-      addTeamMember: async (teamId, payload) => {
-        try {
-          set({ isCreating: true, error: null });
-
-          // First check if user exists and has a profile
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select()
-            .eq('id', payload.userId)
-            .single();
-
-          if (profileError || !profile) {
-            throw new Error('User not found');
+            toast({
+              title: "Success",
+              description: "Team deleted successfully",
+            });
+          } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Failed to delete team';
+            set({ error: errorMessage, isLoading: false });
+            toast({
+              title: "Error",
+              description: errorMessage,
+              variant: "destructive",
+            });
           }
-
-          // Check if user is already a member
-          const { data: existing, error: existingError } = await supabase
-            .from('team_members')
-            .select()
-            .eq('team_id', teamId)
-            .eq('user_id', payload.userId)
-            .maybeSingle();
-
-          if (existing) {
-            throw new Error('User is already a member of this team');
-          }
-
-          const { error: memberError } = await supabase
-            .from('team_members')
-            .insert({
-              team_id: teamId,
-              user_id: payload.userId,
-              role: payload.role,
-            })
-            .throwOnError();
-
-          if (memberError) throw memberError;
-
-          await get().fetchTeamMembers(teamId);
-          
-          toast({
-            title: "Success",
-            description: "Team member added successfully",
-          });
-          return true;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Failed to add team member';
-          set({ error: message });
-          toast({
-            title: "Error",
-            description: message,
-            variant: "destructive",
-          });
-          return false;
-        } finally {
-          set({ isCreating: false });
         }
-      },
-
-      updateTeamMember: async (teamId, userId, payload) => {
-        try {
-          set({ isUpdating: true, error: null });
-
-          // Check if this would remove the last admin
-          if (payload.role !== 'ADMIN') {
-            const { data: admins, error: adminsError } = await supabase
-              .from('team_members')
-              .select('user_id')
-              .eq('team_id', teamId)
-              .eq('role', 'ADMIN');
-
-            if (adminsError) throw adminsError;
-
-            if (admins.length === 1 && admins[0].user_id === userId) {
-              throw new Error('Cannot remove the last admin');
-            }
-          }
-
-          const { error: memberError } = await supabase
-            .from('team_members')
-            .update({
-              role: payload.role,
-              updated_at: new Date().toISOString(),
-            })
-            .eq('team_id', teamId)
-            .eq('user_id', userId)
-            .throwOnError();
-
-          if (memberError) throw memberError;
-
-          await get().fetchTeamMembers(teamId);
-          
-          toast({
-            title: "Success",
-            description: "Team member updated successfully",
-          });
-          return true;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Failed to update team member';
-          set({ error: message });
-          toast({
-            title: "Error",
-            description: message,
-            variant: "destructive",
-          });
-          return false;
-        } finally {
-          set({ isUpdating: false });
-        }
-      },
-
-      removeTeamMember: async (teamId, userId) => {
-        try {
-          set({ isUpdating: true, error: null });
-
-          // Check if this would remove the last admin
-          const { data: member, error: memberError } = await supabase
-            .from('team_members')
-            .select('role')
-            .eq('team_id', teamId)
-            .eq('user_id', userId)
-            .single();
-
-          if (memberError) throw memberError;
-
-          if (member.role === 'ADMIN') {
-            const { data: admins, error: adminsError } = await supabase
-              .from('team_members')
-              .select('user_id')
-              .eq('team_id', teamId)
-              .eq('role', 'ADMIN');
-
-            if (adminsError) throw adminsError;
-
-            if (admins.length === 1) {
-              throw new Error('Cannot remove the last admin');
-            }
-          }
-
-          const { error } = await supabase
-            .from('team_members')
-            .delete()
-            .eq('team_id', teamId)
-            .eq('user_id', userId)
-            .throwOnError();
-
-          if (error) throw error;
-
-          await get().fetchTeamMembers(teamId);
-          
-          toast({
-            title: "Success",
-            description: "Team member removed successfully",
-          });
-          return true;
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'Failed to remove team member';
-          set({ error: message });
-          toast({
-            title: "Error",
-            description: message,
-            variant: "destructive",
-          });
-          return false;
-        } finally {
-          set({ isUpdating: false });
-        }
-      },
-    }),
+      };
+    },
     {
       name: 'team-store',
-      partialize: (state) => ({
-        teams: state.teams,
-        currentTeam: state.currentTeam,
-      }),
     }
   )
 ); 

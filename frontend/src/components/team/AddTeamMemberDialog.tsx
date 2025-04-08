@@ -1,6 +1,10 @@
+'use client';
+
 import { useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -9,72 +13,68 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useTeamStore } from '@/store/teamStore';
-import { TeamRole } from '@/types/team';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { toast } from '@/components/ui/use-toast';
 
 interface AddTeamMemberDialogProps {
-  teamId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  teamId: string;
 }
 
-const supabase = createClientComponentClient();
-
-export function AddTeamMemberDialog({
-  teamId,
-  open,
-  onOpenChange,
-}: AddTeamMemberDialogProps) {
+export function AddTeamMemberDialog({ open, onOpenChange, teamId }: AddTeamMemberDialogProps) {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<TeamRole>('MEMBER');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { addTeamMember } = useTeamStore();
-  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const supabase = createClientComponentClient();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email.trim()) {
+      return;
+    }
 
-    setIsSubmitting(true);
+    setIsLoading(true);
     try {
-      // First, get the user ID from their email
-      const { data: users, error: userError } = await supabase
+      // First, find the user by email
+      const { data: user, error: userError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('email', email.toLowerCase())
+        .eq('email', email.trim())
         .single();
 
-      if (userError || !users) {
-        toast({
-          title: "Error",
-          description: "User not found",
-          variant: "destructive",
-        });
-        return;
+      if (userError) {
+        throw new Error('User not found');
       }
 
-      const success = await addTeamMember(teamId, {
-        userId: users.id,
-        role,
+      // Then add them to the team
+      const { error: memberError } = await supabase
+        .from('team_members')
+        .insert([{
+          team_id: teamId,
+          user_id: user.id,
+          role: 'MEMBER'
+        }]);
+
+      if (memberError) {
+        throw memberError;
+      }
+
+      setEmail('');
+      onOpenChange(false);
+      toast({
+        title: "Success",
+        description: "Team member added successfully",
       });
-
-      if (success) {
-        setEmail('');
-        setRole('MEMBER');
-        onOpenChange(false);
-      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add team member';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -84,49 +84,35 @@ export function AddTeamMemberDialog({
         <DialogHeader>
           <DialogTitle>Add Team Member</DialogTitle>
           <DialogDescription>
-            Add a new member to your team. They must have an account to be added.
+            Add a new member to your team by their email address.
           </DialogDescription>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email address</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter their email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter member's email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <Select
-              value={role}
-              onValueChange={(value: TeamRole) => setRole(value)}
-            >
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Select a role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="MEMBER">Member</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <DialogFooter>
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
+              disabled={isLoading}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Adding...' : 'Add Member'}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Add Member
             </Button>
           </DialogFooter>
         </form>
