@@ -22,7 +22,7 @@ import {
 import { useTeamStore } from '@/store/teamStore';
 import { CreateTeamDialog } from './CreateTeamDialog';
 
-export function TeamSwitcher() {
+export default function TeamSwitcher() {
   const [open, setOpen] = useState(false);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const router = useRouter();
