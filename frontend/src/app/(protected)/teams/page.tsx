@@ -1,168 +1,173 @@
-'use client';
+"use client"
 
-import { useEffect, useState } from 'react';
-import { useTeamStore } from '@/store/team-store';
-import { useAuth } from '@/hooks/useAuth';
-import { PageContainer } from '@/components/layout/PageContainer';
-import { EmptyState } from '@/components/shared/EmptyState';
-import { TeamMemberList } from '@/components/team/TeamMemberList';
-import { CreateTeamDialog } from '@/components/team/CreateTeamDialog';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { Search, Filter, Plus, Users, Loader2, Building2 } from "lucide-react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { EmptyState } from "@/components/ui/empty-state"
+import { cn } from "@/lib/utils"
+import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton"
 
+// Force dynamic rendering to prevent caching issues
+export const dynamic = 'force-dynamic';
+
+// Define the Team type
 interface Team {
   id: string;
   name: string;
-  created_at: string;
-  updated_at: string;
-  role: 'owner' | 'admin' | 'member';
-  member_count?: number;
-}
-
-interface TeamMember {
-  id: string;
-  email: string;
-  full_name: string;
-  role: 'owner' | 'admin' | 'member';
+  memberCount: number;
+  createdAt: string;
+  role: string;
 }
 
 export default function TeamsPage() {
-  const { user } = useAuth();
-  const { teams, fetchTeams } = useTeamStore();
-  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-
+  const [teams, setTeams] = useState<Team[]>([]);
+  
+  // Simulate loading data
   useEffect(() => {
-    loadTeams();
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+    
+    return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (selectedTeam) {
-      loadTeamMembers(selectedTeam.id);
-    }
-  }, [selectedTeam]);
-
-  const loadTeams = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await fetchTeams();
-    } catch (err) {
-      setError('Failed to load teams');
-      console.error('Error loading teams:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const loadTeamMembers = async (teamId: string) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const members = await useTeamStore.getState().fetchTeamMembers(teamId);
-      setTeamMembers(members);
-    } catch (err) {
-      setError('Failed to load team members');
-      console.error('Error loading team members:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleTeamCreated = (team: Team) => {
-    setIsCreateDialogOpen(false);
-    loadTeams();
-  };
-
-  const handleTeamSelect = (team: Team) => {
-    setSelectedTeam(team);
-  };
-
-  const handleMemberUpdate = () => {
-    if (selectedTeam) {
-      loadTeamMembers(selectedTeam.id);
-    }
-  };
-
   return (
-    <PageContainer
-      title="Teams"
-      description="Manage your teams and team members"
-      isLoading={isLoading}
-      error={error}
-      emptyState={
-        teams.length === 0 && (
-          <EmptyState
-            icon={Plus}
-            title="No teams yet"
-            description="Create your first team to get started"
-            action={
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Team
+    <div className="flex min-h-screen w-full flex-col bg-gray-50/50">
+      <main className="flex-1 p-6 md:p-8 lg:p-10">
+        {/* Header Section with Primary CTA */}
+        <section className="mb-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-semibold md:text-2xl">Teams</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Organize teams to streamline document handling and shipment management</p>
+          </div>
+          <Button 
+            size="lg" 
+            className="flex items-center gap-2 shadow-sm hover:shadow-md transition-shadow"
+            onClick={() => router.push('/teams/new')}
+          >
+            <Plus className="h-4 w-4" />
+            Create Team
+          </Button>
+        </section>
+
+        {/* Search and Filter Section */}
+        <section className="mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input 
+                placeholder="Search teams by name..." 
+                className="pl-9"
+                disabled={isLoading}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" disabled={isLoading} className="gap-2">
+                <Filter className="h-4 w-4" />
+                Role
               </Button>
-            }
-            variant="default"
-            className="bg-background"
-          />
-        )
-      }
-    >
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Teams</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {teams.map((team) => (
-                <Button
-                  key={team.id}
-                  variant={selectedTeam?.id === team.id ? 'default' : 'outline'}
-                  className="w-full justify-start"
-                  onClick={() => handleTeamSelect(team)}
-                >
-                  {team.name}
-                </Button>
-              ))}
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => setIsCreateDialogOpen(true)}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create Team
+              <Button variant="outline" disabled={isLoading} className="gap-2">
+                <Users className="h-4 w-4" />
+                Members
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {selectedTeam && (
-          <Card>
-            <CardHeader>
-              <CardTitle>{selectedTeam.name} Members</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TeamMemberList
-                teamId={selectedTeam.id}
-                members={teamMembers}
-                currentUserRole={selectedTeam.role}
-                onMemberUpdate={handleMemberUpdate}
-              />
-            </CardContent>
-          </Card>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-6">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="mt-2 text-sm text-muted-foreground">Loading your teams...</p>
+          </div>
         )}
-      </div>
 
-      <CreateTeamDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        onTeamCreated={handleTeamCreated}
-      />
-    </PageContainer>
-  );
+        {/* Empty State */}
+        {!isLoading && teams.length === 0 && (
+          <EmptyState
+            icon={Users}
+            title="No Teams Created"
+            description="Create your first team to collaborate with members and manage freight efficiently."
+            action={{
+              label: "Create Your First Team",
+              onClick: () => router.push('/teams/new')
+            }}
+          />
+        )}
+
+        {/* Teams Grid */}
+        {!isLoading && teams.length > 0 && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {teams.map((team, index) => (
+              <Card 
+                key={index}
+                className="overflow-hidden border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                onClick={() => router.push(`/teams/${team.id}`)}
+              >
+                <CardHeader className="pb-3 border-b">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <Building2 className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-semibold truncate">{team.name}</CardTitle>
+                      <CardDescription>{team.role}</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Members</span>
+                      <span className="text-sm font-medium">{team.memberCount}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Created</span>
+                      <span className="text-sm font-medium">{team.createdAt}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {/* Loading Skeletons (shown during initial load) */}
+        {isLoading && (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array(8).fill(0).map((_, index) => (
+              <Card key={index} className="overflow-hidden border border-border/40 shadow-sm">
+                <CardHeader className="pb-3 border-b">
+                  <div className="flex items-center gap-2">
+                    <LoadingSkeleton className="h-8 w-8 rounded-full" />
+                    <div>
+                      <LoadingSkeleton className="h-6 w-32" />
+                      <LoadingSkeleton className="mt-2 h-4 w-20" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <LoadingSkeleton className="h-4 w-16" />
+                      <LoadingSkeleton className="h-4 w-8" />
+                    </div>
+                    <div className="flex justify-between">
+                      <LoadingSkeleton className="h-4 w-16" />
+                      <LoadingSkeleton className="h-4 w-24" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </main>
+    </div>
+  )
 } 
