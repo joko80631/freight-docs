@@ -41,7 +41,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           </FreightButton>
         )}
         {secondaryAction && (
-          <FreightButton variant="secondary" onClick={secondaryAction.onClick}>
+          <FreightButton variant="outline" onClick={secondaryAction.onClick}>
             {secondaryAction.label}
           </FreightButton>
         )}
