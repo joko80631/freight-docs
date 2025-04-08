@@ -33,8 +33,26 @@ const nextConfig = {
         test: /\/scripts\//,
         loader: 'ignore-loader',
       });
+
+      // Exclude admin pages that don't exist
+      config.module.rules.push({
+        test: /\/admin\/(cron-monitoring|system-logs|user-management)\//,
+        loader: 'ignore-loader',
+      });
     }
     
+    // Add a fallback for the 'fs' module
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+    };
+
+    // Add a rule to handle Handlebars
+    config.module.rules.push({
+      test: /\.handlebars$/,
+      loader: 'handlebars-loader',
+    });
+
     return config;
   }
 }

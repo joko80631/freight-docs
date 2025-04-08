@@ -9,7 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useTeamStore, TeamMember } from '@/store/teamStore';
+import { useTeamStore } from '@/store/teamStore';
+import { TeamMember } from '@/types/team';
 import { AddTeamMemberDialog } from './AddTeamMemberDialog';
 
 interface TeamMemberListProps {
@@ -48,10 +49,10 @@ export function TeamMemberList({ teamId }: TeamMemberListProps) {
             <div className="flex items-center space-x-4">
               <div className="flex-1 space-y-1">
                 <p className="text-sm font-medium leading-none">
-                  {member.profile.full_name}
+                  {member.profile?.full_name || 'Unknown User'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {member.profile.email}
+                  {member.profile?.email || 'No email provided'}
                 </p>
               </div>
             </div>

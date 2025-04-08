@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils"
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton"
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTeamStore } from '@/store/teamStore'
+import { TeamRole } from '@/types/team'
 import Link from 'next/link'
 
 // Force dynamic rendering to prevent caching issues
@@ -22,7 +23,7 @@ interface Team {
   name: string;
   memberCount: number;
   createdAt: string;
-  role: string;
+  role: TeamRole;
 }
 
 export default function TeamsPage() {
@@ -59,7 +60,7 @@ export default function TeamsPage() {
                     <span className="truncate">{team.name}</span>
                   </CardTitle>
                   <CardDescription>
-                    {team.role === 'ADMIN' ? 'Admin' : 'Member'}
+                    {team.role === 'admin' ? 'Admin' : 'Member'}
                   </CardDescription>
                 </CardHeader>
               </Card>
