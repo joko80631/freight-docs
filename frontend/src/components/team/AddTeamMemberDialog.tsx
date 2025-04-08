@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { toast } from 'sonner';
+import { useToast } from '@/components/ui/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -39,6 +39,7 @@ export function AddTeamMemberDialog({
   const [role, setRole] = useState<TeamRole>('MEMBER');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addTeamMember } = useTeamStore();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +55,11 @@ export function AddTeamMemberDialog({
         .single();
 
       if (userError || !users) {
-        toast.error('User not found');
+        toast({
+          title: "Error",
+          description: "User not found",
+          variant: "destructive",
+        });
         return;
       }
 
