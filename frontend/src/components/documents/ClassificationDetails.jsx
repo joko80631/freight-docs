@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 const DOCUMENT_TYPES = [
   'BOL',
@@ -45,7 +46,6 @@ export default function ClassificationDetails({ document, onReclassified }) {
   const [newType, setNewType] = useState(document.document_type);
   const [reason, setReason] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
 
   const handleReclassify = async () => {
     if (!reason || newType === document.document_type) return;
@@ -75,10 +75,7 @@ export default function ClassificationDetails({ document, onReclassified }) {
       
       const updatedDocument = await response.json();
       
-      toast({
-        title: 'Success',
-        description: 'Document reclassified successfully',
-      });
+      toast.success('Document reclassified successfully');
       
       setIsReclassifying(false);
       setReason('');
@@ -88,11 +85,7 @@ export default function ClassificationDetails({ document, onReclassified }) {
         onReclassified(updatedDocument);
       }
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to reclassify document',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Failed to reclassify document');
     } finally {
       setIsSubmitting(false);
     }
@@ -118,7 +111,7 @@ export default function ClassificationDetails({ document, onReclassified }) {
             <div>
               <p className="text-sm font-medium">Document Type</p>
               <Badge
-                variant="secondary"
+                variant="outline"
                 className={cn(
                   getConfidenceColor(document.classification_confidence),
                   "mt-1"

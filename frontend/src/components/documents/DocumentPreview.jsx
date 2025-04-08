@@ -20,6 +20,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -39,7 +40,6 @@ export default function DocumentPreview({ document, onDownload }) {
   const [textContent, setTextContent] = useState(null);
   const [documentUrl, setDocumentUrl] = useState(document.url);
   const [urlExpired, setUrlExpired] = useState(false);
-  const { toast } = useToast();
 
   const fileType = document.file_type.toLowerCase();
   const isPDF = SUPPORTED_PDF_TYPES.includes(fileType);
@@ -74,11 +74,7 @@ export default function DocumentPreview({ document, onDownload }) {
     } catch (error) {
       setError(error.message);
       if (!urlExpired) {
-        toast({
-          title: 'Error',
-          description: 'Failed to load text content',
-          variant: 'destructive',
-        });
+        toast.error('Failed to load text content');
       }
     } finally {
       setIsLoading(false);
@@ -103,11 +99,7 @@ export default function DocumentPreview({ document, onDownload }) {
       setError('Document URL has expired');
     } else {
       setError(error.message);
-      toast({
-        title: 'Error',
-        description: 'Failed to load document',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load document');
     }
     setIsLoading(false);
   };
@@ -165,11 +157,7 @@ export default function DocumentPreview({ document, onDownload }) {
       } catch (error) {
         setError('Failed to refresh document URL');
         setIsLoading(false);
-        toast({
-          title: 'Error',
-          description: 'Failed to refresh document URL',
-          variant: 'destructive',
-        });
+        toast.error('Failed to refresh document URL');
       }
     } else if (isText) {
       fetchTextContent();

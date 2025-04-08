@@ -12,7 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '../../lib/utils';
 import { useRouter } from 'next/navigation';
 import useDocumentStore from '../../store/documentStore';
-import { useToast } from '../ui/use-toast';
+import { toast } from 'sonner';
 import { Checkbox } from '../ui/checkbox';
 
 const getConfidenceColor = (confidence) => {
@@ -24,7 +24,6 @@ const getConfidenceColor = (confidence) => {
 export default function DocumentCard({ document, onSelect, isSelected }) {
   const router = useRouter();
   const { deleteDocument, linkToLoad, unlinkFromLoad } = useDocumentStore();
-  const { toast } = useToast();
 
   const handleDocumentClick = (e) => {
     // Don't navigate if clicking on checkbox or dropdown
@@ -51,11 +50,7 @@ export default function DocumentCard({ document, onSelect, isSelected }) {
       window.URL.revokeObjectURL(url);
       window.document.body.removeChild(a);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to download document',
-        variant: 'destructive',
-      });
+      toast.error('Failed to download document');
     }
   };
 
@@ -63,16 +58,9 @@ export default function DocumentCard({ document, onSelect, isSelected }) {
     e.stopPropagation();
     try {
       await deleteDocument(document.id);
-      toast({
-        title: 'Success',
-        description: 'Document deleted successfully',
-      });
+      toast.success('Document deleted successfully');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete document',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete document');
     }
   };
 
@@ -163,7 +151,7 @@ export default function DocumentCard({ document, onSelect, isSelected }) {
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Badge
-              variant="secondary"
+              variant="outline"
               className={cn(
                 getConfidenceColor(document.classification_confidence),
                 'font-medium'

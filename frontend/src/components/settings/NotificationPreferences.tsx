@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
 const CATEGORY_LABELS: Record<NotificationCategory, string> = {
@@ -85,11 +85,7 @@ export function NotificationPreferences() {
       const prefs = await getUserNotificationPreferences(user!.id);
       setPreferences(prefs);
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load notification preferences',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load notification preferences');
     } finally {
       setLoading(false);
     }
@@ -118,16 +114,9 @@ export function NotificationPreferences() {
         return newPrefs;
       });
 
-      toast({
-        title: 'Success',
-        description: 'Notification preferences updated',
-      });
+      toast.success('Notification preferences updated');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update notification preferences',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update notification preferences');
     }
   }
 
@@ -147,16 +136,9 @@ export function NotificationPreferences() {
         return newPrefs;
       });
 
-      toast({
-        title: 'Success',
-        description: 'Notification digest preferences updated',
-      });
+      toast.success('Notification digest preferences updated');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to update notification digest preferences',
-        variant: 'destructive',
-      });
+      toast.error('Failed to update notification digest preferences');
     }
   }
 
@@ -227,10 +209,7 @@ export function NotificationPreferences() {
                     preferences.global.frequency
                   );
 
-                  toast({
-                    title: 'Success',
-                    description: 'Global notification settings updated',
-                  });
+                  toast.success('Global notification settings updated');
                 } catch (error) {
                   setPreferences(prev => {
                     if (!prev) return prev;
@@ -240,11 +219,7 @@ export function NotificationPreferences() {
                     };
                   });
 
-                  toast({
-                    title: 'Error',
-                    description: 'Failed to update global notification settings',
-                    variant: 'destructive',
-                  });
+                  toast.error('Failed to update global notification settings');
                 }
               }}
             />
@@ -329,10 +304,7 @@ export function NotificationPreferences() {
 
                         await Promise.all(updatePromises);
 
-                        toast({
-                          title: 'Success',
-                          description: `${CATEGORY_LABELS[typedCategory]} notifications ${checked ? 'enabled' : 'disabled'}`,
-                        });
+                        toast.success(`${CATEGORY_LABELS[typedCategory]} notifications ${checked ? 'enabled' : 'disabled'}`);
                       } catch (error) {
                         setPreferences(prev => {
                           if (!prev) return prev;
@@ -348,11 +320,7 @@ export function NotificationPreferences() {
                           };
                         });
 
-                        toast({
-                          title: 'Error',
-                          description: 'Failed to update notification preferences',
-                          variant: 'destructive',
-                        });
+                        toast.error('Failed to update notification preferences');
                       }
                     }}
                   />
@@ -405,11 +373,7 @@ export function NotificationPreferences() {
                                     return newPrefs;
                                   });
 
-                                  toast({
-                                    title: 'Error',
-                                    description: 'Failed to update notification preference',
-                                    variant: 'destructive',
-                                  });
+                                  toast.error('Failed to update notification preference');
                                 }
                               }}
                             />
