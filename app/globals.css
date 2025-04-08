@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import typography system */
+@import '../src/styles/typography.css';
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -55,5 +58,34 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Default heading styles */
+  h1 {
+    @apply h1 text-foreground;
+  }
+
+  h2 {
+    @apply h2 text-foreground;
+  }
+
+  h3 {
+    @apply h3 text-foreground;
+  }
+
+  h4 {
+    @apply h4 text-foreground;
+  }
+
+  h5 {
+    @apply h5 text-foreground;
+  }
+
+  /* Default paragraph styles */
+  p {
+    @apply body-medium text-foreground;
   }
 } 

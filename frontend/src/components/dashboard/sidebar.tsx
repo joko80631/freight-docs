@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { UserNav } from "@/components/dashboard/user-nav";
 import { forwardRef, useEffect, useRef } from "react";
 import { useTeamStore } from "@/store/team-store";
-import TeamSwitcher from "@/components/team/TeamSwitcher";
+import { TeamSwitcher } from "@/components/team/TeamSwitcher";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface SidebarProps {

@@ -1,9 +1,14 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { FileIcon, FileTextIcon } from 'lucide-react';
+import { FileIcon, FileTextIcon, FileText, Download, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import { formatFileSize, formatRelativeTime } from '@/lib/utils';
 import { Document } from '@/types/document';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { formatDistanceToNow } from 'date-fns';
 
 export interface DocumentCardProps {
   document: Document;
@@ -42,55 +47,45 @@ export function DocumentCard({ document, onViewDetails }: DocumentCardProps) {
       ? 'text-yellow-500 bg-yellow-100' 
       : 'text-red-500 bg-red-100';
   
+  const formatFileSize = (bytes: number | null | undefined) => {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  };
+
   return (
-    <div 
-      className="border rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
-      onClick={() => onViewDetails(document.id)}
-    >
-      <div className="aspect-[4/3] relative bg-slate-100">
-        {thumbnailUrl ? (
-          document.name.toLowerCase().endsWith('.pdf') ? (
-            <div className="flex items-center justify-center h-full">
-              <FileTextIcon className="h-12 w-12 text-slate-300" />
-              <div className="absolute bottom-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">PDF</div>
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="pt-6">
+        <div className="flex flex-col items-center text-center space-y-2">
+          <FileText className="h-12 w-12 text-muted-foreground" />
+          <div>
+            <h3 className="font-medium truncate max-w-[200px]" title={document.name}>
+              {document.name}
+            </h3>
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <FileIcon className="h-4 w-4" />
+              <span>{formatFileSize(document.size)}</span>
             </div>
-          ) : (
-            <div className="relative h-full w-full">
-              <Image 
-                src={thumbnailUrl}
-                alt={document.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <FileIcon className="h-12 w-12 text-slate-300" />
           </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h3 className="font-medium text-sm truncate" title={document.name}>
-          {document.name}
-        </h3>
-        <div className="flex items-center justify-between mt-2">
-          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100">
-            {document.type?.toUpperCase() || 'UNCLASSIFIED'}
-          </span>
-          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${confidenceColor}`}>
-            {confidencePercent}%
-          </span>
         </div>
-        {document.loads && (
-          <div className="mt-2 text-xs text-slate-500">
-            Linked to: {document.loads.reference_number}
-          </div>
-        )}
-        <div className="mt-2 text-xs text-slate-500">
-          {formatRelativeTime(document.uploaded_at)}
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        <p className="text-xs text-muted-foreground">
+          {formatDistanceToNow(new Date(document.uploaded_at), { addSuffix: true })}
+        </p>
+        <div className="flex space-x-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onViewDetails(document.id)}
+            aria-label={`View details for ${document.name}`}
+          >
+            <Download className="h-4 w-4" aria-hidden="true" />
+          </Button>
         </div>
-      </div>
-    </div>
+      </CardFooter>
+    </Card>
   );
 } 

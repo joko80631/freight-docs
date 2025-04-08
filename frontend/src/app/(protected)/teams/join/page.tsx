@@ -2,17 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function JoinTeamPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { toast } = useToast();
 
   const token = searchParams.get('token');
 
@@ -43,10 +42,7 @@ export default function JoinTeamPage() {
         throw new Error(data.error || 'Failed to join team');
       }
 
-      toast({
-        title: 'Success',
-        description: 'You have successfully joined the team!',
-      });
+      toast.success('You have successfully joined the team!');
 
       // Redirect to the teams page
       router.push('/teams');

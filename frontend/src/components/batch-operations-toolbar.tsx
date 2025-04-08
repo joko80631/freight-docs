@@ -4,7 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { useTeamStore } from "@/store/team-store";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { Trash2, Link, FileText, AlertCircle } from "lucide-react";
+import { Trash2, Link, FileText, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -16,7 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from 'sonner';
 import { useAuditLog } from "@/hooks/use-audit-log";
 
 interface BatchOperationsToolbarProps {
@@ -35,7 +35,6 @@ export function BatchOperationsToolbar({
   const router = useRouter();
   const { currentTeam } = useTeamStore();
   const supabase = createClientComponentClient();
-  const { toast } = useToast();
   const { logAction } = useAuditLog();
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
   const [isProcessing, setIsProcessing] = React.useState(false);
@@ -88,11 +87,7 @@ export function BatchOperationsToolbar({
 
     // Check batch size limit
     if (selectedItems.length > MAX_BATCH_SIZE) {
-      toast({
-        title: "Batch size limit exceeded",
-        description: `Please select no more than ${MAX_BATCH_SIZE} documents at a time.`,
-        variant: "destructive",
-      });
+      toast.error(`Please select no more than ${MAX_BATCH_SIZE} documents at a time.`);
       return;
     }
 
@@ -121,10 +116,7 @@ export function BatchOperationsToolbar({
         },
       });
 
-      toast({
-        title: "Success",
-        description: `Deleted ${selectedItems.length} document(s)`,
-      });
+      toast.success(`Deleted ${selectedItems.length} document(s)`);
 
       onSelectionChange([]);
     } catch (error) {
@@ -135,11 +127,7 @@ export function BatchOperationsToolbar({
         onOptimisticDelete([]);
       }
 
-      toast({
-        title: "Error",
-        description: "Failed to delete documents. Nothing was changed.",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete documents. Nothing was changed.");
     } finally {
       setIsProcessing(false);
       setShowDeleteDialog(false);
@@ -149,11 +137,7 @@ export function BatchOperationsToolbar({
   const handleLink = async () => {
     // Check batch size limit
     if (selectedItems.length > MAX_BATCH_SIZE) {
-      toast({
-        title: "Batch size limit exceeded",
-        description: `Please select no more than ${MAX_BATCH_SIZE} documents at a time.`,
-        variant: "destructive",
-      });
+      toast.error(`Please select no more than ${MAX_BATCH_SIZE} documents at a time.`);
       return;
     }
 
@@ -171,11 +155,7 @@ export function BatchOperationsToolbar({
       router.push(`/documents/link?ids=${selectedItems.join(",")}`);
     } catch (error) {
       console.error("Link error:", error);
-      toast({
-        title: "Error",
-        description: "Failed to prepare link operation. Please try again.",
-        variant: "destructive",
-      });
+      toast.error("Failed to prepare link operation. Please try again.");
     }
   };
 

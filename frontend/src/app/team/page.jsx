@@ -1,6 +1,6 @@
 'use client';
 
-import { TeamMembers } from '@/components/TeamMembers';
+import { TeamMembers } from '@/components/team/TeamMembers';
 import { RequireTeam } from '@/components/RequireTeam';
 
 export default function TeamPage() {

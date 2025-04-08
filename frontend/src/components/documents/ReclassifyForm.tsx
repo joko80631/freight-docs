@@ -91,14 +91,15 @@ export function ReclassifyForm({ document, onReclassify }: ReclassifyFormProps) 
         onClick={handleReclassify}
         disabled={!newType || !reason || isSubmitting}
         className="w-full"
+        aria-label="Reclassify document"
       >
         {isSubmitting ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Reclassifying...
+            <span>Reclassifying...</span>
           </>
         ) : (
-          'Reclassify Document'
+          <span>Reclassify Document</span>
         )}
       </Button>
     </div>

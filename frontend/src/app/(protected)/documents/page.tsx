@@ -4,27 +4,23 @@ import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, FileText, Download, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTeamStore } from '@/store/teamStore';
 import { formatDistanceToNow } from 'date-fns';
+import { DocumentList } from '@/components/documents/DocumentList';
+import type { Document } from '@/types/document';
 
 // Force dynamic rendering to prevent caching issues
 export const dynamic = 'force-dynamic';
 
-interface Document {
-  id: string;
-  original_filename: string;
-  file_url: string;
-  file_path: string;
-  created_at: string;
-  status: string;
-  file_size: number;
-}
+const PAGE_SIZE = 12;
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const supabase = createClientComponentClient();
   const { currentTeam } = useTeamStore();
@@ -32,15 +28,26 @@ export default function DocumentsPage() {
   const fetchDocuments = async () => {
     if (!currentTeam?.id) return;
     
+    setIsLoading(true);
     try {
+      // Get total count
+      const { count } = await supabase
+        .from('documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('team_id', currentTeam.id);
+
+      // Get paginated documents
       const { data, error } = await supabase
         .from('documents')
         .select('*')
         .eq('team_id', currentTeam.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       if (error) throw error;
+
       setDocuments(data || []);
+      setTotalCount(count || 0);
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast.error("Failed to fetch documents");
@@ -83,8 +90,17 @@ export default function DocumentsPage() {
   };
 
   useEffect(() => {
-    fetchDocuments();
-  }, [currentTeam?.id]);
+    if (currentTeam?.id) {
+      fetchDocuments();
+    }
+  }, [currentTeam?.id, page]);
+
+  const handleViewDocument = (id: string) => {
+    const document = documents.find(doc => doc.id === id);
+    if (document?.storage_path) {
+      window.open(`/api/documents/${id}`, '_blank');
+    }
+  };
 
   if (!currentTeam?.id) {
     return (
@@ -101,65 +117,35 @@ export default function DocumentsPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="container mx-auto py-6 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Upload Document</CardTitle>
+          <CardTitle>Upload Documents</CardTitle>
+          <CardDescription>
+            Upload documents to share with your team.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <DocumentUpload onUploadComplete={() => fetchDocuments()} />
+          <DocumentUpload onSuccess={fetchDocuments} />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
           <CardTitle>Documents</CardTitle>
+          <CardDescription>
+            View and manage your team's documents.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center p-6">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : documents.length === 0 ? (
-            <p className="text-center text-muted-foreground py-6">
-              No documents uploaded yet
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="flex items-center space-x-4">
-                    <FileText className="h-6 w-6 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">{doc.original_filename}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatFileSize(doc.file_size)} • Uploaded {formatDistanceToNow(new Date(doc.created_at))} ago
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => window.open(doc.file_url, '_blank')}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDelete(doc.id, doc.file_path)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <DocumentList
+            documents={documents}
+            totalCount={totalCount}
+            page={page}
+            pageSize={PAGE_SIZE}
+            onPageChange={setPage}
+            onViewDocument={handleViewDocument}
+          />
         </CardContent>
       </Card>
     </div>

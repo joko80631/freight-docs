@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Loader2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,19 +22,15 @@ import { useTeamStore } from '@/store/teamStore';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
 
-interface TeamSettingsProps {
-  teamId: string;
-}
-
-export function TeamSettings({ teamId }: TeamSettingsProps) {
+export function TeamSettings() {
   const [teamName, setTeamName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const { teams, fetchTeams } = useTeamStore();
+  const { currentTeam, fetchTeams } = useTeamStore();
   const supabase = createClientComponentClient();
+  const router = useRouter();
 
-  const team = teams.find(t => t.id === teamId);
-  if (!team) return null;
+  if (!currentTeam) return null;
 
   const handleUpdateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +41,7 @@ export function TeamSettings({ teamId }: TeamSettingsProps) {
       const { error } = await supabase
         .from('teams')
         .update({ name: teamName })
-        .eq('id', teamId);
+        .eq('id', currentTeam.id);
 
       if (error) throw error;
 
@@ -64,12 +61,13 @@ export function TeamSettings({ teamId }: TeamSettingsProps) {
       const { error } = await supabase
         .from('teams')
         .delete()
-        .eq('id', teamId);
+        .eq('id', currentTeam.id);
 
       if (error) throw error;
 
       toast.success('Team deleted successfully');
-      fetchTeams();
+      await fetchTeams();
+      router.push('/teams');
     } catch (error) {
       console.error('Error deleting team:', error);
       toast.error('Failed to delete team');
@@ -95,7 +93,7 @@ export function TeamSettings({ teamId }: TeamSettingsProps) {
                 id="teamName"
                 value={teamName}
                 onChange={(e) => setTeamName(e.target.value)}
-                placeholder={team.name}
+                placeholder={currentTeam.name}
               />
             </div>
             <Button type="submit" disabled={isUpdating}>

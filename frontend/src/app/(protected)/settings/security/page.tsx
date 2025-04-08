@@ -134,9 +134,8 @@ export default function SecuritySettingsPage() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false)
-      toast({
-        title: "Password updated",
-        description: "Your password has been successfully updated.",
+      toast.success("Password updated", {
+        description: "Your password has been successfully updated."
       })
       
       // Reset form

@@ -1,0 +1,238 @@
+/* Typography System */
+
+/* Font Imports */
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer_Complete/Switzer_Complete/Fonts/WEB/fonts/Switzer-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer_Complete/Switzer_Complete/Fonts/WEB/fonts/Switzer-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer_Complete/Switzer_Complete/Fonts/WEB/fonts/Switzer-Bold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi_Complete/Satoshi_Complete/Fonts/WEB/fonts/Satoshi-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi_Complete/Satoshi_Complete/Fonts/WEB/fonts/Satoshi-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    /* Font Families with fallbacks */
+    --font-heading: 'Switzer', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    --font-body: 'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+
+    /* Heading 1 */
+    --h1-font-size: 72px;
+    --h1-line-height: 1em;
+    --h1-letter-spacing: -2px;
+    --h1-font-weight: 600;
+    --h1-paragraph-spacing: 40px;
+
+    /* Heading 2 */
+    --h2-font-size: 46px;
+    --h2-line-height: 1.1em;
+    --h2-letter-spacing: -1px;
+    --h2-font-weight: 600;
+    --h2-paragraph-spacing: 40px;
+
+    /* Heading 3 */
+    --h3-font-size: 28px;
+    --h3-line-height: 1.1em;
+    --h3-letter-spacing: -0.5px;
+    --h3-font-weight: 600;
+    --h3-paragraph-spacing: 40px;
+
+    /* Heading 4 */
+    --h4-font-size: 20px;
+    --h4-line-height: 1.3em;
+    --h4-letter-spacing: -0.6px;
+    --h4-font-weight: 600;
+    --h4-paragraph-spacing: 40px;
+
+    /* Heading 5 */
+    --h5-font-size: 16px;
+    --h5-line-height: 1.3em;
+    --h5-letter-spacing: -0.1px;
+    --h5-font-weight: 600;
+    --h5-paragraph-spacing: 40px;
+
+    /* Heading Long */
+    --heading-long-font-size: 22px;
+    --heading-long-line-height: 1.2em;
+    --heading-long-letter-spacing: 0px;
+    --heading-long-font-weight: 500;
+    --heading-long-paragraph-spacing: 40px;
+
+    /* Body Large */
+    --body-large-font-size: 18px;
+    --body-large-line-height: 1.4em;
+    --body-large-letter-spacing: 0px;
+    --body-large-font-weight: 400;
+    --body-large-paragraph-spacing: 20px;
+
+    /* Body Medium */
+    --body-medium-font-size: 16px;
+    --body-medium-line-height: 1.5em;
+    --body-medium-letter-spacing: 0px;
+    --body-medium-font-weight: 400;
+    --body-medium-paragraph-spacing: 20px;
+
+    /* Body Small */
+    --body-small-font-size: 14px;
+    --body-small-line-height: 1.3em;
+    --body-small-letter-spacing: -0.2px;
+    --body-small-font-weight: 500;
+    --body-small-paragraph-spacing: 20px;
+
+    /* Strong Medium */
+    --strong-medium-font-size: 16px;
+    --strong-medium-line-height: 1.5em;
+    --strong-medium-letter-spacing: 0px;
+    --strong-medium-font-weight: 500;
+    --strong-medium-paragraph-spacing: 20px;
+  }
+}
+
+@layer components {
+  /* Base Typography Classes */
+  .h1 {
+    @apply font-heading;
+    font-size: var(--h1-font-size);
+    line-height: var(--h1-line-height);
+    letter-spacing: var(--h1-letter-spacing);
+    font-weight: var(--h1-font-weight);
+    margin-bottom: var(--h1-paragraph-spacing);
+  }
+
+  .h2 {
+    @apply font-heading;
+    font-size: var(--h2-font-size);
+    line-height: var(--h2-line-height);
+    letter-spacing: var(--h2-letter-spacing);
+    font-weight: var(--h2-font-weight);
+    margin-bottom: var(--h2-paragraph-spacing);
+  }
+
+  .h3 {
+    @apply font-heading;
+    font-size: var(--h3-font-size);
+    line-height: var(--h3-line-height);
+    letter-spacing: var(--h3-letter-spacing);
+    font-weight: var(--h3-font-weight);
+    margin-bottom: var(--h3-paragraph-spacing);
+  }
+
+  .h4 {
+    @apply font-heading;
+    font-size: var(--h4-font-size);
+    line-height: var(--h4-line-height);
+    letter-spacing: var(--h4-letter-spacing);
+    font-weight: var(--h4-font-weight);
+    margin-bottom: var(--h4-paragraph-spacing);
+  }
+
+  .h5 {
+    @apply font-heading;
+    font-size: var(--h5-font-size);
+    line-height: var(--h5-line-height);
+    letter-spacing: var(--h5-letter-spacing);
+    font-weight: var(--h5-font-weight);
+    margin-bottom: var(--h5-paragraph-spacing);
+  }
+
+  .heading-long {
+    @apply font-heading;
+    font-size: var(--heading-long-font-size);
+    line-height: var(--heading-long-line-height);
+    letter-spacing: var(--heading-long-letter-spacing);
+    font-weight: var(--heading-long-font-weight);
+    margin-bottom: var(--heading-long-paragraph-spacing);
+  }
+
+  .body-large {
+    @apply font-body;
+    font-size: var(--body-large-font-size);
+    line-height: var(--body-large-line-height);
+    letter-spacing: var(--body-large-letter-spacing);
+    font-weight: var(--body-large-font-weight);
+    margin-bottom: var(--body-large-paragraph-spacing);
+  }
+
+  .body-medium {
+    @apply font-body;
+    font-size: var(--body-medium-font-size);
+    line-height: var(--body-medium-line-height);
+    letter-spacing: var(--body-medium-letter-spacing);
+    font-weight: var(--body-medium-font-weight);
+    margin-bottom: var(--body-medium-paragraph-spacing);
+  }
+
+  .body-small {
+    @apply font-body;
+    font-size: var(--body-small-font-size);
+    line-height: var(--body-small-line-height);
+    letter-spacing: var(--body-small-letter-spacing);
+    font-weight: var(--body-small-font-weight);
+    margin-bottom: var(--body-small-paragraph-spacing);
+  }
+
+  .strong-medium {
+    @apply font-body;
+    font-size: var(--strong-medium-font-size);
+    line-height: var(--strong-medium-line-height);
+    letter-spacing: var(--strong-medium-letter-spacing);
+    font-weight: var(--strong-medium-font-weight);
+    margin-bottom: var(--strong-medium-paragraph-spacing);
+  }
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 810px) {
+  :root {
+    --h1-font-size: 56px;
+    --h2-font-size: 36px;
+    --h3-font-size: 24px;
+    --h4-font-size: 18px;
+    --h5-font-size: 14px;
+    --heading-long-font-size: 18px;
+    --body-large-font-size: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --h1-font-size: 40px;
+    --h2-font-size: 28px;
+    --h3-font-size: 20px;
+    --h4-font-size: 16px;
+    --h5-font-size: 14px;
+    --heading-long-font-size: 16px;
+    --body-large-font-size: 16px;
+  }
+} 

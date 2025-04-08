@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import TeamSwitcher from '@/components/team/TeamSwitcher';
+import { TeamSwitcher } from '@/components/team/TeamSwitcher';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface TeamsLayoutProps {

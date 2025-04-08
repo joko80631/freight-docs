@@ -2,14 +2,15 @@
 
 import { cn } from '@/lib/utils';
 import { ButtonHTMLAttributes, forwardRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ArrowRight } from 'lucide-react';
 
 export interface FreightButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'icon';
+  variant?: 'primary' | 'white' | 'outline' | 'icon';
   size?: 'default' | 'small';
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  withArrow?: boolean;
 }
 
 export const FreightButton = forwardRef<HTMLButtonElement, FreightButtonProps>(
@@ -21,19 +22,20 @@ export const FreightButton = forwardRef<HTMLButtonElement, FreightButtonProps>(
       isLoading = false,
       leftIcon,
       rightIcon,
+      withArrow,
       className,
       disabled,
       ...props
     },
     ref
   ) => {
-    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
+    const baseStyles = 'inline-flex items-center justify-center font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none gap-2 group';
     
     const variants = {
-      primary: 'bg-gray-900 text-white hover:bg-gray-800 focus:ring-gray-500',
-      secondary: 'border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 focus:ring-gray-500',
-      danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500',
-      icon: 'p-2 text-gray-700 hover:bg-gray-100 focus:ring-gray-500',
+      primary: 'bg-black text-white hover:bg-black/90 focus:ring-black',
+      white: 'bg-white text-black border border-black/10 hover:bg-gray-50 focus:ring-black',
+      outline: 'border border-black bg-white text-black hover:bg-gray-50 focus:ring-black',
+      icon: 'p-2 text-black hover:bg-gray-50 focus:ring-black',
     };
 
     const sizes = {
@@ -61,6 +63,7 @@ export const FreightButton = forwardRef<HTMLButtonElement, FreightButtonProps>(
             {leftIcon && <span className="mr-2" data-testid="freight-button-left-icon">{leftIcon}</span>}
             {children}
             {rightIcon && <span className="ml-2" data-testid="freight-button-right-icon">{rightIcon}</span>}
+            {withArrow && <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />}
           </>
         )}
       </button>

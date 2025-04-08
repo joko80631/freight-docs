@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Loader2, Search, X } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useTeamStore } from '@/store/team-store';
 import { Document } from '@/types/document';
 import { getErrorMessage } from '@/lib/errors';
@@ -46,7 +46,6 @@ export function LinkToLoadModal({
   const [searchResults, setSearchResults] = useState<Array<{ id: string; reference_number: string }>>([]);
   const [selectedLoadId, setSelectedLoadId] = useState<string | null>(null);
   const supabase = createClientComponentClient();
-  const { toast } = useToast();
   const { currentTeam } = useTeamStore();
   
   useEffect(() => {
@@ -73,11 +72,7 @@ export function LinkToLoadModal({
       setSearchResults(data || []);
     } catch (error) {
       console.error('Error searching loads:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to search loads. Please try again.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to search loads. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -97,20 +92,13 @@ export function LinkToLoadModal({
         
       if (error) throw error;
       
-      toast({
-        title: 'Success',
-        description: 'Document linked to load successfully.'
-      });
+      toast.success('Document linked to load successfully');
       
       onSuccess(data);
       onClose();
     } catch (error) {
       console.error('Error linking load:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to link load. Please try again.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to link load');
     } finally {
       setIsLinking(false);
     }
@@ -128,20 +116,13 @@ export function LinkToLoadModal({
         
       if (error) throw error;
       
-      toast({
-        title: 'Success',
-        description: 'Document unlinked from load successfully.'
-      });
+      toast.success('Document unlinked from load successfully');
       
       onSuccess(data);
       onClose();
     } catch (error) {
       console.error('Error unlinking load:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to unlink load. Please try again.',
-        variant: 'destructive'
-      });
+      toast.error('Failed to unlink load');
     } finally {
       setIsUnlinking(false);
     }

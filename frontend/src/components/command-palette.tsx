@@ -91,11 +91,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         setResults(formattedResults);
       } catch (error) {
         console.error("Search error:", error);
-        toast({
-          title: "Search failed",
-          description: "Please try again.",
-          variant: "destructive",
-        });
+        toast.error("Search failed. Please try again.");
       } finally {
         setLoading(false);
       }
