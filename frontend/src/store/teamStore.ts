@@ -2,26 +2,7 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
-
-export type TeamRole = 'ADMIN' | 'MEMBER';
-
-export interface Team {
-  id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-  created_by: string;
-}
-
-export interface TeamMember {
-  user_id: string;
-  role: TeamRole;
-  profile: {
-    full_name: string;
-    email: string;
-    avatar_url?: string;
-  };
-}
+import { Team, TeamMember, TeamRole } from '@/types/team';
 
 export interface TeamWithRole extends Team {
   role: TeamRole;
@@ -182,12 +163,39 @@ export const useTeamStore = create<TeamState>()(
 
             if (error) throw error;
 
-            set(state => ({
-              teams: state.teams.map(team =>
-                team.id === teamId ? { ...team, role: data.role } : team
-              ),
-              isLoading: false
-            }));
+            set(state => {
+              const updatedMembers = state.members.map(member =>
+                member.user_id === userId ? { ...member, role: data.role } : member
+              );
+
+              const updatedTeams = state.teams.map(team => {
+                if (team.id === teamId && team.members) {
+                  return {
+                    ...team,
+                    members: team.members.map(member =>
+                      member.user_id === userId ? { ...member, role: data.role } : member
+                    )
+                  } as TeamWithRole;
+                }
+                return team;
+              });
+
+              const updatedCurrentTeam = state.currentTeam?.id === teamId && state.currentTeam.members
+                ? {
+                    ...state.currentTeam,
+                    members: state.currentTeam.members.map(member =>
+                      member.user_id === userId ? { ...member, role: data.role } : member
+                    )
+                  } as TeamWithRole
+                : state.currentTeam;
+
+              return {
+                members: updatedMembers,
+                teams: updatedTeams,
+                currentTeam: updatedCurrentTeam,
+                isLoading: false
+              };
+            });
 
             toast.success("Team member updated successfully");
           } catch (error) {

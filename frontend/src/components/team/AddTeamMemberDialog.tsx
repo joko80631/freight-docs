@@ -1,10 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -13,59 +9,54 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useTeamStore } from '@/store/teamStore';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
 
 interface AddTeamMemberDialogProps {
+  teamId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  teamId: string;
 }
 
-export function AddTeamMemberDialog({ open, onOpenChange, teamId }: AddTeamMemberDialogProps) {
+export function AddTeamMemberDialog({
+  teamId,
+  open,
+  onOpenChange,
+}: AddTeamMemberDialogProps) {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const supabase = createClientComponentClient();
+  const { fetchTeamMembers } = useTeamStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) {
-      return;
-    }
-
     setIsLoading(true);
+
     try {
-      // First, find the user by email
-      const { data: user, error: userError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email.trim())
-        .single();
+      const response = await fetch('/api/teams/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          teamId,
+          email,
+          role: 'member',
+        }),
+      });
 
-      if (userError) {
-        throw new Error('User not found');
+      if (!response.ok) {
+        throw new Error('Failed to invite team member');
       }
 
-      // Then add them to the team
-      const { error: memberError } = await supabase
-        .from('team_members')
-        .insert([{
-          team_id: teamId,
-          user_id: user.id,
-          role: 'MEMBER'
-        }]);
-
-      if (memberError) {
-        throw memberError;
-      }
-
-      setEmail('');
+      toast.success('Team member invited successfully');
       onOpenChange(false);
-      toast.success("Team member added successfully");
+      setEmail('');
+      fetchTeamMembers(teamId);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add team member';
-      toast.error(errorMessage);
+      toast.error(error instanceof Error ? error.message : 'Failed to invite team member');
     } finally {
       setIsLoading(false);
     }
@@ -77,20 +68,20 @@ export function AddTeamMemberDialog({ open, onOpenChange, teamId }: AddTeamMembe
         <DialogHeader>
           <DialogTitle>Add Team Member</DialogTitle>
           <DialogDescription>
-            Add a new member to your team by their email address.
+            Invite a new member to your team. They will receive an email with instructions to join.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Enter member's email"
+                placeholder="Enter email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                required
               />
             </div>
           </div>
@@ -104,8 +95,7 @@ export function AddTeamMemberDialog({ open, onOpenChange, teamId }: AddTeamMembe
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Add Member
+              {isLoading ? 'Inviting...' : 'Invite Member'}
             </Button>
           </DialogFooter>
         </form>

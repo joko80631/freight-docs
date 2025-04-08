@@ -1,4 +1,4 @@
-export type TeamRole = 'ADMIN' | 'MEMBER';
+export type TeamRole = 'owner' | 'admin' | 'member';
 
 export interface Team {
   id: string;
@@ -9,11 +9,10 @@ export interface Team {
 }
 
 export interface TeamMember {
-  team_id: string;
   user_id: string;
   role: TeamRole;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   profile?: {
     full_name: string;
     email: string;
@@ -23,7 +22,7 @@ export interface TeamMember {
 
 export interface TeamWithRole extends Team {
   role: TeamRole;
-  member_count?: number;
+  members?: TeamMember[];
 }
 
 export interface CreateTeamPayload {

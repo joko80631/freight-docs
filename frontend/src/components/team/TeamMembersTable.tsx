@@ -39,7 +39,7 @@ export function TeamMembersTable({ teamId, currentUserRole }: TeamMembersTablePr
     await removeTeamMember(teamId, userId);
   };
 
-  const isAdmin = currentUserRole === 'ADMIN';
+  const isAdmin = currentUserRole === 'admin';
 
   return (
     <div className="space-y-4">
@@ -91,7 +91,7 @@ export function TeamMembersTable({ teamId, currentUserRole }: TeamMembersTablePr
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={member.role === 'ADMIN' ? 'default' : 'secondary'}
+                    variant={member.role === 'admin' ? 'default' : 'secondary'}
                   >
                     {member.role}
                   </Badge>
@@ -114,16 +114,16 @@ export function TeamMembersTable({ teamId, currentUserRole }: TeamMembersTablePr
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {member.role !== 'ADMIN' && (
+                        {member.role !== 'admin' && (
                           <DropdownMenuItem
-                            onClick={() => handleRoleChange(member.user_id, 'ADMIN')}
+                            onClick={() => handleRoleChange(member.user_id, 'admin')}
                           >
                             Make Admin
                           </DropdownMenuItem>
                         )}
-                        {member.role === 'ADMIN' && (
+                        {member.role === 'admin' && (
                           <DropdownMenuItem
-                            onClick={() => handleRoleChange(member.user_id, 'MEMBER')}
+                            onClick={() => handleRoleChange(member.user_id, 'member')}
                           >
                             Remove Admin
                           </DropdownMenuItem>
