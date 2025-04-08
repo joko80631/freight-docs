@@ -1,131 +1,151 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/components/ui/use-toast';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Progress } from '@/components/ui/progress';
+import { useDropzone } from 'react-dropzone';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useTeamStore } from '@/store/team-store';
+import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
+import { Loader2, Upload } from 'lucide-react';
+import { useTeamStore } from '@/store/teamStore';
 
 interface DocumentUploadProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onUploadComplete?: () => void;
+  onUploadComplete?: (documentId: string) => void;
+  loadId?: string;
 }
 
-export function DocumentUpload({ open, onOpenChange, onUploadComplete }: DocumentUploadProps) {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+export function DocumentUpload({ onUploadComplete, loadId }: DocumentUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
   const { toast } = useToast();
   const supabase = createClientComponentClient();
   const { currentTeam } = useTeamStore();
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
+  const onDrop = async (acceptedFiles: File[]) => {
+    if (acceptedFiles.length === 0) return;
+    if (!currentTeam?.id) {
+      toast({
+        title: "Error",
+        description: "No team selected. Please select a team first.",
+        variant: "destructive",
+      });
+      return;
     }
-  };
 
-  const handleUpload = async () => {
-    if (!selectedFile || !currentTeam?.id) return;
-
+    const file = acceptedFiles[0];
     setIsUploading(true);
-    setProgress(0);
 
     try {
-      const filePath = `${currentTeam.id}/${selectedFile.name}`;
-      
-      const { error } = await supabase.storage
+      // Get user session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${currentTeam.id}/${loadId || 'unassigned'}/${fileName}`;
+
+      // Upload file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(filePath, selectedFile, {
+        .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
 
-      if (error) throw error;
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(filePath);
+
+      // Create document record
+      const { error: dbError, data: document } = await supabase
+        .from('documents')
+        .insert({
+          team_id: currentTeam.id,
+          load_id: loadId,
+          file_url: publicUrl,
+          file_path: filePath,
+          original_filename: file.name,
+          mime_type: file.type,
+          file_size: file.size,
+          status: 'PENDING_REVIEW',
+          uploaded_by: session.user.id
+        })
+        .select()
+        .single();
+
+      if (dbError) {
+        // Cleanup: Delete uploaded file if DB insert fails
+        await supabase.storage
+          .from('documents')
+          .remove([filePath]);
+        throw dbError;
+      }
 
       toast({
-        title: 'Success',
-        description: 'Document uploaded successfully',
+        title: "Success",
+        description: "Document uploaded successfully",
       });
 
-      onUploadComplete?.();
-      onOpenChange(false);
+      onUploadComplete?.(document.id);
     } catch (error) {
-      console.error('Error uploading document:', error);
+      console.error('Upload error:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to upload document',
-        variant: 'destructive',
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to upload document",
+        variant: "destructive",
       });
     } finally {
       setIsUploading(false);
-      setProgress(0);
-      setSelectedFile(null);
     }
   };
 
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'application/pdf': ['.pdf'],
+      'image/*': ['.png', '.jpg', '.jpeg'],
+      'application/msword': ['.doc'],
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx']
+    },
+    maxSize: 10 * 1024 * 1024, // 10MB
+    multiple: false
+  });
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Upload Document</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          {!selectedFile ? (
-            <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-lg">
-              <input
-                type="file"
-                onChange={handleFileSelect}
-                className="hidden"
-                id="file-upload"
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv"
-              />
-              <label
-                htmlFor="file-upload"
-                className="cursor-pointer text-center"
-              >
-                <div className="text-sm text-gray-500">
-                  Click to select a file or drag and drop
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  PDF, DOC, DOCX, XLS, XLSX, CSV
-                </div>
-              </label>
-            </div>
+    <div
+      {...getRootProps()}
+      className={`
+        border-2 border-dashed rounded-lg p-8 text-center cursor-pointer
+        transition-colors duration-200 ease-in-out
+        ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300'}
+        ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}
+      `}
+    >
+      <input {...getInputProps()} disabled={isUploading} />
+      <div className="space-y-4">
+        <div className="flex justify-center">
+          {isUploading ? (
+            <Loader2 className="h-12 w-12 text-primary animate-spin" />
           ) : (
-            <div className="space-y-4">
-              <div className="text-sm">
-                Selected file: {selectedFile.name}
-              </div>
-              {isUploading && (
-                <div className="space-y-2">
-                  <Progress value={progress} />
-                  <div className="text-xs text-gray-500 text-center">
-                    Uploading... {Math.round(progress)}%
-                  </div>
-                </div>
-              )}
-            </div>
+            <Upload className="h-12 w-12 text-gray-400" />
           )}
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={isUploading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUpload}
-              disabled={!selectedFile || isUploading}
-            >
-              {isUploading ? 'Uploading...' : 'Upload'}
-            </Button>
-          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+        <div>
+          <h3 className="text-lg font-medium">
+            {isDragActive ? 'Drop file here' : 'Drag & drop file here'}
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            or click to select file
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Supported formats: PDF, PNG, JPG, DOC, DOCX (max 10MB)
+        </p>
+      </div>
+    </div>
   );
 } 

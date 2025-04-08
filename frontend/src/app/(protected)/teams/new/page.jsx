@@ -1,18 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTeamStore } from '@/store/teamStore';
+import { useRouter } from 'next/navigation';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 const NewTeamPage = () => {
   const router = useRouter();
   const { toast } = useToast();
-  const { createTeam = async () => {}, setCurrentTeam = async () => {} } = useTeamStore();
+  const supabase = createClientComponentClient();
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -29,18 +30,38 @@ const NewTeamPage = () => {
 
     setIsSubmitting(true);
     try {
-      const newTeam = await createTeam({ name: name.trim() });
-      if (newTeam) {
-        await setCurrentTeam(newTeam);
-        toast({
-          title: "Success",
-          description: "Team created successfully",
-        });
-        router.push('/dashboard');
-      } else {
-        throw new Error('Failed to create team');
-      }
+      // Create the team
+      const { data: team, error: teamError } = await supabase
+        .from('teams')
+        .insert([{ name: name.trim() }])
+        .select()
+        .single();
+
+      if (teamError) throw teamError;
+
+      // Get the current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+
+      // Add the user as an admin of the team
+      const { error: memberError } = await supabase
+        .from('team_members')
+        .insert([{
+          team_id: team.id,
+          user_id: user.id,
+          role: 'ADMIN'
+        }]);
+
+      if (memberError) throw memberError;
+
+      toast({
+        title: "Success",
+        description: "Team created successfully",
+      });
+      
+      router.push('/dashboard');
     } catch (error) {
+      console.error('Error creating team:', error);
       toast({
         title: "Error",
         description: error?.message || "Failed to create team",
@@ -63,8 +84,8 @@ const NewTeamPage = () => {
               <Label htmlFor="name">Team Name</Label>
               <Input
                 id="name"
-                value={name || ''}
-                onChange={(e) => setName(e?.target?.value || '')}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Enter team name"
                 disabled={isSubmitting}
               />
@@ -72,14 +93,21 @@ const NewTeamPage = () => {
             <div className="flex gap-2">
               <Button 
                 type="submit" 
-                disabled={isSubmitting}
+                disabled={isSubmitting || !name.trim()}
               >
-                Create Team
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  "Create Team"
+                )}
               </Button>
               <Button 
                 type="button" 
                 variant="outline"
-                onClick={() => router?.back()}
+                onClick={() => router.back()}
                 disabled={isSubmitting}
               >
                 Cancel
