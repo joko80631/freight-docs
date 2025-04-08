@@ -45,3 +45,20 @@ export function formatRelativeTime(dateString: string): string {
   
   return date.toLocaleDateString();
 }
+
+export function handleComingSoonFeature(showToast: (title: string, description: string) => void) {
+  showToast(
+    "Coming Soon",
+    "This feature will be available in a future update."
+  );
+}
+
+export function handleNavigation(router: any, path: string, showToast?: (title: string, description: string) => void) {
+  if (path.includes('coming-soon')) {
+    if (showToast) {
+      handleComingSoonFeature(showToast);
+    }
+    return;
+  }
+  router.push(path);
+}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { CheckCircle2, Circle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToastNotification } from "@/components/shared";
 import { safeArray } from '@/lib/array-utils';
+import { handleNavigation } from "@/lib/utils";
 
 const ONBOARDING_STORAGE_KEY = "freightdocs_onboarding_status";
 
@@ -73,7 +74,8 @@ const checklistItems = [
 export function OnboardingChecklist() {
   const [isVisible, setIsVisible] = useState(true);
   const [completedItems, setCompletedItems] = useState([]);
-  const { showSuccess } = useToastNotification();
+  const router = useRouter();
+  const { showToast } = useToastNotification();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -99,112 +101,97 @@ export function OnboardingChecklist() {
   }, [pathname, isVisible, completedItems]);
 
   const handleComplete = (itemId) => {
-    const newCompleted = [...completedItems, itemId];
-    setCompletedItems(newCompleted);
+    const newCompletedItems = [...completedItems, itemId];
+    setCompletedItems(newCompletedItems);
     localStorage.setItem(
       ONBOARDING_STORAGE_KEY,
-      JSON.stringify({ completed: newCompleted, dismissed: false })
+      JSON.stringify({
+        completed: newCompletedItems,
+        dismissed: !isVisible,
+      })
     );
-    showSuccess("Progress saved", "Keep going! You're making great progress.");
   };
 
   const handleDismiss = () => {
     setIsVisible(false);
     localStorage.setItem(
       ONBOARDING_STORAGE_KEY,
-      JSON.stringify({ completed: completedItems, dismissed: true })
+      JSON.stringify({
+        completed: completedItems,
+        dismissed: true,
+      })
     );
   };
 
-  const progress = (completedItems.length / checklistItems.length) * 100;
+  const handleActionClick = (path) => {
+    handleNavigation(router, path, showToast);
+  };
 
   if (!isVisible) return null;
 
   return (
-    <Card className="border-primary">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Welcome to FreightDocs!</CardTitle>
-            <CardDescription>
-              Let's get you set up with the basics
-            </CardDescription>
-          </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <X className="h-4 w-4" />
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Dismiss Checklist?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  You can always find this checklist in your settings if you need it later.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDismiss}>
-                  Dismiss Checklist
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div>
+          <CardTitle>Getting Started</CardTitle>
+          <CardDescription>
+            Complete these steps to get the most out of Freight
+          </CardDescription>
         </div>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <X className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Dismiss Getting Started?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You can always access this checklist from your profile settings.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDismiss}>
+                Dismiss
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {/* Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Setup Progress</span>
-              <span>{Math.round(progress)}%</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-gray-200">
+          {safeArray(checklistItems).map((item) => {
+            const isCompleted = completedItems.includes(item.id);
+            return (
               <div
-                className="h-2 rounded-full bg-primary transition-all"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Checklist Items */}
-          <div className="space-y-4">
-            {safeArray(checklistItems).map((item) => {
-              const isCompleted = completedItems.includes(item.id);
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-start space-x-4 rounded-lg border p-4"
-                >
-                  <div className="mt-1">
-                    {isCompleted ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      {item.title}
-                    </p>
+                key={item.id}
+                className="flex items-start justify-between space-x-4"
+              >
+                <div className="flex items-start space-x-4">
+                  {isCompleted ? (
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
+                  ) : (
+                    <Circle className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="font-medium">{item.title}</p>
                     <p className="text-sm text-muted-foreground">
                       {item.description}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleComplete(item.id)}
-                    disabled={isCompleted}
-                  >
-                    {isCompleted ? "Completed" : item.action}
-                  </Button>
                 </div>
-              );
-            })}
-          </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleActionClick(item.path)}
+                >
+                  {item.action}
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>

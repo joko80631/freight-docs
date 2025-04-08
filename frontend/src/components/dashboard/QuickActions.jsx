@@ -5,6 +5,8 @@ import { Plus, Upload, FileText, Package, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { safeArray } from '@/lib/array-utils';
+import { useToastNotification } from "@/components/shared";
+import { handleNavigation } from "@/lib/utils";
 
 const actions = [
   {
@@ -35,6 +37,11 @@ const actions = [
 
 export function QuickActions() {
   const router = useRouter();
+  const { showToast } = useToastNotification();
+
+  const handleActionClick = (path: string) => {
+    handleNavigation(router, path, showToast);
+  };
 
   return (
     <Card>
@@ -50,7 +57,7 @@ export function QuickActions() {
                 key={action.title}
                 variant="outline"
                 className="h-auto flex-col items-start justify-start gap-2 p-4"
-                onClick={() => router.push(action.path)}
+                onClick={() => handleActionClick(action.path)}
               >
                 <div className="flex w-full items-center justify-between">
                   <Icon className="h-4 w-4" />
