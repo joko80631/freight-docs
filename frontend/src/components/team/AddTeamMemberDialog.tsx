@@ -62,17 +62,10 @@ export function AddTeamMemberDialog({ open, onOpenChange, teamId }: AddTeamMembe
 
       setEmail('');
       onOpenChange(false);
-      toast({
-        title: "Success",
-        description: "Team member added successfully",
-      });
+      toast.success("Team member added successfully");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add team member';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      console.error('Error adding team member:', error);
+      toast.error("Failed to add team member");
     } finally {
       setIsLoading(false);
     }
