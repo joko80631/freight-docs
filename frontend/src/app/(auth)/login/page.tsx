@@ -5,7 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 
@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const router = useRouter();
   const supabase = createClientComponentClient();
 
@@ -30,18 +29,11 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Success',
-        description: 'Logged in successfully',
-      });
+      toast.success('Logged in successfully');
       
       // Let the auth state change handler handle the redirect
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to log in',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Failed to log in');
       setIsLoading(false);
     }
   };
@@ -61,16 +53,9 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Check your email',
-        description: 'We sent you a magic link to log in',
-      });
+      toast.success('We sent you a magic link to log in');
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to send magic link',
-        variant: 'destructive',
-      });
+      toast.error(error.message || 'Failed to send magic link');
     } finally {
       setIsLoading(false);
     }

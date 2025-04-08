@@ -7,11 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from 'sonner'
 import { cn } from "@/lib/utils"
 
 export default function ProfileSettingsPage() {
-  const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
     name: "John Doe",
@@ -77,8 +76,7 @@ export default function ProfileSettingsPage() {
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false)
-      toast({
-        title: "Profile updated",
+      toast.success("Profile updated", {
         description: "Your profile information has been successfully updated.",
       })
     }, 1000)

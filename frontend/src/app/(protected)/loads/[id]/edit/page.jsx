@@ -12,14 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft } from 'lucide-react';
 import { LOAD_STATUSES, LOAD_STATUS_LABELS } from '@/config/constants';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from 'sonner';
 
 export default function EditLoadPage() {
   const params = useParams();
   const router = useRouter();
   const supabase = createClientComponentClient();
   const { currentTeam } = useTeamStore();
-  const { toast } = useToast();
   const [load, setLoad] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -76,17 +75,10 @@ export default function EditLoadPage() {
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Load updated successfully",
-      });
+      toast.success("Load updated successfully");
       router.push(`/loads/${load.id}`);
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "Failed to update load",
-        variant: "destructive",
-      });
+      toast.error("Failed to update load");
     }
   };
 

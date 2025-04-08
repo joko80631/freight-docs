@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { Download, Link, Trash, RefreshCw, FileText, ExternalLink } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,6 @@ export default function DocumentDetailPage() {
   const [error, setError] = useState(null);
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const { toast } = useToast();
   const { user = null, isAdmin = false } = useAuth();
 
   useEffect(() => {
@@ -68,11 +67,7 @@ export default function DocumentDetailPage() {
       setDocument(data || null);
     } catch (error) {
       setError(error?.message || 'An error occurred');
-      toast({
-        title: 'Error',
-        description: 'Failed to load document',
-        variant: 'destructive',
-      });
+      toast.error('Failed to load document');
     } finally {
       setIsLoading(false);
     }
@@ -93,16 +88,9 @@ export default function DocumentDetailPage() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      toast({
-        title: 'Success',
-        description: 'Document downloaded successfully',
-      });
+      toast.success('Document downloaded successfully');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to download document',
-        variant: 'destructive',
-      });
+      toast.error('Failed to download document');
     }
   };
 
@@ -113,17 +101,10 @@ export default function DocumentDetailPage() {
       });
       if (!response.ok) throw new Error('Failed to delete document');
 
-      toast({
-        title: 'Success',
-        description: 'Document deleted successfully',
-      });
+      toast.success('Document deleted successfully');
       router.push('/documents');
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete document',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete document');
     }
   };
 

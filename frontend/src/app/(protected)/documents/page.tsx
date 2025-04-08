@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, FileText, Download, Trash2 } from 'lucide-react';
@@ -26,7 +26,6 @@ interface Document {
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   const supabase = createClientComponentClient();
   const { currentTeam } = useTeamStore();
 
@@ -44,11 +43,7 @@ export default function DocumentsPage() {
       setDocuments(data || []);
     } catch (error) {
       console.error('Error fetching documents:', error);
-      toast({
-        title: "Error",
-        description: "Failed to fetch documents",
-        variant: "destructive",
-      });
+      toast.error("Failed to fetch documents");
     } finally {
       setIsLoading(false);
     }
@@ -72,17 +67,10 @@ export default function DocumentsPage() {
       if (dbError) throw dbError;
 
       setDocuments(documents.filter(doc => doc.id !== documentId));
-      toast({
-        title: "Success",
-        description: "Document deleted successfully",
-      });
+      toast.success("Document deleted successfully");
     } catch (error) {
       console.error('Error deleting document:', error);
-      toast({
-        title: "Error",
-        description: "Failed to delete document",
-        variant: "destructive",
-      });
+      toast.error("Failed to delete document");
     }
   };
 
