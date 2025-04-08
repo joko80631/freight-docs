@@ -82,146 +82,191 @@ export default function ProfileSettingsPage() {
     }, 1000)
   }
 
+  // Test function to verify different toast types
+  const testToasts = () => {
+    toast.success('Success Toast', {
+      description: 'This is a success message'
+    });
+
+    setTimeout(() => {
+      toast.error('Error Toast', {
+        description: 'This is an error message'
+      });
+    }, 1000);
+
+    setTimeout(() => {
+      toast.loading('Loading Toast', {
+        description: 'This is a loading message'
+      });
+    }, 2000);
+
+    setTimeout(() => {
+      toast.info('Info Toast', {
+        description: 'This is an info message'
+      });
+    }, 3000);
+  };
+
   return (
-    <div className="p-6">
-      <CardHeader className="pb-4">
-        <CardTitle>Profile Settings</CardTitle>
-        <CardDescription>
-          Update your personal information and profile details
-        </CardDescription>
-      </CardHeader>
-      
-      <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-6">
-          {/* Profile Picture Section */}
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-6">
-            <div className="relative">
-              <Avatar className="h-24 w-24">
-                <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
-                <AvatarFallback className="text-lg">JD</AvatarFallback>
-              </Avatar>
-              <Button 
-                size="icon" 
-                variant="outline" 
-                className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
-                disabled
-              >
-                <Camera className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="text-center sm:text-left">
-              <h3 className="text-lg font-medium">Profile Picture</h3>
-              <p className="text-sm text-muted-foreground">
-                Upload a new profile picture (coming soon)
-              </p>
-            </div>
-          </div>
-          
-          <div className="h-px bg-border" />
-          
-          {/* Basic Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Basic Information</h3>
-            
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    name="name"
-                    className={cn("pl-9", errors.name && "border-destructive")}
-                    value={formData.name}
-                    onChange={handleChange}
-                  />
-                </div>
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    className={cn("pl-9", errors.email && "border-destructive")}
-                    value={formData.email}
-                    onChange={handleChange}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="h-px bg-border" />
-          
-          {/* Additional Information (Placeholders for future features) */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Additional Information</h3>
-            <p className="text-sm text-muted-foreground">
-              These fields will be available in a future update
-            </p>
-            
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    name="phone"
-                    className="pl-9 bg-muted/50"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    disabled
-                  />
-                </div>
-                {errors.phone && (
-                  <p className="text-sm text-destructive">{errors.phone}</p>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="jobTitle">Job Title</Label>
-                <div className="relative">
-                  <Briefcase className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="jobTitle"
-                    name="jobTitle"
-                    className="pl-9 bg-muted/50"
-                    value={formData.jobTitle}
-                    onChange={handleChange}
-                    disabled
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">Profile Settings</h3>
+        <p className="text-sm text-muted-foreground">
+          Manage your profile information and preferences.
+        </p>
+      </div>
+
+      {/* Test Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Toast Notifications Test</CardTitle>
+          <CardDescription>
+            Click the button below to test different types of toast notifications
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={testToasts}>Test Toast Notifications</Button>
         </CardContent>
-        
-        <CardFooter className="flex justify-end gap-3 border-t p-6">
-          <Button variant="outline" type="button">
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              "Save Changes"
-            )}
-          </Button>
-        </CardFooter>
+      </Card>
+
+      <form onSubmit={handleSubmit}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile Information</CardTitle>
+            <CardDescription>
+              Update your profile details and personal information.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
+                  <AvatarFallback className="text-lg">JD</AvatarFallback>
+                </Avatar>
+                <div>
+                  <Button 
+                    size="icon" 
+                    variant="outline" 
+                    className="absolute bottom-0 right-0 h-8 w-8 rounded-full"
+                    disabled
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="text-center sm:text-left">
+                <h3 className="text-lg font-medium">Profile Picture</h3>
+                <p className="text-sm text-muted-foreground">
+                  Upload a new profile picture (coming soon)
+                </p>
+              </div>
+            </div>
+            
+            <div className="h-px bg-border" />
+            
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Basic Information</h3>
+              
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="name"
+                      name="name"
+                      className={cn("pl-9", errors.name && "border-destructive")}
+                      value={formData.name}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  {errors.name && (
+                    <p className="text-sm text-destructive">{errors.name}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email Address</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      className={cn("pl-9", errors.email && "border-destructive")}
+                      value={formData.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="text-sm text-destructive">{errors.email}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            <div className="h-px bg-border" />
+            
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium">Additional Information</h3>
+              <p className="text-sm text-muted-foreground">
+                These fields will be available in a future update
+              </p>
+              
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      name="phone"
+                      className="pl-9 bg-muted/50"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      disabled
+                    />
+                  </div>
+                  {errors.phone && (
+                    <p className="text-sm text-destructive">{errors.phone}</p>
+                  )}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="jobTitle">Job Title</Label>
+                  <div className="relative">
+                    <Briefcase className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="jobTitle"
+                      name="jobTitle"
+                      className="pl-9 bg-muted/50"
+                      value={formData.jobTitle}
+                      onChange={handleChange}
+                      disabled
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+          
+          <CardFooter className="flex justify-end gap-3 border-t p-6">
+            <Button variant="outline" type="button">
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
       </form>
     </div>
   )
