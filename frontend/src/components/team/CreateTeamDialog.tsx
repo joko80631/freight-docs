@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTeamStore } from '@/store/team-store';
+import { useTeamStore, TeamWithRole } from '@/store/teamStore';
 import {
   Dialog,
   DialogContent,
@@ -12,23 +12,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-
-interface Team {
-  id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-  role: 'owner' | 'admin' | 'member';
-  member_count?: number;
-}
+import { Loader2 } from 'lucide-react';
 
 interface CreateTeamDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onTeamCreated: (team: Team) => void;
+  onTeamCreated?: (team: TeamWithRole) => void;
 }
 
-export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTeamDialogProps) {
+export function CreateTeamDialog({ 
+  open, 
+  onOpenChange, 
+  onTeamCreated 
+}: CreateTeamDialogProps) {
   const [teamName, setTeamName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { createTeam } = useTeamStore();
@@ -36,18 +32,30 @@ export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTe
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamName.trim()) return;
+    if (!teamName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Team name is required',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     setIsLoading(true);
     try {
-      const team = await createTeam(teamName);
-      onTeamCreated(team);
+      const team = await createTeam(teamName.trim());
+      toast({
+        title: 'Success',
+        description: 'Team created successfully'
+      });
+      onTeamCreated?.(team);
       setTeamName('');
+      onOpenChange(false);
     } catch (error) {
       console.error('Error creating team:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create team',
+        description: error instanceof Error ? error.message : 'Failed to create team',
         variant: 'destructive'
       });
     } finally {
@@ -59,21 +67,23 @@ export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTe
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create a new team</DialogTitle>
+          <DialogTitle>Create New Team</DialogTitle>
           <DialogDescription>
-            Add a new team to collaborate with others
+            Create a new team to collaborate with others.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Team name</Label>
-            <Input
-              id="name"
-              placeholder="Enter team name"
-              value={teamName}
-              onChange={(e) => setTeamName(e.target.value)}
-              disabled={isLoading}
-            />
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Team Name</Label>
+              <Input
+                id="name"
+                placeholder="Enter team name"
+                value={teamName}
+                onChange={(e) => setTeamName(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button
@@ -84,8 +94,15 @@ export function CreateTeamDialog({ open, onOpenChange, onTeamCreated }: CreateTe
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!teamName.trim() || isLoading}>
-              {isLoading ? 'Creating...' : 'Create Team'}
+            <Button type="submit" disabled={isLoading || !teamName.trim()}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Team'
+              )}
             </Button>
           </DialogFooter>
         </form>
