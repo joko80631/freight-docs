@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dialog';
 import { useTeamStore } from '@/store/teamStore';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 interface AddTeamMemberDialogProps {
   open: boolean;
@@ -64,8 +64,8 @@ export function AddTeamMemberDialog({ open, onOpenChange, teamId }: AddTeamMembe
       onOpenChange(false);
       toast.success("Team member added successfully");
     } catch (error) {
-      console.error('Error adding team member:', error);
-      toast.error("Failed to add team member");
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add team member';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
