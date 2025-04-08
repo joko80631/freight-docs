@@ -20,7 +20,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <RootProvider>{children}</RootProvider>
-        <Toaster />
+        <Toaster 
+          position="top-right"
+          richColors 
+          closeButton
+          theme="system"
+          duration={4000}
+          visibleToasts={6}
+          hotkey={['altKey', 'KeyT']}
+          style={{ zIndex: 100 }}
+        />
       </body>
     </html>
   );
