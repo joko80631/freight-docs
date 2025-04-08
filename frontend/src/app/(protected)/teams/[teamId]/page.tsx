@@ -1,3 +1,5 @@
+"use client";
+
 import { Suspense, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
