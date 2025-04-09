@@ -3,51 +3,39 @@
  * This file contains realistic test data for each email template type
  */
 
-import { TemplateData, TemplateName } from './index';
+export type TemplateData = Record<string, any>;
 
-type SampleDataGenerator = (params: URLSearchParams) => Promise<TemplateData>;
-
-const sampleGenerators: Record<string, SampleDataGenerator> = {
+const sampleGenerators: Record<string, (params: URLSearchParams) => Promise<TemplateData>> = {
   'document-upload': async (params) => ({
-    documentType: params.get('documentType') || 'Bill of Lading',
-    uploadedBy: params.get('uploadedBy') || 'John Smith',
-    documentUrl: params.get('documentUrl') || `${process.env.NEXT_PUBLIC_APP_URL}/documents/sample`,
-    loadNumber: params.get('loadNumber') || 'L123456',
-    dueDate: params.get('dueDate') || '2024-03-15',
-    userId: params.get('userId') || 'user123',
-    unsubscribeUrl: params.get('unsubscribeUrl') || `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?token=sample`,
+    documentName: params.get('documentName') || 'Bill of Lading',
+    documentType: params.get('documentType') || 'BOL',
+    uploadDate: new Date().toISOString(),
+    status: params.get('status') || 'pending',
+    loadNumber: params.get('loadNumber') || 'LOAD-123',
+    carrierName: params.get('carrierName') || 'ABC Trucking',
+    documentUrl: params.get('documentUrl') || 'https://example.com/documents/bol-123',
   }),
-
   'missing-document': async (params) => ({
-    documentType: params.get('documentType') || 'Proof of Delivery',
-    dueDate: params.get('dueDate') || '2024-03-20',
-    loadNumber: params.get('loadNumber') || 'L123456',
-    recipientName: params.get('recipientName') || 'Jane Doe',
-    uploadUrl: params.get('uploadUrl') || `${process.env.NEXT_PUBLIC_APP_URL}/loads/L123456/documents/upload`,
-    userId: params.get('userId') || 'user123',
-    unsubscribeUrl: params.get('unsubscribeUrl') || `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?token=sample`,
+    documentType: params.get('documentType') || 'BOL',
+    dueDate: params.get('dueDate') || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    loadNumber: params.get('loadNumber') || 'LOAD-123',
+    carrierName: params.get('carrierName') || 'ABC Trucking',
+    documentUrl: params.get('documentUrl') || 'https://example.com/documents/upload/bol',
   }),
-
   'load-status': async (params) => ({
-    loadNumber: params.get('loadNumber') || 'L123456',
-    status: params.get('status') || 'In Transit',
-    updatedBy: params.get('updatedBy') || 'John Smith',
-    details: params.get('details') || 'Arrived at distribution center',
-    loadUrl: params.get('loadUrl') || `${process.env.NEXT_PUBLIC_APP_URL}/loads/L123456`,
-    recipientName: params.get('recipientName') || 'Jane Doe',
-    userId: params.get('userId') || 'user123',
-    unsubscribeUrl: params.get('unsubscribeUrl') || `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?token=sample`,
+    loadNumber: params.get('loadNumber') || 'LOAD-123',
+    status: params.get('status') || 'in-transit',
+    estimatedDelivery: params.get('estimatedDelivery') || new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    carrierName: params.get('carrierName') || 'ABC Trucking',
+    currentLocation: params.get('currentLocation') || 'Chicago, IL',
+    trackingUrl: params.get('trackingUrl') || 'https://example.com/tracking/load-123',
   }),
-
   'team-invite': async (params) => ({
-    teamName: params.get('teamName') || 'Acme Logistics',
-    inviterName: params.get('inviterName') || 'John Smith',
-    inviteUrl: params.get('inviteUrl') || `${process.env.NEXT_PUBLIC_APP_URL}/teams/invite?token=sample`,
-    role: params.get('role') || 'member',
-    recipientName: params.get('recipientName') || 'Jane Doe',
+    inviterName: params.get('inviterName') || 'John Doe',
+    teamName: params.get('teamName') || 'Freight Team',
+    inviteLink: params.get('inviteLink') || 'https://example.com/invite/123',
+    role: params.get('role') || 'Member',
     expiresIn: params.get('expiresIn') || '7 days',
-    userId: params.get('userId') || 'user123',
-    unsubscribeUrl: params.get('unsubscribeUrl') || `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?token=sample`,
   }),
 };
 
@@ -57,18 +45,19 @@ export async function getSampleData(
 ): Promise<TemplateData | null> {
   const generator = sampleGenerators[templateName];
   if (!generator) return null;
-  
+
   return generator(params);
 }
 
 export const sampleData = {
-  'team-invite': {
-    inviterName: 'John Doe',
-    teamName: 'Acme Corp',
-    inviteUrl: 'https://example.com/invite/123',
-    recipientName: 'Jane Smith',
-    role: 'Member',
-    expiresIn: '7 days',
+  'document-upload': {
+    documentName: 'Bill of Lading',
+    documentType: 'BOL',
+    uploadDate: new Date().toISOString(),
+    status: 'pending',
+    loadNumber: 'LOAD-123',
+    carrierName: 'ABC Trucking',
+    documentUrl: 'https://example.com/documents/bol-123',
   },
   'missing-document': {
     documentType: 'Bill of Lading',
@@ -104,6 +93,14 @@ export const sampleData = {
     uploadedBy: 'John Doe',
     uploadDate: new Date().toISOString(),
   },
+  'load-status': {
+    loadNumber: 'LOAD-123',
+    status: 'in-transit',
+    estimatedDelivery: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    carrierName: 'ABC Trucking',
+    currentLocation: 'Chicago, IL',
+    trackingUrl: 'https://example.com/tracking/load-123',
+  },
   'load-status-update': {
     loadId: 'LOAD-123',
     loadReference: 'REF-456',
@@ -114,6 +111,14 @@ export const sampleData = {
     updateDate: new Date().toISOString(),
     location: 'Los Angeles, CA',
     estimatedArrival: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  'team-invite': {
+    inviterName: 'John Doe',
+    teamName: 'Acme Corp',
+    inviteUrl: 'https://example.com/invite/123',
+    recipientName: 'Jane Smith',
+    role: 'Member',
+    expiresIn: '7 days',
   },
   'team-role-update': {
     teamName: 'Acme Corp',
@@ -128,62 +133,22 @@ export const sampleData = {
 
 export type TemplateName = keyof typeof sampleData;
 
-/**
- * Sample data for email templates
- * Used for testing and preview
- */
-export const SAMPLE_DATA: Record<TemplateName, Record<string, any>> = {
-  'document-upload': {
-    documentName: 'Bill of Lading',
-    documentType: 'BOL',
-    uploadDate: new Date().toISOString(),
-    status: 'pending',
-    loadNumber: 'LOAD-123',
-    carrierName: 'ABC Trucking',
-    documentUrl: 'https://example.com/documents/bol-123',
-  },
-  'missing-document': {
-    documentType: 'BOL',
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    loadNumber: 'LOAD-123',
-    carrierName: 'ABC Trucking',
-    documentUrl: 'https://example.com/documents/upload/bol',
-  },
-  'load-status': {
-    loadNumber: 'LOAD-123',
-    status: 'in-transit',
-    estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    carrierName: 'ABC Trucking',
-    currentLocation: 'Chicago, IL',
-    trackingUrl: 'https://example.com/tracking/load-123',
-  },
-  'team-invite': {
-    inviterName: 'John Doe',
-    teamName: 'Freight Team',
-    inviteLink: 'https://example.com/invite/123',
-    role: 'Member',
-    expiresIn: '7 days',
-  },
-};
+export function getSampleDataFromParams(
+  templateName: string,
+  params: URLSearchParams
+): TemplateData | null {
+  const template = sampleData[templateName as TemplateName];
+  if (!template) return null;
 
-/**
- * Get sample data for a template
- * @param templateName The name of the template
- * @param overrides Optional overrides for the sample data
- */
-export function getSampleData(
-  templateName: TemplateName,
-  overrides: Record<string, any> = {}
-): Record<string, any> {
-  const baseData = SAMPLE_DATA[templateName];
-  if (!baseData) {
-    throw new Error(`No sample data found for template: ${templateName}`);
-  }
+  // Apply any overrides from the URL parameters
+  const result = { ...template };
+  Array.from(params.entries()).forEach(([key, value]) => {
+    if (value) {
+      (result as any)[key] = value;
+    }
+  });
 
-  return {
-    ...baseData,
-    ...overrides,
-  };
+  return result;
 }
 
 /**
@@ -193,7 +158,7 @@ export function getSampleData(
 export function getAllSampleData(
   overrides: Partial<Record<TemplateName, Record<string, any>>> = {}
 ): Record<TemplateName, Record<string, any>> {
-  return Object.entries(SAMPLE_DATA).reduce(
+  return Object.entries(sampleData).reduce(
     (acc, [templateName, data]) => ({
       ...acc,
       [templateName as TemplateName]: {
@@ -203,4 +168,4 @@ export function getAllSampleData(
     }),
     {} as Record<TemplateName, Record<string, any>>
   );
-} 
+}

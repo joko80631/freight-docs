@@ -1,36 +1,30 @@
-import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { createClient } from '@supabase/supabase-js';
 
 interface EmailActivityLog {
   recipientId: string;
   templateName: string;
-  status: 'sent' | 'failed' | 'skipped';
+  status: 'success' | 'failure';
   error?: string;
   metadata?: Record<string, any>;
 }
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 /**
  * Log an email activity to the audit logs
  */
 export async function logEmailActivity(log: EmailActivityLog): Promise<void> {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
-
-  const { error } = await supabase
-    .from('audit_logs')
-    .insert({
-      category: 'email',
-      action: 'send',
-      user_id: log.recipientId,
-      template_name: log.templateName,
-      status: log.status,
-      error: log.error,
-      metadata: log.metadata,
-    });
-
-  if (error) {
-    console.error('Error logging email activity:', error);
-  }
+  await supabase.from('email_activity_logs').insert({
+    recipient_id: log.recipientId,
+    template_name: log.templateName,
+    status: log.status,
+    error: log.error,
+    metadata: log.metadata,
+    created_at: new Date().toISOString(),
+  });
 }
 
 /**
@@ -45,8 +39,7 @@ export async function getUserEmailLogs(
     templateName?: string;
   } = {}
 ): Promise<any[]> {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   let query = supabase
     .from('audit_logs')
@@ -92,8 +85,7 @@ export async function getLoadEmailLogs(
     status?: 'sent' | 'failed' | 'skipped';
   } = {}
 ): Promise<any[]> {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   let query = supabase
     .from('audit_logs')
