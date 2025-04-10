@@ -7,9 +7,15 @@ import { Loader2 } from 'lucide-react';
 
 interface DocumentUploadProps {
   onUploadComplete?: (documentId: string) => void;
+  onUploadError?: (error: Error) => void;
+  onUploadStart?: () => void;
 }
 
-export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
+export function DocumentUpload({ 
+  onUploadComplete, 
+  onUploadError,
+  onUploadStart 
+}: DocumentUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isClassifying, setIsClassifying] = useState(false);
   const { toast } = useToast();
@@ -20,6 +26,7 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
 
     const file = acceptedFiles[0];
     setIsUploading(true);
+    onUploadStart?.();
 
     try {
       // Get user session
@@ -48,10 +55,14 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
       const { error: uploadError, data: uploadData } = await supabase
         .storage
         .from('documents')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
       if (uploadError) {
-        throw uploadError;
+        console.error('Storage upload error:', uploadError);
+        throw new Error(`Failed to upload file: ${uploadError.message}`);
       }
 
       // Create document record
@@ -63,51 +74,69 @@ export function DocumentUpload({ onUploadComplete }: DocumentUploadProps) {
           team_id: teamMember.team_id,
           uploaded_by: session.user.id,
           size: file.size,
-          mime_type: file.type
+          mime_type: file.type,
+          status: 'pending_classification' // Add status to track progress
         })
         .select()
         .single();
 
       if (dbError) {
-        throw dbError;
+        console.error('Database insert error:', dbError);
+        // Try to clean up the uploaded file if database insert fails
+        await supabase.storage.from('documents').remove([filePath]);
+        throw new Error(`Failed to create document record: ${dbError.message}`);
       }
 
       // Trigger classification
       setIsClassifying(true);
-      const response = await fetch('/api/documents/classify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          documentId: document.id,
-          storagePath: filePath
-        })
-      });
+      try {
+        const response = await fetch('/api/documents/classify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            documentId: document.id,
+            storagePath: filePath
+          })
+        });
 
-      const classificationResult = await response.json();
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Classification API error:', errorData);
+          throw new Error(errorData.error || `Classification failed: ${response.statusText}`);
+        }
 
-      if (!response.ok) {
-        throw new Error(classificationResult.error || 'Classification failed');
+        const classificationResult = await response.json();
+
+        // Show classification result
+        const confidencePercent = Math.round(classificationResult.classification.confidence * 100);
+        const isLowConfidence = classificationResult.classification.confidence < 0.6;
+
+        toast({
+          title: isLowConfidence ? 'Low Confidence Classification' : 'Document Classified',
+          description: `Classified as ${classificationResult.classification.type.toUpperCase()} (${confidencePercent}% confidence)`,
+          variant: isLowConfidence ? 'destructive' : 'default'
+        });
+
+        onUploadComplete?.(document.id);
+      } catch (classifyError) {
+        // Update document status to reflect classification failure
+        await supabase
+          .from('documents')
+          .update({ status: 'classification_failed' })
+          .eq('id', document.id);
+          
+        throw classifyError;
       }
 
-      // Show classification result
-      const confidencePercent = Math.round(classificationResult.classification.confidence * 100);
-      const isLowConfidence = classificationResult.classification.confidence < 0.6;
-
-      toast({
-        title: isLowConfidence ? 'Low Confidence Classification' : 'Document Classified',
-        description: `Classified as ${classificationResult.classification.type.toUpperCase()} (${confidencePercent}% confidence)`,
-        variant: isLowConfidence ? 'warning' : 'default'
-      });
-
-      onUploadComplete?.(document.id);
-
     } catch (error) {
-      console.error('Upload error:', error);
+      const uploadError = error instanceof Error ? error : new Error('Upload failed');
+      console.error('Upload process error:', uploadError);
+      onUploadError?.(uploadError);
       toast({
         title: 'Upload Failed',
-        description: error.message,
+        description: uploadError.message,
         variant: 'destructive'
       });
     } finally {

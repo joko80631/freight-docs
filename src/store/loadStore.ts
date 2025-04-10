@@ -2,6 +2,17 @@ import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/database';
 
+export interface Load {
+  id: string;
+  reference_number: string;
+  status: string;
+  origin: string;
+  destination: string;
+  created_at: string;
+  team_id: string;
+  // Add other load properties as needed
+}
+
 interface LoadFilters {
   status?: string;
   dateRange?: string;
@@ -13,15 +24,21 @@ interface LoadPagination {
   limit: number;
 }
 
+interface LoadError {
+  message: string;
+  code?: string;
+}
+
 interface LoadStore {
-  loads: any[];
+  loads: Load[];
   isLoading: boolean;
-  error: string | null;
+  error: LoadError | null;
   filters: LoadFilters;
   pagination: LoadPagination;
   setFilters: (filters: LoadFilters) => void;
   setPagination: (pagination: LoadPagination) => void;
   fetchLoads: (teamId: string) => Promise<void>;
+  clearError: () => void;
 }
 
 export const useLoadStore = create<LoadStore>((set, get) => ({
@@ -38,8 +55,19 @@ export const useLoadStore = create<LoadStore>((set, get) => ({
 
   setPagination: (pagination) => set({ pagination }),
 
+  clearError: () => set({ error: null }),
+
   fetchLoads: async (teamId) => {
-    if (!teamId) return;
+    if (!teamId) {
+      set({ 
+        error: { 
+          message: 'No team selected',
+          code: 'NO_TEAM'
+        },
+        isLoading: false 
+      });
+      return;
+    }
     
     set({ isLoading: true, error: null });
     try {
@@ -91,11 +119,25 @@ export const useLoadStore = create<LoadStore>((set, get) => ({
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      set({ loads: data ?? [], isLoading: false });
+      set({ 
+        loads: data ?? [], 
+        isLoading: false,
+        error: null
+      });
     } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'An error occurred', isLoading: false });
+      const loadError: LoadError = {
+        message: error instanceof Error ? error.message : 'Failed to fetch loads',
+        code: error instanceof Error ? (error as any).code : 'UNKNOWN_ERROR'
+      };
+      set({ 
+        error: loadError, 
+        isLoading: false,
+        loads: []
+      });
     }
   }
 })); 
