@@ -8,15 +8,32 @@ export async function middleware(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
 
   // Protected routes pattern
-  const protectedRoutes = ['/documents', '/document-upload'];
-  const isProtectedRoute = protectedRoutes.some(route => 
-    request.nextUrl.pathname.startsWith(route)
+  const protectedPaths = [
+    '/dashboard',
+    '/loads',
+    '/documents',
+    '/teams',
+    '/fleet'
+  ];
+  
+  const isProtectedRoute = protectedPaths.some(path => 
+    request.nextUrl.pathname.startsWith(path)
   );
 
-  // Handle auth
+  // Development mode warnings
+  if (process.env.NODE_ENV === 'development') {
+    const isUnhandledPath = !protectedPaths.some(path => 
+      request.nextUrl.pathname.startsWith(path)
+    );
+    if (isUnhandledPath) {
+      console.warn(`Unhandled path in middleware: ${request.nextUrl.pathname}`);
+    }
+  }
+
   if (isProtectedRoute && !session) {
     const redirectUrl = new URL('/login', request.url);
-    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname);
+    // Preserve the original URL for post-login redirect
+    redirectUrl.searchParams.set('redirect', request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(redirectUrl);
   }
 
@@ -25,9 +42,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/documents/:path*',
-    '/document-upload/:path*',
-    '/api/document-upload',
-    '/api/documents/:path*'
-  ]
+    '/((?!_next/static|_next/image|favicon.ico|public).*)',
+  ],
 }; 
