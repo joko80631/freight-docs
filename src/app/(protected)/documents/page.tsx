@@ -180,7 +180,9 @@ export default function DocumentsPage() {
             Upload and manage your freight documents
           </p>
         </div>
-        <Button onClick={() => router.push('/upload-document')}>
+        <Button 
+          onClick={() => router.push('/document-upload')}
+        >
           <Plus className="mr-2 h-4 w-4" />
           Upload Document
         </Button>

@@ -2,10 +2,9 @@
 
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTeamStore } from '@/store/team-store';
 
@@ -14,7 +13,6 @@ export function DocumentUpload() {
   const { toast } = useToast();
   const router = useRouter();
   const { currentTeam } = useTeamStore();
-  const supabase = createClientComponentClient();
 
   const onDrop = async (acceptedFiles: File[]) => {
     if (!currentTeam?.id) {
@@ -30,25 +28,20 @@ export function DocumentUpload() {
 
     try {
       for (const file of acceptedFiles) {
-        const filePath = `${currentTeam.id}/${file.name}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('documents')
-          .upload(filePath, file);
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('teamId', currentTeam.id);
 
-        if (uploadError) throw uploadError;
+        const response = await fetch('/api/document-upload', {
+          method: 'POST',
+          body: formData
+        });
 
-        const { error: dbError } = await supabase
-          .from('documents')
-          .insert({
-            team_id: currentTeam.id,
-            path: filePath,
-            original_name: file.name,
-            file_type: file.type,
-            file_size: file.size,
-          });
+        const data = await response.json();
 
-        if (dbError) throw dbError;
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to upload document');
+        }
       }
 
       toast({
@@ -102,6 +95,7 @@ export function DocumentUpload() {
           <p className="text-sm text-muted-foreground">Drop the files here...</p>
         ) : (
           <>
+            <Upload className="h-6 w-6 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
               Drag & drop files here, or click to select files
             </p>
