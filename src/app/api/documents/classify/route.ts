@@ -12,6 +12,15 @@ const openai = new OpenAI({
 async function handleClassification(request: Request, context: { userId: string, teamId: string }) {
   const supabase = createRouteHandlerClient({ cookies });
   
+  // Check for authenticated session
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 401 }
+    );
+  }
+
   const { documentId, storagePath } = await request.json();
   if (!documentId || !storagePath) {
     return NextResponse.json(
