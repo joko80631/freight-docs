@@ -108,8 +108,8 @@ module.exports = {
   			
   			// Accent & Status colors
   			accent: {
-  				DEFAULT: '#0070f3',
-  				hover: '#0051a3',
+  				DEFAULT: '#262626',
+  				hover: '#404040',
   			},
   			success: '#22c55e',
   			warning: '#ffcc00',
@@ -117,7 +117,7 @@ module.exports = {
   			
   			// Semantic UI colors - Mapped to strict values
   			primary: {
-  				DEFAULT: '#0070f3',
+  				DEFAULT: '#262626',
   				foreground: '#ffffff',
   			},
   			secondary: {
