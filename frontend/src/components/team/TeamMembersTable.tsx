@@ -97,7 +97,7 @@ export function TeamMembersTable({ teamId, currentUserRole }: TeamMembersTablePr
                   </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {formatDistanceToNow(new Date(member.created_at), {
+                  {member.created_at && formatDistanceToNow(new Date(member.created_at), {
                     addSuffix: true,
                   })}
                 </TableCell>

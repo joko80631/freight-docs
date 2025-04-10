@@ -40,17 +40,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
-import { useTeamStore, TeamRole, TeamMember } from '@/store/teamStore';
+import { useTeamStore } from '@/store/teamStore';
+import { TeamRole, TeamMember } from '@/types/team';
 import { createTeamScopedApi } from '@/utils/api';
 import { roleColors } from '@/lib/theme';
 import { toast } from 'sonner';
 
 const ROLE_CONFIG = {
-  ADMIN: {
+  owner: {
+    label: 'Owner',
+    ...roleColors.admin,
+  },
+  admin: {
     label: 'Admin',
     ...roleColors.admin,
   },
-  MEMBER: {
+  member: {
     label: 'Member',
     ...roleColors.user,
   },
@@ -61,7 +66,7 @@ interface TeamMemberBadgeProps {
 }
 
 export const TeamMemberBadge: React.FC<TeamMemberBadgeProps> = ({ role }) => {
-  const config = ROLE_CONFIG[role] || ROLE_CONFIG.MEMBER;
+  const config = ROLE_CONFIG[role] || ROLE_CONFIG.member;
 
   return (
     <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${config.bg} ${config.text} ${config.border}`}>
@@ -75,7 +80,7 @@ export function TeamMembers() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<TeamRole>('MEMBER');
+  const [inviteRole, setInviteRole] = useState<TeamRole>('member');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -181,7 +186,7 @@ export function TeamMembers() {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-black">Team Members</h2>
-        {currentTeam?.role === 'ADMIN' && (
+        {currentTeam?.role === 'admin' && (
           <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -245,8 +250,8 @@ export function TeamMembers() {
               <TableRow key={member.user_id}>
                 <TableCell>
                   <div>
-                    <div className="font-medium">{member.profile.full_name || 'Unknown'}</div>
-                    <div className="text-sm text-gray-500">{member.profile.email}</div>
+                    <div className="font-medium">{member.profile?.full_name || 'Unknown'}</div>
+                    <div className="text-sm text-gray-500">{member.profile?.email}</div>
                   </div>
                 </TableCell>
                 <TableCell>
@@ -254,7 +259,7 @@ export function TeamMembers() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
-                    {currentTeam?.role === 'ADMIN' && (
+                    {currentTeam?.role === 'admin' && (
                       <>
                         <Select
                           value={member.role}
