@@ -1,47 +1,63 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { createAuditLog } from './audit-logger';
-import { getTeamId } from './auth';
+import { AuditAction } from './audit-constants';
 
-interface AuditMiddlewareOptions {
-  action: string;
-  getContext: (request: Request) => Promise<Record<string, any>>;
+interface AuditMetadata {
+  [key: string]: any;
+}
+
+interface AuditOptions {
+  action: AuditAction;
+  getDocumentIds?: (body: any) => string[];
+  getMetadata?: (body: any, result: any) => AuditMetadata;
 }
 
 export function withAuditLogging(
-  handler: (request: Request) => Promise<NextResponse>,
-  options: AuditMiddlewareOptions
+  handler: (request: Request, context: { userId: string; teamId: string }) => Promise<NextResponse>,
+  options: AuditOptions
 ) {
   return async (request: Request) => {
     const supabase = createRouteHandlerClient({ cookies });
     
-    try {
-      // Get user and team info
-      const { data: { user } } = await supabase.auth.getUser();
-      const teamId = await getTeamId(supabase);
-      
-      if (!user || !teamId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      
-      // Get additional context from the request
-      const context = await options.getContext(request);
-      
-      // Execute the handler
-      const response = await handler(request);
-      
-      // Create audit log
-      await createAuditLog(supabase, options.action, {
-        userId: user.id,
-        teamId,
-        ...context
-      });
-      
-      return response;
-    } catch (error) {
-      console.error('Error in audit middleware:', error);
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    // Get session
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Get user's team
+    const { data: userTeam } = await supabase
+      .from('user_teams')
+      .select('team_id')
+      .eq('user_id', session.user.id)
+      .single();
+
+    if (!userTeam) {
+      return NextResponse.json({ error: 'No team found' }, { status: 403 });
+    }
+
+    // Execute the handler
+    const result = await handler(request, {
+      userId: session.user.id,
+      teamId: userTeam.team_id
+    });
+
+    // Parse request body for audit
+    const body = await request.json();
+    const responseData = await result.json();
+
+    // Create audit log
+    await supabase.from('audit_logs').insert({
+      user_id: session.user.id,
+      team_id: userTeam.team_id,
+      action: options.action,
+      document_ids: options.getDocumentIds?.(body) || [],
+      metadata: options.getMetadata?.(body, responseData) || {},
+      created_at: new Date().toISOString()
+    });
+
+    // Return the original response
+    return NextResponse.json(responseData, { status: result.status });
   };
 } 
