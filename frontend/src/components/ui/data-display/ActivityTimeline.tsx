@@ -22,9 +22,9 @@ const activityItemVariants = cva(
     variants: {
       type: {
         default: "bg-muted/50",
-        success: "bg-green-50 dark:bg-green-950/20",
-        warning: "bg-yellow-50 dark:bg-yellow-950/20",
-        error: "bg-red-50 dark:bg-red-950/20",
+        success: "bg-green-50",
+        warning: "bg-yellow-50",
+        error: "bg-red-50",
       },
     },
     defaultVariants: {
