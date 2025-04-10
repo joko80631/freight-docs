@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useTeamStore } from '@/store/team-store';
-import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { DocumentList } from './components/DocumentList';
 import { DocumentFilters } from './components/DocumentFilters';
 import { Button } from '@/components/ui/button';
@@ -33,55 +32,74 @@ interface DocumentError {
   code?: string;
 }
 
+function DocumentsLoadingState() {
+  return (
+    <div className="container mx-auto py-8">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+          <div className="h-4 w-64 bg-gray-200 rounded animate-pulse mt-2" />
+        </div>
+        <div className="h-10 w-32 bg-gray-200 rounded animate-pulse" />
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="h-48 bg-gray-200 rounded animate-pulse" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function DocumentsPage() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingDocs, setIsLoadingDocs] = useState(true);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
   const [filters, setFilters] = useState<DocumentFilters>({});
   const [error, setError] = useState<DocumentError | null>(null);
-  const { currentTeam } = useTeamStore();
+  const { currentTeam, isLoading: isTeamLoading } = useTeamStore();
   const { toast } = useToast();
   const router = useRouter();
   const supabase = createClientComponentClient();
-  
+
   const fetchDocuments = async () => {
     if (!currentTeam?.id) {
       setError({ message: 'No team selected' });
       return;
     }
-    
-    setIsLoading(true);
+
+    setIsLoadingDocs(true);
     setError(null);
-    
+
     try {
       let query = supabase
         .from('documents')
         .select('*, loads(id, reference_number)', { count: 'exact' })
         .eq('team_id', currentTeam.id)
         .order('uploaded_at', { ascending: false });
-        
+
       // Apply filters
       if (filters.type) {
         query = query.eq('type', filters.type);
       }
-      
+
       if (filters.confidence) {
         query = query.gte('confidence_score', filters.confidence);
       }
-      
+
       if (filters.loadId) {
         query = query.eq('load_id', filters.loadId);
       }
-      
+
       // Apply pagination
       query = query.range(page * pageSize, (page + 1) * pageSize - 1);
-      
+
       const { data, error: queryError, count } = await query;
-      
+
       if (queryError) throw queryError;
-      
+
       setDocuments(data || []);
       setTotalCount(count || 0);
     } catch (error) {
@@ -96,16 +114,16 @@ export default function DocumentsPage() {
         variant: 'destructive'
       });
     } finally {
-      setIsLoading(false);
+      setIsLoadingDocs(false);
     }
   };
-  
+
   useEffect(() => {
-    if (currentTeam?.id) {
+    if (currentTeam?.id && !isTeamLoading) {
       fetchDocuments();
     }
-  }, [currentTeam?.id, page, pageSize, filters]);
-  
+  }, [currentTeam?.id, isTeamLoading, page, pageSize, filters]);
+
   const handleViewDocument = (id: string) => {
     if (!id) {
       toast({
@@ -117,17 +135,23 @@ export default function DocumentsPage() {
     }
     router.push(`/documents/${id}`);
   };
-  
+
   const handleFilterChange = (newFilters: DocumentFilters) => {
     setFilters(newFilters);
     setPage(0); // Reset to first page when filters change
   };
-  
+
   const handlePageChange = (newPage: number) => {
     if (newPage < 0) return;
     setPage(newPage);
   };
-  
+
+  // Show loading state while team data is loading
+  if (isTeamLoading) {
+    return <DocumentsLoadingState />;
+  }
+
+  // Show team selection prompt if no team is selected
   if (!currentTeam?.id) {
     return (
       <div className="container mx-auto py-8">
@@ -136,11 +160,17 @@ export default function DocumentsPage() {
           <p className="text-slate-500 mt-1">
             Please select a team to view documents.
           </p>
+          <Button
+            onClick={() => router.push('/teams/select')}
+            className="mt-4"
+          >
+            Select Team
+          </Button>
         </div>
       </div>
     );
   }
-  
+
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
@@ -150,22 +180,20 @@ export default function DocumentsPage() {
             Upload and manage your freight documents
           </p>
         </div>
-        <Button 
-          onClick={() => router.push('/upload-document')}
-        >
-          <Plus className="mr-2 h-4 w-4" /> 
+        <Button onClick={() => router.push('/upload-document')}>
+          <Plus className="mr-2 h-4 w-4" />
           Upload Document
         </Button>
       </div>
-      
+
       <DocumentFilters onFilterChange={handleFilterChange} />
-      
+
       {error && (
         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <h3 className="text-red-800 font-medium">Error Loading Documents</h3>
           <p className="text-red-600 mt-1">{error.message}</p>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="mt-2"
             onClick={() => {
               setError(null);
@@ -176,13 +204,15 @@ export default function DocumentsPage() {
           </Button>
         </div>
       )}
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin" />
+
+      {isLoadingDocs ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="h-48 bg-gray-200 rounded animate-pulse" />
+          ))}
         </div>
       ) : (
-        <DocumentList 
+        <DocumentList
           documents={documents}
           totalCount={totalCount}
           page={page}
@@ -191,7 +221,7 @@ export default function DocumentsPage() {
           onViewDocument={handleViewDocument}
         />
       )}
-      
+
       <Toaster />
     </div>
   );
