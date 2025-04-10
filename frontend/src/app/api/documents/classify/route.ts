@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import OpenAI from 'openai';
-import { withAuditLogging } from '@/lib/audit-middleware';
-import { AUDIT_ACTIONS } from '@/lib/audit-constants';
+import { withAuditLogging, AUDIT_ACTIONS } from '@/lib/audit-middleware-stub';
 import { DocumentStatus } from '@/types/database';
 
 const openai = new OpenAI({

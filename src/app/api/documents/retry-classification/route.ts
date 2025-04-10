@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { withAuditLogging } from '@/lib/audit-middleware';
+import { withAuditLogging, AUDIT_ACTIONS } from '@/lib/audit-middleware-stub';
 import { createAuditLog } from '@/lib/audit-logger';
 import { getTeamId } from '@/lib/auth';
 import { classifyDocument } from '@/lib/document-classifier';
@@ -102,9 +102,9 @@ async function handler(request: Request) {
 }
 
 export const POST = withAuditLogging(handler, {
-  action: 'retry_classification',
-  getContext: async (request) => {
-    const { documentId } = await request.json();
-    return { documentId };
-  }
+  action: AUDIT_ACTIONS.CLASSIFY,
+  getDocumentIds: (body) => [body.documentId],
+  getMetadata: (body, result) => ({
+    source: 'retry'
+  })
 }); 

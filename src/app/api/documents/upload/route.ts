@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
  import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { withAuditLogging } from '@/lib/audit-middleware';
-import { AUDIT_ACTIONS } from '@/lib/audit-constants';
+import { withAuditLogging, AUDIT_ACTIONS } from '@/lib/audit-middleware-stub';
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_FILE_TYPES = ['application/pdf', 'image/png', 'image/jpeg'];

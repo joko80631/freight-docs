@@ -1,7 +1,17 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { AuditAction } from './audit-constants';
+
+export const AUDIT_ACTIONS = {
+  CLASSIFY: 'CLASSIFY',
+  RECLASSIFY: 'RECLASSIFY',
+  UPLOAD: 'UPLOAD',
+  DELETE: 'DELETE',
+  UPDATE: 'UPDATE',
+  CREATE: 'CREATE'
+} as const;
+
+export type AuditAction = typeof AUDIT_ACTIONS[keyof typeof AUDIT_ACTIONS];
 
 interface AuditMetadata {
   [key: string]: any;

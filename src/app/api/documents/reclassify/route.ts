@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { withAuditLogging } from '@/lib/audit-middleware';
-import { AUDIT_ACTIONS } from '@/lib/audit-constants';
+import { withAuditLogging, AUDIT_ACTIONS } from '@/lib/audit-middleware-stub';
 
 async function handleReclassification(request: Request, context: { userId: string, teamId: string }) {
   const supabase = createRouteHandlerClient({ cookies });
