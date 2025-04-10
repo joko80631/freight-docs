@@ -35,12 +35,10 @@ interface DocumentError {
 
 export default function DocumentsPage() {
   const [isLoading, setIsLoading] = useState(true);
-  const [isUploading, setIsUploading] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [filters, setFilters] = useState<DocumentFilters>({});
   const [error, setError] = useState<DocumentError | null>(null);
   const { currentTeam } = useTeamStore();
@@ -130,41 +128,6 @@ export default function DocumentsPage() {
     setPage(newPage);
   };
   
-  const handleUploadError = (error: Error) => {
-    setIsUploading(false);
-    setShowUploadModal(false);
-    toast({
-      title: 'Upload Failed',
-      description: error.message || 'Failed to upload document. Please try again.',
-      variant: 'destructive',
-      duration: 5000
-    });
-    fetchDocuments();
-  };
-
-  const handleUploadStart = () => {
-    setIsUploading(true);
-    setError(null);
-  };
-
-  const handleUploadComplete = () => {
-    setShowUploadModal(false);
-    setIsUploading(false);
-    setError(null);
-    fetchDocuments();
-    toast({
-      title: 'Upload Complete',
-      description: 'Your document has been uploaded and classified.',
-      duration: 3000
-    });
-  };
-
-  const handleModalClose = () => {
-    if (!isUploading) {
-      setShowUploadModal(false);
-    }
-  };
-  
   if (!currentTeam?.id) {
     return (
       <div className="container mx-auto py-8">
@@ -188,11 +151,10 @@ export default function DocumentsPage() {
           </p>
         </div>
         <Button 
-          onClick={() => setShowUploadModal(true)}
-          disabled={isUploading}
+          onClick={() => router.push('/documents/upload')}
         >
           <Plus className="mr-2 h-4 w-4" /> 
-          {isUploading ? 'Uploading...' : 'Upload Document'}
+          Upload Document
         </Button>
       </div>
       
@@ -228,28 +190,6 @@ export default function DocumentsPage() {
           onPageChange={handlePageChange}
           onViewDocument={handleViewDocument}
         />
-      )}
-      
-      {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-2xl font-bold mb-4">Upload Document</h2>
-            <DocumentUpload 
-              onUploadComplete={handleUploadComplete}
-              onUploadError={handleUploadError}
-              onUploadStart={() => setIsUploading(true)}
-            />
-            <div className="mt-4 flex justify-end">
-              <Button 
-                variant="outline" 
-                onClick={() => setShowUploadModal(false)}
-                disabled={isUploading}
-              >
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
       )}
       
       <Toaster />
