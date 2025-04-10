@@ -151,7 +151,7 @@ export default function DocumentsPage() {
           </p>
         </div>
         <Button 
-          onClick={() => router.push('/documents/upload')}
+          onClick={() => router.push('/upload-document')}
         >
           <Plus className="mr-2 h-4 w-4" /> 
           Upload Document

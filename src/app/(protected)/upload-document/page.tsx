@@ -1,3 +1,5 @@
+'use client';
+
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
