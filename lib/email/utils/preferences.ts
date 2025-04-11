@@ -123,7 +123,11 @@ export async function getNotificationRecipients(
   // Filter by email preferences
   const recipients = members
     .filter(member => {
-      const preferences = member.profiles.email_preferences as EmailPreferences;
+      // Since we know it's a 1:1 relationship, we can safely access the first profile
+      const profile = member.profiles[0];
+      if (!profile) return false;
+      
+      const preferences = profile.email_preferences as EmailPreferences;
       return preferences.enabled && (preferences.preferences.all || preferences.preferences[type]);
     })
     .map(member => member.user_id);
