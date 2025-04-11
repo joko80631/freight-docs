@@ -5,12 +5,24 @@ import { useLoadStore } from '@/store/loadStore';
 import { useTeamStore } from '@/store/team-store';
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LOAD_STATUSES, LOAD_STATUS_LABELS, type LoadStatus } from '@/constants/loads';
+import { type LoadStatus } from '@/types/database';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormControl } from '@/components/ui/form-control';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
+
+const LOAD_STATUSES = ['pending', 'active', 'completed'] as const;
+const LOAD_STATUS_LABELS = {
+  pending: 'Pending',
+  active: 'Active',
+  completed: 'Completed',
+} as const;
+
+interface Filters {
+  status?: LoadStatus;
+  search?: string;
+}
 
 export default function LoadFilters() {
   const { filters, setFilters, fetchLoads } = useLoadStore();
@@ -20,16 +32,23 @@ export default function LoadFilters() {
 
   // Initialize filters from URL params
   useEffect(() => {
-    const status = searchParams.get('status') || '';
+    if (!searchParams) return;
+    const status = searchParams.get('status') as LoadStatus | null;
     const search = searchParams.get('search') || '';
-    setFilters({ status, search });
+    setFilters({ status: status || undefined, search });
   }, [searchParams, setFilters]);
 
-  const handleFilterChange = (key: string, value: string) => {
-    const newFilters = { ...filters, [key]: value };
+  const handleFilterChange = (key: 'status' | 'search', value: string) => {
+    const newFilters: Filters = { ...filters };
+    if (key === 'status') {
+      newFilters.status = (value || undefined) as LoadStatus | undefined;
+    } else {
+      newFilters.search = value;
+    }
     setFilters(newFilters);
 
     // Update URL params
+    if (!searchParams) return;
     const params = new URLSearchParams(searchParams.toString());
     if (value) {
       params.set(key, value);
@@ -87,7 +106,7 @@ export default function LoadFilters() {
         <div className="flex flex-wrap gap-2">
           {filters.status && (
             <div className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-800">
-              <span>Status: {LOAD_STATUS_LABELS[filters.status as LoadStatus]}</span>
+              <span>Status: {LOAD_STATUS_LABELS[filters.status]}</span>
               <button
                 onClick={() => handleFilterChange('status', '')}
                 className="ml-1 text-blue-600 hover:text-blue-800"

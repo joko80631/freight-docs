@@ -6,18 +6,20 @@ import { useLoadStore } from '@/store/loadStore';
 import { useTeamStore } from '@/store/team-store';
 import { useEffect, useState } from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
-import type { Load } from '@/src/types/database';
+import type { Load, Database } from '@/types/database';
 import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS, type LoadStatus } from '@/constants/loads';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/src/types/database';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function LoadManagement() {
   const { loads, isLoading, fetchLoads } = useLoadStore();
   const { currentTeam } = useTeamStore();
-  const [selectedLoads, setSelectedLoads] = useState<Set<string>>(new Set());
+  const [selectedLoads, setSelectedLoads] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
+  const router = useRouter();
   const supabase = createClientComponentClient<Database>();
 
   useEffect(() => {
@@ -28,41 +30,40 @@ export default function LoadManagement() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedLoads(new Set(loads.map(load => load.id)));
+      setSelectedLoads(loads.map(load => load.id));
     } else {
-      setSelectedLoads(new Set());
+      setSelectedLoads([]);
     }
   };
 
   const handleSelectLoad = (loadId: string, checked: boolean) => {
-    const newSelected = new Set(selectedLoads);
     if (checked) {
-      newSelected.add(loadId);
+      setSelectedLoads(prev => [...prev, loadId]);
     } else {
-      newSelected.delete(loadId);
+      setSelectedLoads(prev => prev.filter(id => id !== loadId));
     }
-    setSelectedLoads(newSelected);
   };
 
-  const handleBulkDelete = async () => {
-    if (selectedLoads.size === 0) return;
+  const handleDeleteSelected = async () => {
+    if (!selectedLoads.length) return;
 
     setIsDeleting(true);
     try {
       const { error } = await supabase
         .from('loads')
         .delete()
-        .in('id', Array.from(selectedLoads));
+        .in('id', selectedLoads);
 
       if (error) throw error;
 
-      // Refresh loads and clear selection
+      toast.success('Selected loads deleted successfully');
+      setSelectedLoads([]);
       if (currentTeam?.id) {
         fetchLoads(currentTeam.id);
       }
-      setSelectedLoads(new Set());
     } catch (error) {
       console.error('Error deleting loads:', error);
+      toast.error('Failed to delete loads');
     } finally {
       setIsDeleting(false);
     }
@@ -70,8 +71,8 @@ export default function LoadManagement() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -95,112 +96,68 @@ export default function LoadManagement() {
   return (
     <div className="space-y-4">
       {/* Bulk Actions */}
-      {selectedLoads.size > 0 && (
-        <div className="flex items-center justify-between bg-gray-50 p-4 rounded-lg">
-          <span className="text-sm text-gray-700">
-            {selectedLoads.size} load{selectedLoads.size === 1 ? '' : 's'} selected
-          </span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id="select-all"
+            checked={selectedLoads.length === loads.length && loads.length > 0}
+            onCheckedChange={handleSelectAll}
+          />
+          <label htmlFor="select-all" className="text-sm text-gray-600">
+            Select All
+          </label>
+        </div>
+        {selectedLoads.length > 0 && (
           <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleBulkDelete}
+            variant="outline"
+            onClick={handleDeleteSelected}
             disabled={isDeleting}
+            className="text-red-600 hover:bg-red-50"
           >
             {isDeleting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="mr-2 h-4 w-4" />
             )}
-            <span className="ml-2">Delete Selected</span>
+            Delete Selected
           </Button>
-        </div>
-      )}
+        )}
+      </div>
 
-      <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-        <table className="min-w-full divide-y divide-gray-300">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
-                <Checkbox
-                  checked={selectedLoads.size === loads.length}
-                  onCheckedChange={handleSelectAll}
-                />
-              </th>
-              <th className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900">
-                Load Number
-              </th>
-              <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                Status
-              </th>
-              <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                Origin
-              </th>
-              <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                Destination
-              </th>
-              <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                Date
-              </th>
-              <th className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {loads.map((load: Load) => (
-              <tr key={load.id}>
-                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm">
-                  <Checkbox
-                    checked={selectedLoads.has(load.id)}
-                    onCheckedChange={(checked) => handleSelectLoad(load.id, checked as boolean)}
-                  />
-                </td>
-                <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm">
-                  <Link
-                    href={`/loads/${load.id}`}
-                    className="font-medium text-blue-600 hover:text-blue-500"
-                  >
-                    {load.load_number}
-                  </Link>
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm">
-                  <span
-                    className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-                      LOAD_STATUS_COLORS[load.status as LoadStatus] || 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    {LOAD_STATUS_LABELS[load.status as LoadStatus] || load.status}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  {load.origin}
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  {load.destination}
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  {new Date(load.created_at).toLocaleDateString()}
-                </td>
-                <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  <div className="flex space-x-2">
-                    <button
-                      className="text-blue-600 hover:text-blue-500"
-                      onClick={() => {/* Handle edit */}}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="text-red-600 hover:text-red-500"
-                      onClick={() => {/* Handle delete */}}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Load List */}
+      <div className="space-y-2">
+        {loads.map((load) => (
+          <div
+            key={load.id}
+            className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50"
+          >
+            <div className="flex items-center gap-4">
+              <Checkbox
+                checked={selectedLoads.includes(load.id)}
+                onCheckedChange={(checked: boolean) => handleSelectLoad(load.id, checked)}
+              />
+              <div>
+                <h3 className="font-medium">{load.load_number}</h3>
+                <p className="text-sm text-gray-500">
+                  {load.origin} → {load.destination}
+                </p>
+              </div>
+              <span
+                className={`rounded-full px-2 py-1 text-xs font-medium ${
+                  LOAD_STATUS_COLORS[load.status as LoadStatus]
+                }`}
+              >
+                {LOAD_STATUS_LABELS[load.status as LoadStatus]}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => router.push(`/loads/${load.id}`)}
+            >
+              View Details
+            </Button>
+          </div>
+        ))}
       </div>
     </div>
   );

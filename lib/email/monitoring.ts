@@ -97,7 +97,7 @@ export class EmailMonitoringService {
       type: EmailEventType.SENT,
       emailId,
       templateName,
-      recipient: typeof options.to === 'string' ? options.to : options.to.email,
+      recipient: Array.isArray(options.to) ? options.to[0].email : options.to.email,
       metadata: {
         subject: options.subject,
         hasAttachments: options.attachments && options.attachments.length > 0,
@@ -123,7 +123,7 @@ export class EmailMonitoringService {
     return this.logEvent({
       type: EmailEventType.FAILED,
       templateName,
-      recipient: typeof options.to === 'string' ? options.to : options.to.email,
+      recipient: Array.isArray(options.to) ? options.to[0].email : options.to.email,
       error: errorData,
       metadata: {
         subject: options.subject,
@@ -154,7 +154,7 @@ export class EmailMonitoringService {
     return this.logEvent({
       type: EmailEventType.RETRIED,
       emailId: newEmailId,
-      recipient: typeof options.to === 'string' ? options.to : options.to.email,
+      recipient: Array.isArray(options.to) ? options.to[0].email : options.to.email,
       metadata: {
         originalEmailId,
         subject: options.subject,

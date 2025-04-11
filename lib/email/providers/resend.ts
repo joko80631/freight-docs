@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import { EmailProvider, EmailOptions, SendResult, EmailRecipient } from '../types';
-import { logEmailActivity } from '../utils/audit-log';
+import { logEmailActivity } from '../utils';
 
 // Error types
 export enum EmailErrorType {
@@ -181,16 +181,13 @@ export class ResendProvider implements EmailProvider {
           : 'unknown';
 
         // Log successful send
-        await logEmailActivity({
+        const recipients = this.formatRecipients(options.to);
+        await logEmailActivity(
           recipientId,
+          Array.isArray(recipients) ? recipients[0] : recipients,
           templateName,
-          status: 'sent',
-          metadata: {
-            messageId,
-            attempt: attempt + 1,
-            ...options.metadata,
-          },
-        });
+          'email_sent'
+        );
 
         return {
           success: true,
@@ -206,18 +203,13 @@ export class ResendProvider implements EmailProvider {
         });
 
         // Log failed attempt
-        await logEmailActivity({
+        const recipients = this.formatRecipients(options.to);
+        await logEmailActivity(
           recipientId,
+          Array.isArray(recipients) ? recipients[0] : recipients,
           templateName,
-          status: 'failed',
-          error: lastError.message,
-          metadata: {
-            attempt: attempt + 1,
-            errorType: lastError.type,
-            statusCode: lastError.statusCode,
-            ...options.metadata,
-          },
-        });
+          'email_failed'
+        );
 
         // Check if we should retry
         if (attempt < this.retryStrategy.maxRetries && this.retryStrategy.shouldRetry(lastError)) {

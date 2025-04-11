@@ -6,7 +6,7 @@ import { Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { Database } from '@/src/types/database';
+import type { Database } from '@/types/database';
 import { toast } from 'sonner';
 import { useTeamStore } from '@/store/team-store';
 

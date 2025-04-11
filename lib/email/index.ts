@@ -1,7 +1,7 @@
 import { EmailProvider, EmailOptions, SendResult } from './types';
 import { ResendProvider } from './providers/resend';
 import { hasEmailOptIn, logEmailActivity } from './utils';
-import { renderTemplate } from './templates';
+import { renderTemplate, type TemplateName, type TemplateData } from './templates';
 import { generateUnsubscribeToken } from '../utils/unsubscribe-token';
 
 // Initialize the email provider with the API key from environment variables
@@ -22,7 +22,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 export async function sendEmail(
   options: EmailOptions,
   userId?: string,
-  templateName?: string,
+  templateName?: TemplateName,
   category?: string
 ): Promise<SendResult> {
   try {
@@ -30,18 +30,18 @@ export async function sendEmail(
     if (userId && !(await hasEmailOptIn(userId, category))) {
       console.log(`User ${userId} has opted out of ${category || 'all'} emails`);
       
-      // Log skipped email due to preference
-      await logEmailActivity({
-        recipientId: userId,
-        templateName,
-        status: 'skipped',
-        metadata: {
-          reason: 'preference_disabled',
-          category
-        }
-      });
+      const recipientEmail = Array.isArray(options.to) 
+        ? options.to[0].email 
+        : options.to.email;
+
+      await logEmailActivity(
+        userId,
+        recipientEmail,
+        templateName || 'unknown',
+        'email_skipped'
+      );
       
-      return { success: false, error: 'User has opted out of emails' };
+      return { success: false, errors: [new Error('User has opted out of emails')] };
     }
 
     // In non-production environments, redirect emails to sandbox
@@ -51,7 +51,9 @@ export async function sendEmail(
       
       // Add original recipient to metadata
       const metadata = {
-        originalTo: typeof originalTo === 'string' ? originalTo : originalTo.email,
+        originalTo: Array.isArray(originalTo) 
+          ? originalTo.map(r => r.email) 
+          : originalTo.email,
         environment: process.env.NODE_ENV
       };
       
@@ -60,47 +62,40 @@ export async function sendEmail(
     }
 
     // Send the email
-    const result = await emailProvider.send(options);
+    const result = await emailProvider.sendEmail(options);
 
     // Log the email activity
     if (result.success) {
-      await logEmailActivity({
-        recipientId: userId,
-        templateName,
-        status: 'sent',
-        metadata: {
-          messageId: result.messageId,
-          category
-        }
-      });
+      const recipientEmail = Array.isArray(options.to) 
+        ? options.to[0].email 
+        : options.to.email;
+
+      await logEmailActivity(
+        userId || 'system',
+        recipientEmail,
+        templateName || 'unknown',
+        'email_sent'
+      );
     } else {
-      await logEmailActivity({
-        recipientId: userId,
-        templateName,
-        status: 'failed',
-        error: result.error,
-        metadata: {
-          category
-        }
-      });
+      const recipientEmail = Array.isArray(options.to) 
+        ? options.to[0].email 
+        : options.to.email;
+
+      await logEmailActivity(
+        userId || 'system',
+        recipientEmail,
+        templateName || 'unknown',
+        'email_failed'
+      );
     }
 
     return result;
   } catch (error) {
     console.error('Error sending email:', error);
-    
-    // Log the error
-    await logEmailActivity({
-      recipientId: userId,
-      templateName,
-      status: 'failed',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      metadata: {
-        category
-      }
-    });
-    
-    return { success: false, error: 'Failed to send email' };
+    return { 
+      success: false, 
+      errors: [error instanceof Error ? error : new Error('Unknown error')] 
+    };
   }
 }
 
@@ -113,8 +108,8 @@ export async function sendEmail(
  * @returns A promise that resolves when the email is sent
  */
 export async function sendTemplatedEmail(
-  templateName: string,
-  data: Record<string, any>,
+  templateName: TemplateName,
+  data: TemplateData,
   to: EmailOptions['to'],
   options: {
     subject?: string;
@@ -131,31 +126,39 @@ export async function sendTemplatedEmail(
   try {
     // Generate unsubscribe token if not provided
     let unsubscribeUrl = options.unsubscribeUrl;
-    if (!unsubscribeUrl && typeof to === 'object' && to.email) {
+    if (!unsubscribeUrl && typeof to === 'object' && !Array.isArray(to) && to.email) {
       const scope = options.category || 'all';
       const token = generateUnsubscribeToken(to.email, scope);
       unsubscribeUrl = `${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe?token=${token}`;
     }
 
     // Render the template
-    const content = renderTemplate(templateName, {
+    const rendered = await renderTemplate(templateName, {
       ...data,
       unsubscribeUrl
-    });
+    } as TemplateData);
 
     // Send the email
     return await sendEmail({
       to,
-      subject: options.subject || data.title || 'Notification from Freight Document Platform',
-      content,
+      subject: options.subject || rendered.subject,
+      content: rendered.html,
       cc: options.cc,
       bcc: options.bcc,
       attachments: options.attachments,
-      replyTo: options.replyTo,
+      replyTo: options.replyTo ? { email: options.replyTo } : undefined,
+      metadata: {
+        ...options.metadata,
+        templateName,
+        templateVersion: rendered.version
+      }
     }, options.userId, templateName, options.category);
   } catch (error) {
     console.error('Error sending templated email:', error);
-    throw error;
+    return { 
+      success: false, 
+      errors: [error instanceof Error ? error : new Error('Unknown error')] 
+    };
   }
 }
 

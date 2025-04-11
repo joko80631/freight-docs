@@ -3,32 +3,26 @@
  * Scans for loads with incomplete document sets and sends reminder emails to customers
  */
 
+import { createClient } from '@supabase/supabase-js';
 import { CronJobResult } from '../types';
-import { sendTemplatedEmail } from '@/lib/email';
-import { getEmailMonitoringService, EmailEventType } from '@/lib/email/monitoring';
-import { getEmailRecoveryService } from '@/lib/email/recovery';
-import { EmailSendError } from '@/lib/email/errors';
-import { EmailPreferences, EmailRecipient } from '@/lib/email/types';
+import { sendTemplatedEmail } from '../../email';
+import { getEmailMonitoringService, EmailEventType } from '../../email/monitoring';
+import { getEmailRecoveryService } from '../../email/recovery';
+import { EmailSendError } from '../../email/errors';
+import type { EmailRecipient, EmailOptions } from '../../email/types';
+
+// Initialize Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 interface Load {
   id: string;
-  customer: {
-    id: string;
-    email: string;
-    name: string;
-    emailPreferences?: EmailPreferences;
-  };
-  documents: {
-    id: string;
-    type: string;
-    status: 'pending' | 'uploaded' | 'approved' | 'rejected';
-    dueDate: Date;
-  }[];
-  teamReminderSettings: {
-    enabled: boolean;
-    recipients: string[];
-    frequency: 'daily' | 'weekly';
-  };
+  reference_number: string;
+  customer_email: string;
+  customer_name: string;
+  missing_documents: string[];
 }
 
 interface ReminderRecord {
@@ -47,35 +41,10 @@ async function getLoadsWithIncompleteDocuments(): Promise<Load[]> {
   return [
     {
       id: 'load1',
-      customer: {
-        id: 'customer1',
-        email: 'customer1@example.com',
-        name: 'Customer One',
-        emailPreferences: {
-          global_enabled: true,
-          categories: {
-            notifications: true,
-          },
-          frequency: {
-            alerts: 'immediate',
-          },
-          source: 'manual',
-          updated_at: new Date().toISOString(),
-        },
-      },
-      documents: [
-        {
-          id: 'doc1',
-          type: 'bill-of-lading',
-          status: 'pending',
-          dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours from now
-        },
-      ],
-      teamReminderSettings: {
-        enabled: true,
-        recipients: ['team1@example.com'],
-        frequency: 'daily',
-      },
+      reference_number: 'REF12345',
+      customer_email: 'customer1@example.com',
+      customer_name: 'Customer One',
+      missing_documents: ['bill-of-lading'],
     },
   ];
 }
@@ -95,20 +64,16 @@ function wasReminderSent(loadId: string, documentType: string): boolean {
 }
 
 // Record that a reminder was sent
-function recordReminderSent(loadId: string, documentType: string): void {
-  const key = `${loadId}:${documentType}`;
-  const existing = reminderRecords.get(key);
-  
-  if (existing) {
-    existing.lastSent = new Date();
-    existing.sentCount += 1;
-  } else {
-    reminderRecords.set(key, {
-      loadId,
-      documentType,
-      lastSent: new Date(),
-      sentCount: 1,
-    });
+async function recordReminderSent(load: Load, reminderCount: number): Promise<void> {
+  const { error } = await supabase.from('reminder_records').insert({
+    load_id: load.id,
+    reminder_count: reminderCount,
+    sent_at: new Date().toISOString(),
+    reminder_type: 'missing_documents'
+  });
+
+  if (error) {
+    throw new Error(`Failed to record reminder: ${error.message}`);
   }
 }
 
@@ -121,16 +86,6 @@ function getReminderCount(loadId: string, documentType: string): number {
 
 // Check if we should send a reminder based on preferences and history
 function shouldSendReminder(load: Load, documentType: string): boolean {
-  // Check if customer has unsubscribed
-  if (load.customer.emailPreferences?.global_enabled === false) {
-    return false;
-  }
-
-  // Check if notifications are disabled
-  if (load.customer.emailPreferences?.categories?.notifications === false) {
-    return false;
-  }
-
   // Check if reminder was recently sent
   if (wasReminderSent(load.id, documentType)) {
     return false;
@@ -153,7 +108,7 @@ export async function missingDocumentsScanJob(): Promise<CronJobResult> {
   
   let emailsSent = 0;
   let emailsFailed = 0;
-  const failures: Array<{ recipient: string; error: string }> = [];
+  const failures: { recipient: string; error: string }[] = [];
 
   try {
     // Get loads with incomplete documents
@@ -161,101 +116,88 @@ export async function missingDocumentsScanJob(): Promise<CronJobResult> {
     
     // Process each load
     for (const load of loads) {
-      // Find pending documents
-      const pendingDocuments = load.documents.filter(doc => doc.status === 'pending');
+      const pendingDocuments = load.missing_documents;
       
       for (const doc of pendingDocuments) {
-        // Check if we should send a reminder
-        if (!shouldSendReminder(load, doc.type)) {
+        if (!shouldSendReminder(load, doc)) {
           continue;
         }
 
         const recipient: EmailRecipient = {
-          email: load.customer.email,
-          name: load.customer.name,
+          email: load.customer_email,
+          name: load.customer_name
         };
 
         try {
-          // Send reminder email using template
-          const result = await sendTemplatedEmail(
-            'missing-document',
-            {
-              customerName: load.customer.name,
+          const emailData = {
+            documentType: doc,
+            dueDate: new Date().toISOString(),
+            uploadUrl: `${process.env.NEXT_PUBLIC_APP_URL}/loads/${load.id}/documents/upload`,
+            loadId: load.id,
+            customerName: load.customer_name
+          };
+
+          const emailOptions = {
+            subject: `Document Required: ${doc} for Load ${load.id}`,
+            category: 'reminders',
+            metadata: {
               loadId: load.id,
-              documentType: doc.type,
-              dueDate: doc.dueDate,
-            },
-            recipient,
-            {
-              subject: `Document Required: ${doc.type} for Load ${load.id}`,
-              category: 'notifications',
-              metadata: {
-                loadId: load.id,
-                documentType: doc.type,
-                dueDate: doc.dueDate.toISOString(),
-              },
+              documentType: doc,
+              dueDate: new Date().toISOString(),
             }
-          );
+          };
 
-          if (result.success) {
-            // Record the reminder was sent
-            recordReminderSent(load.id, doc.type);
-            
-            // Log the event
-            monitoringService.logEvent({
-              type: EmailEventType.SENT,
-              templateName: 'missing-document',
-              recipient: load.customer.email,
-              metadata: {
-                loadId: load.id,
-                documentType: doc.type,
-                reminderCount: getReminderCount(load.id, doc.type),
-              },
-            });
+          await sendTemplatedEmail('missing-document', emailData, recipient, emailOptions);
+          
+          monitoringService.logEvent({
+            type: EmailEventType.SENT,
+            templateName: 'missing-document',
+            recipient: recipient.email,
+            metadata: {
+              loadId: load.id,
+              documentType: doc,
+              reminderCount: getReminderCount(load.id, doc),
+            }
+          });
 
-            emailsSent++;
-          } else if (result.errors && result.errors.length > 0) {
-            throw new EmailSendError('Failed to send email', result.errors[0]);
-          }
+          await recordReminderSent(load, getReminderCount(load.id, doc) + 1);
+          emailsSent++;
         } catch (error) {
           emailsFailed++;
           failures.push({
-            recipient: load.customer.email,
+            recipient: recipient.email,
             error: error instanceof Error ? error.message : 'Unknown error',
           });
 
-          // Log the failure
-          monitoringService.logEvent({
-            type: EmailEventType.FAILED,
-            templateName: 'missing-document',
-            recipient: load.customer.email,
-            error: {
-              code: 'EMAIL_SEND_ERROR',
-              message: error instanceof Error ? error.message : 'Unknown error',
-              details: error,
-            },
-            metadata: {
-              loadId: load.id,
-              documentType: doc.type,
-            },
-          });
-
-          // Add to retry queue if it's a recoverable error
           if (error instanceof EmailSendError) {
-            const emailOptions = {
-              to: recipient,
-              subject: `Document Required: ${doc.type} for Load ${load.id}`,
-              content: '', // Required by EmailOptions type
+            monitoringService.logEvent({
+              type: EmailEventType.FAILED,
               templateName: 'missing-document',
+              recipient: recipient.email,
+              error: {
+                code: 'EMAIL_SEND_ERROR',
+                message: error.message,
+              },
               metadata: {
                 loadId: load.id,
-                documentType: doc.type,
-                dueDate: doc.dueDate.toISOString(),
-              },
+                documentType: doc,
+              }
+            });
+
+            const recoveryService = getEmailRecoveryService();
+            const emailOptions: EmailOptions = {
+              to: recipient,
+              subject: `Document Required: ${doc} for Load ${load.id}`,
+              content: `Please submit the required document: ${doc}`,
+              metadata: {
+                loadId: load.id,
+                documentType: doc,
+                dueDate: new Date().toISOString(),
+              }
             };
 
             recoveryService.addToRetryQueue(
-              'missing-document-retry',
+              load.id,
               emailOptions,
               error,
               'missing-document'
@@ -266,7 +208,7 @@ export async function missingDocumentsScanJob(): Promise<CronJobResult> {
     }
 
     return {
-      success: true,
+      success: emailsFailed === 0,
       message: `Processed ${loads.length} loads, sent ${emailsSent} emails, failed ${emailsFailed}`,
       data: {
         loadsProcessed: loads.length,
@@ -292,4 +234,169 @@ export async function missingDocumentsScanJob(): Promise<CronJobResult> {
       },
     };
   }
+}
+
+async function sendReminder(load: Load, reminderCount: number): Promise<void> {
+  const recipient: EmailRecipient = {
+    email: load.customer_email,
+    name: load.customer_name
+  };
+
+  try {
+    await sendTemplatedEmail(
+      'missing-document',
+      {
+        documentType: load.missing_documents.join(', '),
+        dueDate: new Date().toISOString(),
+        uploadUrl: `${process.env.NEXT_PUBLIC_APP_URL}/loads/${load.id}/documents/upload`,
+        loadId: load.id,
+        recipientName: load.customer_name,
+        recipientEmail: load.customer_email
+      },
+      recipient,
+      {
+        subject: `Missing Documents Reminder for Load ${load.reference_number}`,
+        category: 'reminders',
+        metadata: {
+          loadId: load.id,
+          reminderCount,
+          referenceNumber: load.reference_number
+        }
+      }
+    );
+
+    await recordReminderSent(load, reminderCount);
+  } catch (error) {
+    if (error instanceof EmailSendError) {
+      const recoveryService = getEmailRecoveryService();
+      const emailOptions: EmailOptions = {
+        to: recipient,
+        subject: `Document Required: ${load.missing_documents.join(', ')} for Load ${load.id}`,
+        content: `Please submit the required document: ${load.missing_documents.join(', ')}`,
+        metadata: {
+          loadId: load.id,
+          documentType: load.missing_documents.join(', '),
+          dueDate: new Date().toISOString(),
+        }
+      };
+      
+      recoveryService.addToRetryQueue(
+        load.id,
+        emailOptions,
+        error,
+        'missing-document'
+      );
+    }
+    throw error;
+  }
+}
+
+async function processLoads(loads: Load[]): Promise<CronJobResult> {
+  const monitoringService = getEmailMonitoringService();
+  let emailsSent = 0;
+  let emailsFailed = 0;
+  const failures: { recipient: string; error: string }[] = [];
+
+  for (const load of loads) {
+    const pendingDocuments = load.missing_documents;
+    
+    for (const doc of pendingDocuments) {
+      if (!shouldSendReminder(load, doc)) {
+        continue;
+      }
+
+      const recipient: EmailRecipient = {
+        email: load.customer_email,
+        name: load.customer_name
+      };
+
+      try {
+        const emailData = {
+          documentType: doc,
+          dueDate: new Date().toISOString(),
+          uploadUrl: `${process.env.NEXT_PUBLIC_APP_URL}/loads/${load.id}/documents/upload`,
+          loadId: load.id,
+          customerName: load.customer_name
+        };
+
+        const emailOptions = {
+          subject: `Document Required: ${doc} for Load ${load.id}`,
+          category: 'reminders',
+          metadata: {
+            loadId: load.id,
+            documentType: doc,
+            dueDate: new Date().toISOString(),
+          }
+        };
+
+        await sendTemplatedEmail('missing-document', emailData, recipient, emailOptions);
+        
+        monitoringService.logEvent({
+          type: EmailEventType.SENT,
+          templateName: 'missing-document',
+          recipient: recipient.email,
+          metadata: {
+            loadId: load.id,
+            documentType: doc,
+            reminderCount: getReminderCount(load.id, doc),
+          }
+        });
+
+        await recordReminderSent(load, getReminderCount(load.id, doc) + 1);
+        emailsSent++;
+      } catch (error) {
+        emailsFailed++;
+        failures.push({
+          recipient: recipient.email,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+
+        if (error instanceof EmailSendError) {
+          monitoringService.logEvent({
+            type: EmailEventType.FAILED,
+            templateName: 'missing-document',
+            recipient: recipient.email,
+            error: {
+              code: 'EMAIL_SEND_ERROR',
+              message: error.message,
+            },
+            metadata: {
+              loadId: load.id,
+              documentType: doc,
+            }
+          });
+
+          const recoveryService = getEmailRecoveryService();
+          const emailOptions: EmailOptions = {
+            to: recipient,
+            subject: `Document Required: ${doc} for Load ${load.id}`,
+            content: `Please submit the required document: ${doc}`,
+            metadata: {
+              loadId: load.id,
+              documentType: doc,
+              dueDate: new Date().toISOString(),
+            }
+          };
+
+          recoveryService.addToRetryQueue(
+            load.id,
+            emailOptions,
+            error,
+            'missing-document'
+          );
+        }
+      }
+    }
+  }
+
+  return {
+    success: emailsFailed === 0,
+    message: `Processed ${loads.length} loads, sent ${emailsSent} emails, failed ${emailsFailed}`,
+    data: {
+      loadsProcessed: loads.length,
+      emailsSent,
+      emailsFailed,
+      failures,
+    },
+  };
 } 
