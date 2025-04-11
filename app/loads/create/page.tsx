@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import { useTeamStore } from '@/src/store/team-store';
+// import { useTeamStore } from '@/src/store/team-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ui/use-toast';
 import { Loader2 } from 'lucide-react';
-import type { Toast } from '@/components/ui/use-toast';
+// import type { Toast } from '@/components/ui/use-toast';
 
 interface LoadFormData {
   load_number: string;
@@ -22,8 +22,8 @@ interface LoadFormData {
 
 export default function CreateLoadPage() {
   const router = useRouter();
-  const { currentTeam } = useTeamStore();
-  const { toast } = useToast();
+  // const { currentTeam } = useTeamStore();
+  // const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<LoadFormData>({
     load_number: '',
@@ -36,14 +36,17 @@ export default function CreateLoadPage() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    if (!currentTeam?.id) {
-      toast({
-        title: 'Error',
-        description: 'Please select a team first.',
-        type: 'error',
-      });
-      return;
-    }
+    // Temporarily hardcoded team ID for testing
+    const teamId = 'temp-team-id';
+    
+    // if (!currentTeam?.id) {
+    //   toast({
+    //     title: 'Error',
+    //     description: 'Please select a team first.',
+    //     type: 'error',
+    //   });
+    //   return;
+    // }
 
     setIsLoading(true);
     try {
@@ -52,7 +55,7 @@ export default function CreateLoadPage() {
         .from('loads')
         .insert({
           ...formData,
-          team_id: currentTeam.id,
+          team_id: teamId, // Using hardcoded team ID
         });
 
       if (error) throw error;
@@ -60,7 +63,7 @@ export default function CreateLoadPage() {
       toast({
         title: 'Success',
         description: 'Load created successfully.',
-        type: 'success',
+        // type: 'success',
       });
 
       router.push('/loads');
@@ -69,7 +72,7 @@ export default function CreateLoadPage() {
       toast({
         title: 'Error',
         description: 'Failed to create load. Please try again.',
-        type: 'error',
+        // type: 'error',
       });
     } finally {
       setIsLoading(false);
@@ -80,15 +83,16 @@ export default function CreateLoadPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  if (!currentTeam) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-500">Please select a team to create a load.</p>
-        </div>
-      </div>
-    );
-  }
+  // Temporarily removing team check
+  // if (!currentTeam) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <div className="text-center">
+  //         <p className="text-gray-500">Please select a team to create a load.</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -143,20 +147,13 @@ export default function CreateLoadPage() {
 
               <div>
                 <Label htmlFor="status">Status</Label>
-                <Select
+                {/* Replaced Select with Input */}
+                <Input
+                  id="status"
                   value={formData.status}
-                  onValueChange={(value: string) => handleChange('status', value)}
-                >
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="In Transit">In Transit</SelectItem>
-                    <SelectItem value="Delivered">Delivered</SelectItem>
-                    <SelectItem value="Cancelled">Cancelled</SelectItem>
-                  </SelectContent>
-                </Select>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange('status', e.target.value)}
+                  className="mt-1"
+                />
               </div>
 
               <div className="flex justify-end space-x-4">
