@@ -2,16 +2,20 @@ import { sendTemplatedEmail } from '../index';
 import { hasEmailOptIn, getNotificationRecipients, EmailPreferenceType } from './preferences';
 import { isDuplicateEmail, isRateLimited, isLoadRateLimited } from './deduplication';
 import { logEmailActivity } from './audit-log';
+import { TEMPLATE_VERSIONS, SpecificTemplateData } from '../templates/types';
+import { EmailRecipient } from '../types';
 
 interface NotificationContext {
-  templateName: string;
-  preferenceType: EmailPreferenceType;
-  data: Record<string, any>;
-  teamId?: string;
+  recipientId: string;
+  recipientEmail: string;
+  templateName: keyof typeof TEMPLATE_VERSIONS;
+  metadata?: Record<string, any>;
   loadId?: string;
   documentId?: string;
+  teamId?: string;
+  preferenceType?: EmailPreferenceType;
+  data?: SpecificTemplateData;
   excludeUserIds?: string[];
-  metadata?: Record<string, any>;
 }
 
 /**
@@ -31,7 +35,7 @@ export async function sendNotification(context: NotificationContext): Promise<{
 }> {
   const {
     templateName,
-    preferenceType,
+    preferenceType = 'all' as EmailPreferenceType,
     data,
     teamId,
     loadId,
@@ -170,28 +174,63 @@ export async function sendNotification(context: NotificationContext): Promise<{
 
       // Send the email
       try {
-        const result = await sendTemplatedEmail({
+        if (!data) {
+          throw new Error(`Template data is required for template: ${templateName}`);
+        }
+
+        const recipient: EmailRecipient = {
+          email: context.recipientEmail,
+          name: data.recipientName,
+        };
+
+        const result = await sendTemplatedEmail(
           templateName,
           data,
-          to: recipientId,
-          metadata: {
-            ...metadata,
-            loadId,
-            documentId,
-            teamId,
-          },
-        });
+          recipient,
+          {
+            metadata: {
+              ...metadata,
+              loadId,
+              documentId,
+              teamId,
+            },
+          }
+        );
 
         if (result.success) {
+          await logEmailActivity({
+            recipientId,
+            templateName,
+            status: 'success',
+            metadata: {
+              ...metadata,
+              loadId,
+              documentId,
+              teamId,
+            },
+          });
           return {
             recipientId,
             status: 'sent' as const,
           };
         } else {
+          await logEmailActivity({
+            recipientId,
+            templateName,
+            status: 'failure',
+            error: result.errors?.[0]?.message,
+            metadata: {
+              ...metadata,
+              loadId,
+              documentId,
+              teamId,
+              errors: result.errors,
+            },
+          });
           return {
             recipientId,
             status: 'failed' as const,
-            error: result.error,
+            error: result.errors?.[0]?.message,
           };
         }
       } catch (error) {
@@ -200,7 +239,7 @@ export async function sendNotification(context: NotificationContext): Promise<{
         await logEmailActivity({
           recipientId,
           templateName,
-          status: 'failed',
+          status: 'failure',
           error: errorMessage,
           metadata: {
             ...metadata,

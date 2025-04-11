@@ -1,4 +1,5 @@
 import { EmailTemplate, TemplateData } from './index';
+import { TEMPLATE_VERSIONS } from './types';
 
 interface TeamInviteData extends TemplateData {
   teamName: string;
@@ -59,5 +60,9 @@ export async function teamInviteTemplate(data: TeamInviteData): Promise<EmailTem
     </p>
   `;
 
-  return { subject, html };
+  return { 
+    subject, 
+    html,
+    version: TEMPLATE_VERSIONS['team-invite']
+  };
 } 

@@ -3,72 +3,18 @@ import { documentUploadTemplate } from './document-upload';
 import { missingDocumentTemplate } from './missing-document';
 import { loadStatusTemplate } from './load-status';
 import { teamInviteTemplate } from './team-invite';
-
-// Template version tracking
-export const TEMPLATE_VERSIONS = {
-  'document-upload': '1.0.0',
-  'missing-document': '1.0.0',
-  'load-status': '1.0.0',
-  'team-invite': '1.0.0',
-} as const;
-
-// Base template data that all templates must include
-export interface BaseTemplateData {
-  userId?: string;
-  documentId?: string;
-  loadId?: string;
-  teamId?: string;
-  unsubscribeUrl?: string;
-  recipientName?: string;
-  recipientEmail?: string;
-}
-
-// Specific template data types
-export interface DocumentUploadData extends BaseTemplateData {
-  documentType: string;
-  uploadedBy: string;
-  documentUrl: string;
-  loadNumber?: string;
-  dueDate?: string;
-}
-
-export interface MissingDocumentData extends BaseTemplateData {
-  documentType: string;
-  dueDate: string;
-  loadNumber?: string;
-  uploadUrl: string;
-}
-
-export interface LoadStatusData extends BaseTemplateData {
-  loadNumber: string;
-  status: string;
-  updatedBy: string;
-  details?: string;
-  loadUrl: string;
-}
-
-export interface TeamInviteData extends BaseTemplateData {
-  teamName: string;
-  inviterName: string;
-  inviteUrl: string;
-  role?: string;
-  expiresIn?: string;
-}
-
-// Union type of all template data types
-export type TemplateData = 
-  | DocumentUploadData 
-  | MissingDocumentData 
-  | LoadStatusData 
-  | TeamInviteData;
-
-export type TemplateName = keyof typeof TEMPLATE_VERSIONS;
-
-export interface EmailTemplate {
-  subject: string;
-  html: string;
-  version: string;
-}
+import {
+  BaseTemplateData,
+  DocumentUploadData,
+  MissingDocumentData,
+  LoadStatusData,
+  TeamInviteData,
+  TemplateData,
+  SpecificTemplateData,
+  TemplateName,
+  EmailTemplate,
+  TEMPLATE_VERSIONS
+} from './types';
 
 // Template function type with proper typing
 type TemplateFunction<T extends TemplateData> = (data: T) => Promise<EmailTemplate>;
@@ -124,7 +70,7 @@ export function validateTemplateData(
  */
 export async function renderTemplate(
   templateName: TemplateName,
-  data: TemplateData
+  data: SpecificTemplateData
 ): Promise<EmailTemplate> {
   const template = templates[templateName];
   if (!template) {
@@ -164,5 +110,16 @@ export function getTemplateVersion(templateName: TemplateName): string {
 // Export base template and its types
 export { baseTemplate };
 export type { BaseTemplateProps } from './base';
-export type { TemplateName, TemplateData, EmailTemplate, BaseTemplateData };
-export type { DocumentUploadData, MissingDocumentData, LoadStatusData, TeamInviteData }; 
+
+// Re-export types
+export type {
+  BaseTemplateData,
+  DocumentUploadData,
+  MissingDocumentData,
+  LoadStatusData,
+  TeamInviteData,
+  TemplateData,
+  SpecificTemplateData,
+  TemplateName,
+  EmailTemplate
+}; 

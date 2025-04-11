@@ -1,4 +1,5 @@
 import { EmailTemplate, TemplateData } from './index';
+import { TEMPLATE_VERSIONS } from './types';
 
 interface MissingDocumentData extends TemplateData {
   documentType: string;
@@ -57,5 +58,9 @@ export async function missingDocumentTemplate(data: MissingDocumentData): Promis
     </p>
   `;
 
-  return { subject, html };
+  return { 
+    subject, 
+    html,
+    version: TEMPLATE_VERSIONS['missing-document']
+  };
 } 

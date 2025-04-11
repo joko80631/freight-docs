@@ -1,7 +1,7 @@
 import { EmailProvider, EmailOptions, SendResult } from './types';
 import { ResendProvider } from './providers/resend';
 import { hasEmailOptIn, logEmailActivity } from './utils';
-import { renderTemplate, type TemplateName, type TemplateData } from './templates';
+import { renderTemplate, type TemplateName, type SpecificTemplateData } from './templates';
 import { generateUnsubscribeToken } from '../utils/unsubscribe-token';
 
 // Initialize the email provider with the API key from environment variables
@@ -109,7 +109,7 @@ export async function sendEmail(
  */
 export async function sendTemplatedEmail(
   templateName: TemplateName,
-  data: TemplateData,
+  data: SpecificTemplateData,
   to: EmailOptions['to'],
   options: {
     subject?: string;
@@ -136,7 +136,7 @@ export async function sendTemplatedEmail(
     const rendered = await renderTemplate(templateName, {
       ...data,
       unsubscribeUrl
-    } as TemplateData);
+    } as SpecificTemplateData);
 
     // Send the email
     return await sendEmail({

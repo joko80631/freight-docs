@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 interface EmailActivityLog {
   recipientId: string;
   templateName: string;
-  status: 'success' | 'failure';
+  status: 'success' | 'failure' | 'skipped';
   error?: string;
   metadata?: Record<string, any>;
 }
@@ -39,8 +39,6 @@ export async function getUserEmailLogs(
     templateName?: string;
   } = {}
 ): Promise<any[]> {
-  const supabase = createClient();
-
   let query = supabase
     .from('audit_logs')
     .select('*')
@@ -85,8 +83,6 @@ export async function getLoadEmailLogs(
     status?: 'sent' | 'failed' | 'skipped';
   } = {}
 ): Promise<any[]> {
-  const supabase = createClient();
-
   let query = supabase
     .from('audit_logs')
     .select('*')

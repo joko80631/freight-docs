@@ -1,4 +1,5 @@
 import { EmailTemplate, TemplateData } from './index';
+import { TEMPLATE_VERSIONS } from './types';
 
 interface LoadStatusData extends TemplateData {
   loadNumber: string;
@@ -58,5 +59,9 @@ export async function loadStatusTemplate(data: LoadStatusData): Promise<EmailTem
     </p>
   `;
 
-  return { subject, html };
+  return { 
+    subject, 
+    html,
+    version: TEMPLATE_VERSIONS['load-status']
+  };
 } 

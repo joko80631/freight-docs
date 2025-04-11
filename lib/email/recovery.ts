@@ -5,7 +5,7 @@
 import { EmailOptions } from './types';
 import { EmailError, EmailSendError, isRetryableError } from './errors';
 import { getEmailMonitoringService, EmailEventType } from './monitoring';
-import { getEmailProvider } from './providers/factory';
+import { createEmailProvider } from './providers/factory';
 
 /**
  * Maximum number of retry attempts
@@ -71,7 +71,9 @@ export class EmailRecoveryService {
     templateName?: string
   ): EmailRetryRecord | null {
     // Get recipient email
-    const recipient = typeof options.to === 'string' ? options.to : options.to.email;
+    const recipient = Array.isArray(options.to) 
+      ? options.to[0].email 
+      : options.to.email;
     
     // Skip if this address has bounced
     if (this.isBouncedAddress(recipient)) {
@@ -211,7 +213,7 @@ export class EmailRecoveryService {
       record.nextAttempt = new Date(Date.now() + RETRY_DELAY);
 
       // Get email provider
-      const provider = getEmailProvider();
+      const provider = createEmailProvider();
 
       // Send the email
       const result = await provider.sendEmail(record.options);
@@ -220,7 +222,7 @@ export class EmailRecoveryService {
         // Log successful retry
         this.monitoringService.logRetriedEmail(
           record.originalEmailId,
-          result.emailId,
+          result.messageId || 'unknown',
           record.options
         );
 
@@ -230,9 +232,9 @@ export class EmailRecoveryService {
       } else {
         // Update error information
         record.error = {
-          code: result.error?.code || 'SEND_ERROR',
-          message: result.error?.message || 'Failed to send email',
-          details: result.error?.details,
+          code: result.errors?.[0]?.name || 'SEND_ERROR',
+          message: result.errors?.[0]?.message || 'Failed to send email',
+          details: result.errors?.[0],
         };
 
         // If max attempts reached, remove from queue

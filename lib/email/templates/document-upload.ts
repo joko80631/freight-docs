@@ -1,4 +1,5 @@
-import { EmailTemplate, TemplateData } from './index';
+import { EmailTemplate } from './index';
+import { TemplateData, TEMPLATE_VERSIONS } from './types';
 
 interface DocumentUploadData extends TemplateData {
   documentType: string;
@@ -55,5 +56,9 @@ export async function documentUploadTemplate(data: DocumentUploadData): Promise<
     </p>
   `;
 
-  return { subject, html };
+  return { 
+    subject, 
+    html,
+    version: TEMPLATE_VERSIONS['document-upload']
+  };
 } 
