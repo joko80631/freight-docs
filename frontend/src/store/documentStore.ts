@@ -3,14 +3,15 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useTeamStore } from './teamStore';
 import type { Database, Document } from '@/types/database';
 import { getErrorMessage } from '@/lib/errors';
+import { showToast } from '@/lib/toast';
 
-interface DocumentFilters {
-  documentType: string;
-  confidence: string;
-  loadStatus: string;
-  dateFrom: string;
-  dateTo: string;
-  search: string;
+export interface DocumentFilters {
+  document_type: string | null;
+  classification_confidence: 'high' | 'medium' | 'low' | null;
+  load_status: 'linked' | 'unlinked' | null;
+  date_from: string | null;
+  date_to: string | null;
+  search: string | null;
 }
 
 interface DocumentPagination {
@@ -31,6 +32,7 @@ interface DocumentStore {
   setSelectedDocuments: (documents: Document[]) => void;
   fetchDocuments: (teamId: string) => Promise<void>;
   uploadDocument: (file: File, metadata: Record<string, any>) => Promise<Document>;
+  resetFilters: () => void;
 }
 
 export const useDocumentStore = create<DocumentStore>((set, get) => ({
@@ -38,17 +40,17 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   isLoading: false,
   error: null,
   filters: {
-    documentType: '',
-    confidence: '',
-    loadStatus: '',
-    dateFrom: '',
-    dateTo: '',
-    search: '',
+    document_type: null,
+    classification_confidence: null,
+    load_status: null,
+    date_from: null,
+    date_to: null,
+    search: null
   },
   pagination: {
     page: 1,
     limit: 10,
-    total: 0,
+    total: 0
   },
   selectedDocuments: [],
 
@@ -73,14 +75,19 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     try {
       const { filters, pagination } = get();
 
-      const queryParams = new URLSearchParams({
-        ...filters,
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
-      });
+      const queryParams = new URLSearchParams();
+      queryParams.append('page', pagination.page.toString());
+      queryParams.append('limit', pagination.limit.toString());
+      
+      if (filters.document_type) queryParams.append('documentType', filters.document_type);
+      if (filters.classification_confidence) queryParams.append('confidence', filters.classification_confidence);
+      if (filters.load_status) queryParams.append('loadStatus', filters.load_status);
+      if (filters.date_from) queryParams.append('dateFrom', filters.date_from);
+      if (filters.date_to) queryParams.append('dateTo', filters.date_to);
+      if (filters.search) queryParams.append('search', filters.search);
 
       const response = await fetch(
-        `/api/teams/${teamId}/documents?${queryParams.toString()}`
+        `/api/documents?team_id=${teamId}&${queryParams.toString()}`
       );
 
       if (!response.ok) {
@@ -96,74 +103,69 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         },
       });
     } catch (error) {
-      set({ error: getErrorMessage(error) });
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage });
+      showToast.error('Error', errorMessage);
     } finally {
       set({ isLoading: false });
     }
   },
 
   uploadDocument: async (file: File, metadata: Record<string, any>) => {
-    const { currentTeam } = useTeamStore.getState();
-    if (!currentTeam?.id) throw new Error('No team selected');
-
     set({ isLoading: true, error: null });
     try {
       const supabase = createClientComponentClient<Database>();
-
-      // 1. Upload file to Supabase Storage
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-      const filePath = `${currentTeam.id}/${fileName}`;
-
+      const { currentTeam } = useTeamStore.getState();
+      
+      if (!currentTeam?.id) {
+        throw new Error('No team selected');
+      }
+      
+      // Upload file to storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(filePath, file);
-
+        .upload(`${currentTeam.id}/${file.name}`, file);
+        
       if (uploadError) throw uploadError;
-
-      // 2. Get public URL
-      const { data: { publicUrl } } = supabase.storage
+      
+      // Create document record
+      const { data: document, error: documentError } = await supabase
         .from('documents')
-        .getPublicUrl(filePath);
-
-      // 3. Create document record
-      const response = await fetch('/api/documents', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+        .insert({
           team_id: currentTeam.id,
           name: file.name,
-          file_path: filePath,
-          file_url: publicUrl,
-          file_type: fileExt,
-          file_size: file.size,
+          file_path: uploadData.path,
           ...metadata,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create document record');
-      }
-
-      const document = await response.json();
+        })
+        .select()
+        .single();
+        
+      if (documentError) throw documentError;
       
-      // Add the new document to the beginning of the list
-      set((state) => ({
-        documents: [document, ...state.documents],
-        pagination: {
-          ...state.pagination,
-          total: state.pagination.total + 1
-        }
-      }));
-
+      showToast.success('Document Uploaded', 'Your document has been successfully uploaded');
       return document;
     } catch (error) {
-      set({ error: getErrorMessage(error) });
+      const errorMessage = getErrorMessage(error);
+      set({ error: errorMessage });
+      showToast.error('Upload Failed', errorMessage);
       throw error;
     } finally {
       set({ isLoading: false });
     }
   },
+
+  resetFilters: () => set({
+    filters: {
+      document_type: null,
+      classification_confidence: null,
+      load_status: null,
+      date_from: null,
+      date_to: null,
+      search: null
+    },
+    pagination: {
+      ...get().pagination,
+      page: 1
+    }
+  }),
 })); 

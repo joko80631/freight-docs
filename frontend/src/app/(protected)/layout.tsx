@@ -3,8 +3,11 @@
 import { useAuth } from '@/providers/auth-provider';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
 import { LoadingSkeleton } from '@/components/shared/LoadingSkeleton';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { FallbackError } from '@/components/shared/FallbackError';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { routes } from '@/config/routes';
 
 export default function ProtectedLayout({
   children,
@@ -16,7 +19,7 @@ export default function ProtectedLayout({
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      router.push(routes.auth.login);
     }
   }, [isLoading, isAuthenticated, router]);
 
@@ -32,5 +35,9 @@ export default function ProtectedLayout({
     return null;
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return (
+    <ErrorBoundary FallbackComponent={FallbackError}>
+      <DashboardLayout>{children}</DashboardLayout>
+    </ErrorBoundary>
+  );
 } 

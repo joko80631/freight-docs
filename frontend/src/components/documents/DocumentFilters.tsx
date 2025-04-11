@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useTeamStore } from '@/store/team-store';
+import { useDocumentStore } from '@/store/documentStore';
+import type { DocumentFilters } from '@/store/documentStore';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -12,30 +14,30 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Search, X } from 'lucide-react';
-import { Document } from '@/types/document';
+import { Search, Loader2, Calendar } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { showToast } from '@/lib/toast';
+import { format } from 'date-fns';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
-interface DocumentFiltersProps {
-  onFilterChange: (filters: {
-    type?: string;
-    confidence?: number;
-    loadId?: string;
-  }) => void;
-}
-
-export function DocumentFilters({ onFilterChange }: DocumentFiltersProps) {
-  const [type, setType] = useState<string>('');
-  const [confidence, setConfidence] = useState<number | null>(null);
-  const [loadId, setLoadId] = useState<string>('');
-  const supabase = createClientComponentClient();
-  const [loads, setLoads] = useState<Array<{ id: string; reference_number: string }>>([]);
+export function DocumentFilters() {
+  const [loads, setLoads] = React.useState<Array<{ id: string; reference_number: string }>>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { currentTeam } = useTeamStore();
+  const { filters, setFilters, resetFilters } = useDocumentStore();
+  const supabase = createClientComponentClient();
   
   useEffect(() => {
     const fetchLoads = async () => {
       if (!currentTeam?.id) return;
       
+      setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('loads')
@@ -43,30 +45,30 @@ export function DocumentFilters({ onFilterChange }: DocumentFiltersProps) {
           .eq('team_id', currentTeam.id)
           .order('created_at', { ascending: false });
           
-        if (!error && data) {
+        if (error) throw error;
+        if (data) {
           setLoads(data);
         }
       } catch (error) {
-        console.error('Error fetching loads:', error);
+        showToast.error('Error', 'Failed to fetch loads');
+      } finally {
+        setIsLoading(false);
       }
     };
     
     fetchLoads();
   }, [currentTeam?.id, supabase]);
   
-  const handleFilterChange = () => {
-    onFilterChange({
-      type: type || undefined,
-      confidence: confidence || undefined,
-      loadId: loadId || undefined
+  const handleFilterChange = (field: keyof DocumentFilters, value: string | null) => {
+    setFilters({
+      ...filters,
+      [field]: value,
     });
   };
   
   const handleReset = () => {
-    setType('');
-    setConfidence(null);
-    setLoadId('');
-    onFilterChange({});
+    resetFilters();
+    showToast.info('Filters Reset', 'All filters have been cleared');
   };
   
   return (
@@ -75,56 +77,140 @@ export function DocumentFilters({ onFilterChange }: DocumentFiltersProps) {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <Label className="text-sm font-medium">Document Type</Label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="mt-1 block w-full p-2 border rounded-md"
+          <Select
+            value={filters.document_type ?? ''}
+            onValueChange={(value) => handleFilterChange('document_type', value || null)}
           >
-            <option value="">All Types</option>
-            <option value="bol">BOL</option>
-            <option value="pod">POD</option>
-            <option value="invoice">Invoice</option>
-            <option value="other">Other</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Types</SelectItem>
+              <SelectItem value="bol">BOL</SelectItem>
+              <SelectItem value="pod">POD</SelectItem>
+              <SelectItem value="invoice">Invoice</SelectItem>
+              <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         <div>
           <Label className="text-sm font-medium">Confidence</Label>
-          <select
-            value={confidence?.toString() || ''}
-            onChange={(e) => setConfidence(e.target.value ? Number(e.target.value) : null)}
-            className="mt-1 block w-full p-2 border rounded-md"
+          <Select
+            value={filters.classification_confidence ?? ''}
+            onValueChange={(value) => handleFilterChange('classification_confidence', value as 'high' | 'medium' | 'low' | null)}
           >
-            <option value="">Any Confidence</option>
-            <option value="0.85">High (85%+)</option>
-            <option value="0.6">Medium (60%+)</option>
-            <option value="0">Low (All)</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="Any Confidence" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Any Confidence</SelectItem>
+              <SelectItem value="high">High (85%+)</SelectItem>
+              <SelectItem value="medium">Medium (60%+)</SelectItem>
+              <SelectItem value="low">Low (All)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         
         <div>
-          <Label className="text-sm font-medium">Linked Load</Label>
-          <select
-            value={loadId}
-            onChange={(e) => setLoadId(e.target.value)}
-            className="mt-1 block w-full p-2 border rounded-md"
+          <Label className="text-sm font-medium">Status</Label>
+          <Select
+            value={filters.load_status ?? ''}
+            onValueChange={(value) => handleFilterChange('load_status', value as 'linked' | 'unlinked' | null)}
           >
-            <option value="">Any Load</option>
-            {loads.map((load) => (
-              <option key={load.id} value={load.id}>
-                {load.reference_number}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger>
+              <SelectValue placeholder="Any Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">Any Status</SelectItem>
+              <SelectItem value="linked">Linked</SelectItem>
+              <SelectItem value="unlinked">Unlinked</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
-      
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        <div>
+          <Label className="text-sm font-medium">Date From</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !filters.date_from && "text-muted-foreground"
+                )}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {filters.date_from ? format(new Date(filters.date_from), "PPP") : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <CalendarComponent
+                mode="single"
+                selected={filters.date_from ? new Date(filters.date_from) : undefined}
+                onSelect={(date) => handleFilterChange('date_from', date ? date.toISOString() : null)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        
+        <div>
+          <Label className="text-sm font-medium">Date To</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !filters.date_to && "text-muted-foreground"
+                )}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {filters.date_to ? format(new Date(filters.date_to), "PPP") : "Pick a date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <CalendarComponent
+                mode="single"
+                selected={filters.date_to ? new Date(filters.date_to) : undefined}
+                onSelect={(date) => handleFilterChange('date_to', date ? date.toISOString() : null)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <Label className="text-sm font-medium">Search</Label>
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search documents..."
+            value={filters.search || ''}
+            onChange={(e) => handleFilterChange('search', e.target.value || null)}
+            className="pl-8"
+          />
+        </div>
+      </div>
+
       <div className="flex justify-end mt-4 space-x-2">
-        <Button variant="outline" onClick={handleReset}>
-          Reset
-        </Button>
-        <Button onClick={handleFilterChange}>
-          Apply Filters
+        <Button 
+          variant="outline" 
+          onClick={handleReset}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Loading...
+            </>
+          ) : (
+            'Reset Filters'
+          )}
         </Button>
       </div>
     </div>

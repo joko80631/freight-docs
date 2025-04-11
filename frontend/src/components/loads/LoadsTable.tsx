@@ -40,6 +40,7 @@ import {
 import { useToastNotification } from "@/components/shared";
 import { Load, formatDate, getRelativeTime, getDocumentCompletionStatus, getMissingDocuments } from "@/lib/mock/loads";
 import { safeArray } from "@/lib/array-utils";
+import { routes } from '@/config/routes';
 
 interface LoadsTableProps {
   loads: Load[];
@@ -130,7 +131,7 @@ export function LoadsTable({ loads, isLoading = false }: LoadsTableProps) {
   });
 
   const handleView = (loadId: string) => {
-    router.push(`/loads/${loadId}`);
+    router.push(routes.loads.detail(loadId));
   };
 
   const handleEdit = (loadId: string) => {

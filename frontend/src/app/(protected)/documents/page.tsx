@@ -1,103 +1,44 @@
 "use client"
 
-import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Loader2, FileText, Download, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useTeamStore } from '@/store/teamStore';
-import { formatDistanceToNow } from 'date-fns';
 import { DocumentList } from '@/components/documents/DocumentList';
-import type { Document } from '@/types/document';
+import { useDocumentStore } from '@/store/documentStore';
 
 // Force dynamic rendering to prevent caching issues
 export const dynamic = 'force-dynamic';
 
-const PAGE_SIZE = 12;
-
 export default function DocumentsPage() {
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [page, setPage] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClientComponentClient();
   const { currentTeam } = useTeamStore();
+  const { 
+    documents, 
+    isLoading, 
+    error, 
+    pagination, 
+    setPagination, 
+    fetchDocuments 
+  } = useDocumentStore();
 
-  const fetchDocuments = async () => {
-    if (!currentTeam?.id) return;
-    
-    setIsLoading(true);
-    try {
-      // Get total count
-      const { count } = await supabase
-        .from('documents')
-        .select('*', { count: 'exact', head: true })
-        .eq('team_id', currentTeam.id);
-
-      // Get paginated documents
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('team_id', currentTeam.id)
-        .order('created_at', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-      if (error) throw error;
-
-      setDocuments(data || []);
-      setTotalCount(count || 0);
-    } catch (error) {
-      console.error('Error fetching documents:', error);
-      toast.error("Failed to fetch documents");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleDelete = async (documentId: string, filePath: string) => {
-    try {
-      // Delete from storage
-      const { error: storageError } = await supabase.storage
-        .from('documents')
-        .remove([filePath]);
-
-      if (storageError) throw storageError;
-
-      // Delete from database
-      const { error: dbError } = await supabase
-        .from('documents')
-        .delete()
-        .eq('id', documentId);
-
-      if (dbError) throw dbError;
-
-      setDocuments(documents.filter(doc => doc.id !== documentId));
-      toast.success("Document deleted successfully");
-    } catch (error) {
-      console.error('Error deleting document:', error);
-      toast.error("Failed to delete document");
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
+  // Fetch documents when team or pagination changes
   useEffect(() => {
     if (currentTeam?.id) {
-      fetchDocuments();
+      fetchDocuments(currentTeam.id);
     }
-  }, [currentTeam?.id, page]);
+  }, [currentTeam?.id, pagination, fetchDocuments]);
+
+  // Show error toast if there's an error
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message);
+    }
+  }, [error]);
 
   const handleViewDocument = (id: string) => {
     const document = documents.find(doc => doc.id === id);
-    if (document?.storage_path) {
+    if (document?.file_path) {
       window.open(`/api/documents/${id}`, '_blank');
     }
   };
@@ -126,7 +67,7 @@ export default function DocumentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DocumentUpload onSuccess={fetchDocuments} />
+          <DocumentUpload onSuccess={() => fetchDocuments(currentTeam.id)} />
         </CardContent>
       </Card>
 
@@ -140,10 +81,10 @@ export default function DocumentsPage() {
         <CardContent>
           <DocumentList
             documents={documents}
-            totalCount={totalCount}
-            page={page}
-            pageSize={PAGE_SIZE}
-            onPageChange={setPage}
+            totalCount={documents.length}
+            page={pagination.page}
+            pageSize={pagination.limit}
+            onPageChange={(page) => setPagination({ ...pagination, page })}
             onViewDocument={handleViewDocument}
           />
         </CardContent>

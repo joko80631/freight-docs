@@ -27,6 +27,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
+import { routes } from '@/config/routes';
 
 const getConfidenceColor = (confidence) => {
   if (confidence >= 0.9) return 'bg-green-100 text-green-800';
@@ -270,7 +271,7 @@ export default function DocumentDetailPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => router.push(`/loads/${document.load_id}`)}
+                onClick={() => router.push(routes.loads.detail(document.load_id))}
               >
                 <ExternalLink className="mr-2 h-4 w-4" />
                 View Load

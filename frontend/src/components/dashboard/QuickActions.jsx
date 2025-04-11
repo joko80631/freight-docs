@@ -7,31 +7,32 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { safeArray } from '@/lib/array-utils';
 import { useToastNotification } from "@/components/shared";
 import { handleNavigation } from "@/lib/utils";
+import { routes } from '@/config/routes';
 
 const actions = [
   {
     title: "New Load",
     description: "Create a new load to track",
     icon: Package,
-    path: "/loads/new",
+    path: routes.loads.create,
   },
   {
     title: "Upload Document",
     description: "Upload a BOL, POD, or invoice",
     icon: Upload,
-    path: "/upload",
+    path: routes.documents.upload,
   },
   {
     title: "View Documents",
     description: "Browse all your documents",
     icon: FileText,
-    path: "/documents",
+    path: routes.documents.index,
   },
   {
     title: "Team Members",
     description: "Manage team access",
     icon: Users,
-    path: "/teams",
+    path: routes.teams.index,
   },
 ];
 
@@ -44,36 +45,28 @@ export function QuickActions() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Quick Actions</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 sm:grid-cols-2">
-          {safeArray(actions).map((action) => {
-            const Icon = action.icon;
-            return (
-              <Button
-                key={action.title}
-                variant="outline"
-                className="h-auto flex-col items-start justify-start gap-2 p-4"
-                onClick={() => handleActionClick(action.path)}
-              >
-                <div className="flex w-full items-center justify-between">
-                  <Icon className="h-4 w-4" />
-                  <Plus className="h-4 w-4" />
-                </div>
-                <div className="flex flex-col items-start">
-                  <span className="font-medium">{action.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {action.description}
-                  </span>
-                </div>
-              </Button>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {actions.map((action) => (
+        <Card key={action.title} className="hover:bg-accent/50 transition-colors">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {action.title}
+            </CardTitle>
+            <action.icon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{action.description}</div>
+            <Button
+              variant="ghost"
+              className="w-full mt-4"
+              onClick={() => handleActionClick(action.path)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {action.title}
+            </Button>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
   );
 } 

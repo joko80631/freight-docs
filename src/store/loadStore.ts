@@ -39,6 +39,7 @@ interface LoadStore {
   setPagination: (pagination: LoadPagination) => void;
   fetchLoads: (teamId: string) => Promise<void>;
   clearError: () => void;
+  resetFilters: () => void;
 }
 
 export const useLoadStore = create<LoadStore>((set, get) => ({
@@ -56,6 +57,14 @@ export const useLoadStore = create<LoadStore>((set, get) => ({
   setPagination: (pagination) => set({ pagination }),
 
   clearError: () => set({ error: null }),
+
+  resetFilters: () => set({ 
+    filters: {},
+    pagination: {
+      page: 1,
+      limit: 10
+    }
+  }),
 
   fetchLoads: async (teamId) => {
     if (!teamId) {
@@ -114,7 +123,7 @@ export const useLoadStore = create<LoadStore>((set, get) => ({
         }
       }
       if (filters.search) {
-        query = query.or(`load_number.ilike.%${filters.search}%,origin.ilike.%${filters.search}%,destination.ilike.%${filters.search}%`);
+        query = query.or(`reference_number.ilike.%${filters.search}%,origin.ilike.%${filters.search}%,destination.ilike.%${filters.search}%`);
       }
 
       const { data, error } = await query;

@@ -3,6 +3,7 @@
 import { useAuth } from '@/providers/auth-provider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { routes } from '@/config/routes';
 
 export default function AuthLayout({
   children,
@@ -14,7 +15,7 @@ export default function AuthLayout({
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
-      router.push('/dashboard');
+      router.push(routes.dashboard);
     }
   }, [isLoading, isAuthenticated, router]);
 

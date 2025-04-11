@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Search, Filter, Plus, Truck, Loader2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,32 +9,36 @@ import { Input } from "@/components/ui/input"
 import { EmptyState } from "@/components/ui/empty-state"
 import { cn } from "@/lib/utils"
 import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton"
+import { useLoadStore } from "@/store/loadStore"
+import { useTeamStore } from "@/store/teamStore"
 
 // Force dynamic rendering to prevent caching issues
 export const dynamic = 'force-dynamic';
 
-// Define the Load type
-interface Load {
-  id: string;
-  status: string;
-  origin: string;
-  destination: string;
-  createdAt: string;
-}
-
 export default function LoadsPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [loads, setLoads] = useState<Load[]>([]);
+  const { currentTeam } = useTeamStore();
+  const { 
+    loads, 
+    isLoading, 
+    filters, 
+    pagination, 
+    setFilters, 
+    setPagination, 
+    fetchLoads 
+  } = useLoadStore();
   
-  // Simulate loading data
+  // Fetch loads when team, filters, or pagination changes
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    if (currentTeam?.id) {
+      fetchLoads(currentTeam.id);
+    }
+  }, [currentTeam?.id, filters, pagination, fetchLoads]);
+
+  // Handle search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilters({ ...filters, search: e.target.value });
+  };
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-gray-50/50">
@@ -64,6 +68,8 @@ export default function LoadsPage() {
                 placeholder="Search loads by ID, origin, destination..." 
                 className="pl-9"
                 disabled={isLoading}
+                value={filters.search || ''}
+                onChange={handleSearchChange}
               />
             </div>
             <div className="flex gap-2">
@@ -103,14 +109,14 @@ export default function LoadsPage() {
         {/* Loads Grid */}
         {!isLoading && loads.length > 0 && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {loads.map((load, index) => (
+            {loads.map((load) => (
               <Card 
-                key={index}
+                key={load.id}
                 className="overflow-hidden border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
                 onClick={() => router.push(`/loads/${load.id}`)}
               >
                 <CardHeader className="pb-3 border-b">
-                  <CardTitle className="text-lg font-semibold">Load #{load.id}</CardTitle>
+                  <CardTitle className="text-lg font-semibold">Load #{load.reference_number}</CardTitle>
                   <CardDescription>{load.status}</CardDescription>
                 </CardHeader>
                 <CardContent className="p-4">
@@ -125,7 +131,7 @@ export default function LoadsPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm text-muted-foreground">Created</span>
-                      <span className="text-sm font-medium">{load.createdAt}</span>
+                      <span className="text-sm font-medium">{new Date(load.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </CardContent>

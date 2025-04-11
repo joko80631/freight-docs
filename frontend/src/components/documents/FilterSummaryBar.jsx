@@ -2,24 +2,28 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { X } from 'lucide-react';
 import { format } from 'date-fns';
+import { useDocumentStore } from '@/store/documentStore';
 
-export default function FilterSummaryBar({ filters, onFilterChange, totalItems, filteredItems }) {
+export default function FilterSummaryBar({ totalItems, filteredItems }) {
+  const { filters, setFilters } = useDocumentStore();
+  
   const hasActiveFilters = Object.values(filters).some(value => 
     value !== null && value !== undefined && value !== ''
   );
 
   const clearAllFilters = () => {
-    onFilterChange({
-      documentType: null,
-      confidenceLevel: null,
-      loadStatus: null,
-      dateRange: null,
-      search: '',
+    setFilters({
+      document_type: null,
+      classification_confidence: null,
+      load_status: null,
+      date_from: null,
+      date_to: null,
+      search: null,
     });
   };
 
   const removeFilter = (key) => {
-    onFilterChange({
+    setFilters({
       ...filters,
       [key]: key === 'search' ? '' : null,
     });
@@ -36,53 +40,56 @@ export default function FilterSummaryBar({ filters, onFilterChange, totalItems, 
       </div>
       <div className="flex-1" />
       <div className="flex flex-wrap items-center gap-2">
-        {filters.documentType && (
+        {filters.document_type && (
           <Badge variant="secondary" className="flex items-center gap-1">
-            Type: {filters.documentType}
+            Type: {filters.document_type}
             <Button
               variant="ghost"
               size="icon"
               className="h-4 w-4 p-0 hover:bg-transparent"
-              onClick={() => removeFilter('documentType')}
+              onClick={() => removeFilter('document_type')}
             >
               <X className="h-3 w-3" />
             </Button>
           </Badge>
         )}
-        {filters.confidenceLevel && (
+        {filters.classification_confidence && (
           <Badge variant="secondary" className="flex items-center gap-1">
-            Confidence: {filters.confidenceLevel}
+            Confidence: {filters.classification_confidence}
             <Button
               variant="ghost"
               size="icon"
               className="h-4 w-4 p-0 hover:bg-transparent"
-              onClick={() => removeFilter('confidenceLevel')}
+              onClick={() => removeFilter('classification_confidence')}
             >
               <X className="h-3 w-3" />
             </Button>
           </Badge>
         )}
-        {filters.loadStatus && (
+        {filters.load_status && (
           <Badge variant="secondary" className="flex items-center gap-1">
-            Load Status: {filters.loadStatus}
+            Load Status: {filters.load_status}
             <Button
               variant="ghost"
               size="icon"
               className="h-4 w-4 p-0 hover:bg-transparent"
-              onClick={() => removeFilter('loadStatus')}
+              onClick={() => removeFilter('load_status')}
             >
               <X className="h-3 w-3" />
             </Button>
           </Badge>
         )}
-        {filters.dateRange && (
+        {(filters.date_from || filters.date_to) && (
           <Badge variant="secondary" className="flex items-center gap-1">
-            Date: {filters.dateRange}
+            Date: {filters.date_from ? format(new Date(filters.date_from), 'MMM d, yyyy') : 'Any'} - {filters.date_to ? format(new Date(filters.date_to), 'MMM d, yyyy') : 'Any'}
             <Button
               variant="ghost"
               size="icon"
               className="h-4 w-4 p-0 hover:bg-transparent"
-              onClick={() => removeFilter('dateRange')}
+              onClick={() => {
+                removeFilter('date_from');
+                removeFilter('date_to');
+              }}
             >
               <X className="h-3 w-3" />
             </Button>

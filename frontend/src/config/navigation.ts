@@ -8,6 +8,7 @@ import {
   HelpCircle,
   Building2,
 } from "lucide-react";
+import { routes } from './routes';
 
 export interface NavigationItem {
   label: string;
@@ -21,58 +22,58 @@ export interface NavigationItem {
 export const navigationConfig: NavigationItem[] = [
   {
     label: "Dashboard",
-    href: "/dashboard",
+    href: routes.dashboard,
     icon: LayoutDashboard,
     featureFlag: true,
   },
   {
     label: "Loads",
-    href: "/loads",
+    href: routes.loads.index,
     icon: Truck,
     featureFlag: true,
   },
   {
     label: "Documents",
-    href: "/documents",
+    href: routes.documents.index,
     icon: FileText,
     featureFlag: true,
   },
   {
     label: "Teams",
-    href: "/teams",
+    href: routes.teams.index,
     icon: Building2,
     featureFlag: true,
   },
   {
     label: "Customers",
-    href: "/coming-soon/customers",
+    href: routes.comingSoon('customers'),
     icon: Users,
     featureFlag: false,
     comingSoon: true,
   },
   {
     label: "Analytics",
-    href: "/coming-soon/analytics",
+    href: routes.comingSoon('analytics'),
     icon: BarChart3,
     featureFlag: false,
     comingSoon: true,
   },
   {
     label: "Fleet",
-    href: "/coming-soon/fleet",
+    href: routes.comingSoon('fleet'),
     icon: Truck,
     featureFlag: false,
     comingSoon: true,
   },
   {
     label: "Settings",
-    href: "/settings",
+    href: routes.settings.index,
     icon: Settings,
     featureFlag: true,
   },
   {
     label: "Help",
-    href: "/help",
+    href: routes.support,
     icon: HelpCircle,
     featureFlag: true,
   },

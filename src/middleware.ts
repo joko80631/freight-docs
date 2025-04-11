@@ -1,6 +1,7 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { routes } from '@/config/routes';
 
 export async function middleware(request: NextRequest) {
   const res = NextResponse.next();
@@ -9,11 +10,11 @@ export async function middleware(request: NextRequest) {
 
   // Protected routes pattern
   const protectedPaths = [
-    '/dashboard',
-    '/loads',
-    '/documents',
-    '/teams',
-    '/fleet'
+    routes.dashboard,
+    routes.loads.index,
+    routes.documents.index,
+    routes.teams.index,
+    routes.fleet.index
   ];
   
   const isProtectedRoute = protectedPaths.some(path => 
@@ -31,7 +32,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isProtectedRoute && !session) {
-    const redirectUrl = new URL('/login', request.url);
+    const redirectUrl = new URL(routes.auth.login, request.url);
     // Preserve the original URL for post-login redirect
     redirectUrl.searchParams.set('redirect', request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(redirectUrl);
