@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Loader2 } from 'lucide-react';
@@ -35,7 +35,7 @@ export default function LoadDetailPage() {
   const [formData, setFormData] = useState<LoadFormData>({} as LoadFormData);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const fetchLoad = async () => {
+  const fetchLoad = useCallback(async () => {
     if (!params?.id) return;
     try {
       const response = await fetch(`/api/loads/${params.id}`);
@@ -56,11 +56,11 @@ export default function LoadDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [params?.id, supabase]);
 
   useEffect(() => {
     fetchLoad();
-  }, [params?.id]);
+  }, [fetchLoad]);
 
   const handleStatusChange = async (newStatus: LoadStatus) => {
     if (!load?.id) return;

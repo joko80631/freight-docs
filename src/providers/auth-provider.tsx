@@ -2,7 +2,7 @@
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User } from '@supabase/auth-helpers-nextjs';
 
 interface AuthContextType {
@@ -31,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const supabase = createClientComponentClient();
 
   // Handle auth state changes
-  const handleAuthStateChange = async (session: any) => {
+  const handleAuthStateChange = useCallback(async (session: any) => {
     let mounted = true;
     try {
       if (session) {
@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
-  };
+  }, [router]);
 
   const signIn = async (email: string, password: string) => {
     let mounted = true;

@@ -69,7 +69,7 @@ export default function DocumentDetailPage() {
     if (documentId) {
       fetchDocument();
     }
-  }, [documentId, supabase]);
+  }, [documentId, supabase, toast]);
   
   const handleReclassify = async (newType: string) => {
     if (!document || newType === document.type) return;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { TemplateName } from '@/lib/email/templates';
 
 interface PreviewData {
@@ -18,12 +18,10 @@ export default function EmailPreviewPage() {
 
   const templates: TemplateName[] = [
     'document-upload',
-    'missing-document',
-    'load-status',
-    'team-invite'
+    'missing-document'
   ];
 
-  const defaultTestData: Record<TemplateName, Record<string, any>> = {
+  const defaultTestData = useMemo(() => ({
     'document-upload': {
       documentName: 'Bill of Lading',
       documentType: 'BOL',
@@ -34,18 +32,8 @@ export default function EmailPreviewPage() {
       documentType: 'BOL',
       dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
       loadNumber: 'LOAD-123'
-    },
-    'load-status': {
-      loadNumber: 'LOAD-123',
-      status: 'in-transit',
-      estimatedDelivery: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString()
-    },
-    'team-invite': {
-      inviterName: 'John Doe',
-      teamName: 'Freight Team',
-      inviteLink: 'https://example.com/invite/123'
     }
-  };
+  }), []);
 
   useEffect(() => {
     setTestData(defaultTestData[selectedTemplate]);

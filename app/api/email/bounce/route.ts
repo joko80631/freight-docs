@@ -13,21 +13,21 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validate required fields
-    if (!body.emailId || !body.recipient) {
+    if (!body.templateId || !body.recipient) {
       return NextResponse.json(
-        { error: 'Missing required fields: emailId and recipient' },
+        { error: 'Missing required fields: templateId and recipient' },
         { status: 400 }
       );
     }
     
     // Extract bounce information
-    const { emailId, recipient, reason = 'Unknown reason', type = 'bounce' } = body;
+    const { templateId, recipient, reason = 'Unknown reason', type = 'bounce' } = body;
     
     // Log the bounce event
     const monitoringService = getEmailMonitoringService();
     monitoringService.logEvent({
       type: EmailEventType.BOUNCED,
-      emailId,
+      templateId,
       recipient,
       error: {
         code: 'BOUNCE',

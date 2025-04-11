@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useTeamStore } from '@/store/team-store';
@@ -64,7 +64,7 @@ export default function DocumentsPage() {
   const router = useRouter();
   const supabase = createClientComponentClient();
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     if (!currentTeam?.id) {
       setError({ message: 'No team selected' });
       return;
@@ -116,13 +116,13 @@ export default function DocumentsPage() {
     } finally {
       setIsLoadingDocs(false);
     }
-  };
+  }, [currentTeam?.id, isTeamLoading, page, pageSize, filters, supabase, toast]);
 
   useEffect(() => {
     if (currentTeam?.id && !isTeamLoading) {
       fetchDocuments();
     }
-  }, [currentTeam?.id, isTeamLoading, page, pageSize, filters]);
+  }, [currentTeam?.id, isTeamLoading, fetchDocuments]);
 
   const handleViewDocument = (id: string) => {
     if (!id) {

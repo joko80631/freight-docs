@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 export default function UnsubscribedPage() {
   return (
@@ -14,19 +15,19 @@ export default function UnsubscribedPage() {
         </p>
 
         <div className="space-y-4">
-          <a
+          <Link
             href="/settings/notifications"
             className="block w-full bg-blue-600 text-white rounded-md px-4 py-2 text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Manage Email Preferences
-          </a>
+          </Link>
           
-          <a
+          <Link
             href="/"
             className="block w-full bg-white text-gray-700 border border-gray-300 rounded-md px-4 py-2 text-sm font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           >
             Return to Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>
