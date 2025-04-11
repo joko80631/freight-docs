@@ -32,7 +32,7 @@ export default function DocumentsPage() {
   // Show error toast if there's an error
   useEffect(() => {
     if (error) {
-      toast.error(error.message);
+      toast.error(error);
     }
   }, [error]);
 
