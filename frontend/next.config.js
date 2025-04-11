@@ -53,6 +53,15 @@ const nextConfig = {
       loader: 'handlebars-loader',
     });
 
+    // Fix for require.extensions warning
+    config.module.rules.push({
+      test: /node_modules\/handlebars/,
+      loader: 'babel-loader',
+      options: {
+        presets: ['next/babel'],
+      },
+    });
+
     return config;
   }
 }
