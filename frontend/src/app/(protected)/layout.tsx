@@ -36,7 +36,7 @@ export default function ProtectedLayout({
   }
 
   return (
-    <ErrorBoundary FallbackComponent={FallbackError}>
+    <ErrorBoundary fallback={<FallbackError error={new Error()} resetErrorBoundary={() => {}} />}>
       <DashboardLayout>{children}</DashboardLayout>
     </ErrorBoundary>
   );
