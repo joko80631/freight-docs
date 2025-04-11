@@ -2,10 +2,29 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { routes } from '@/config/routes';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useTeamStore } from '@/store/team-store';
+import { toast } from 'sonner';
 
 export default function DashboardHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
+  const supabase = createClientComponentClient();
+  const { setCurrentTeam } = useTeamStore();
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      setCurrentTeam(null);
+      router.push(routes.auth.login);
+      toast.success('Signed out successfully');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error('Failed to sign out');
+    }
+  };
 
   return (
     <header className="bg-white shadow">
@@ -71,6 +90,7 @@ export default function DashboardHeader() {
                     Settings
                   </Link>
                   <button
+                    onClick={handleSignOut}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >
                     Sign out
