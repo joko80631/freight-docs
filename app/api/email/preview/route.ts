@@ -42,7 +42,7 @@ export async function GET(req: Request) {
     };
 
     // Render the template
-    const { subject, html } = await renderTemplate(templateName, sampleData);
+    const { subject, html } = await renderTemplate(templateName as TemplateName, sampleData);
 
     return NextResponse.json({
       template: templateName,

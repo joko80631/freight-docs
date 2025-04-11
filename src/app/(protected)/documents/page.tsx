@@ -116,7 +116,7 @@ export default function DocumentsPage() {
     } finally {
       setIsLoadingDocs(false);
     }
-  }, [currentTeam?.id, isTeamLoading, page, pageSize, filters, supabase, toast]);
+  }, [currentTeam?.id, page, pageSize, filters, supabase, toast]);
 
   useEffect(() => {
     if (currentTeam?.id && !isTeamLoading) {
