@@ -1,4 +1,6 @@
 import React from 'react';
+import { ErrorBoundary } from '@/components/error-boundary';
+import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
 import type { Metadata } from 'next';
 
@@ -22,7 +24,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <ErrorBoundary>
+          {children}
+          <Toaster />
+        </ErrorBoundary>
       </body>
     </html>
   );

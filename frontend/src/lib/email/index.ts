@@ -157,6 +157,28 @@ export async function sendTemplatedEmail(
   }
 }
 
-// Re-export types and utilities
-export * from './types';
-export * from './templates'; 
+// Re-export specific types and utilities instead of using star exports
+export type { 
+  EmailRecipient, 
+  EmailAttachment, 
+  EmailTemplate, 
+  RenderedEmailTemplate, 
+  EmailOptions, 
+  SendResult, 
+  EmailProvider,
+  EmailPreferences,
+  NotificationCategory,
+  NotificationType,
+  NotificationFrequency,
+  NotificationPreference,
+  NotificationDigest,
+  PendingNotification,
+  NotificationPreferences,
+  NotificationDigestPreferences
+} from './types';
+
+export { 
+  renderTemplate, 
+  validateTemplateData, 
+  getTemplateVersion 
+} from './templates'; 

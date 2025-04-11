@@ -1,4 +1,5 @@
 export const routes = {
+  dashboard: '/dashboard',
   loads: {
     list: '/loads',
     detail: (id: string) => `/loads/${id}`,

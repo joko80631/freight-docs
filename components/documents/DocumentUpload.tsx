@@ -8,6 +8,7 @@ import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Database } from '@/src/types/database';
 import { toast } from 'sonner';
+import { useTeamStore } from '@/store/team-store';
 
 const DOCUMENT_TYPES = [
   'BOL', // Bill of Lading
@@ -19,7 +20,7 @@ const DOCUMENT_TYPES = [
 type DocumentType = typeof DOCUMENT_TYPES[number];
 
 interface DocumentUploadProps {
-  loadId: string;
+  loadId?: string;
   onUploadComplete?: () => void;
 }
 
@@ -29,6 +30,7 @@ export function DocumentUpload({ loadId, onUploadComplete }: DocumentUploadProps
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState<DocumentType>('BOL');
   const supabase = createClientComponentClient<Database>();
+  const { currentTeam } = useTeamStore();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -38,13 +40,21 @@ export function DocumentUpload({ loadId, onUploadComplete }: DocumentUploadProps
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      toast.error('Please select a file to upload');
+      return;
+    }
+
+    if (!currentTeam) {
+      toast.error('No team selected');
+      return;
+    }
 
     setIsUploading(true);
     try {
       // 1. Upload file to Supabase Storage
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${loadId}/${Date.now()}.${fileExt}`;
+      const fileName = `${currentTeam.id}/${loadId || 'unassigned'}/${Date.now()}.${fileExt}`;
       
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('documents')
@@ -61,12 +71,12 @@ export function DocumentUpload({ loadId, onUploadComplete }: DocumentUploadProps
       const { data: document, error: insertError } = await supabase
         .from('documents')
         .insert({
-          load_id: loadId,
+          load_id: loadId || null,
           file_name: selectedFile.name,
           file_url: publicUrl,
           storage_path: fileName,
           type: documentType,
-          team_id: (await supabase.auth.getUser()).data.user?.id || '',
+          team_id: currentTeam.id,
           status: 'pending'
         })
         .select()
@@ -98,49 +108,39 @@ export function DocumentUpload({ loadId, onUploadComplete }: DocumentUploadProps
         await supabase
           .from('documents')
           .update({
-            type: result.classification.type,
-            confidence_score: result.classification.confidence,
-            classification_reason: result.classification.reason,
-            status: 'classified'
+            confidence_score: result.confidence,
+            classification_result: result.classification,
           })
           .eq('id', document.id);
 
-        toast({
-          title: 'Document Classified',
-          description: `Document classified as ${result.classification.type.toUpperCase()} with ${Math.round(result.classification.confidence * 100)}% confidence`,
-        });
+        toast.success('Document uploaded and classified successfully');
+        onUploadComplete?.();
       } catch (error) {
         console.error('Classification error:', error);
-        toast.error('Classification Failed', {
-          description: 'Document was uploaded but classification failed. You can retry classification later.'
-        });
-      } finally {
-        setIsClassifying(false);
+        toast.error('Document uploaded but classification failed');
       }
-
-      // 5. Reset form and notify parent
-      setSelectedFile(null);
-      setDocumentType('BOL');
-      onUploadComplete?.();
     } catch (error) {
-      console.error('Error uploading document:', error);
-      toast.error('Upload Failed', {
-        description: 'Failed to upload document. Please try again.'
-      });
+      console.error('Upload error:', error);
+      toast.error('Failed to upload document');
     } finally {
       setIsUploading(false);
+      setIsClassifying(false);
+      setSelectedFile(null);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <FormControl label="Document Type">
+    <div className="space-y-6">
+      <FormControl>
+        <label className="block text-sm font-medium text-gray-700">
+          Document Type
+        </label>
         <Select
           value={documentType}
-          onValueChange={(value) => setDocumentType(value as DocumentType)}
+          onValueChange={(value: DocumentType) => setDocumentType(value)}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select document type" />
+            <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {DOCUMENT_TYPES.map((type) => (
@@ -152,36 +152,55 @@ export function DocumentUpload({ loadId, onUploadComplete }: DocumentUploadProps
         </Select>
       </FormControl>
 
-      <FormControl label="File">
-        <div className="flex items-center space-x-2">
-          <input
-            type="file"
-            onChange={handleFileSelect}
-            className="hidden"
-            id="file-upload"
-            accept=".pdf,.jpg,.jpeg,.png"
-          />
-          <label
-            htmlFor="file-upload"
-            className="flex-1 cursor-pointer rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-          >
-            {selectedFile ? selectedFile.name : 'Choose file'}
-          </label>
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading || isClassifying}
-          >
-            {isUploading || isClassifying ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Upload className="h-4 w-4" />
-            )}
-            <span className="ml-2">
-              {isUploading ? 'Uploading...' : isClassifying ? 'Classifying...' : 'Upload'}
-            </span>
-          </Button>
+      <FormControl>
+        <label className="block text-sm font-medium text-gray-700">
+          File
+        </label>
+        <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+          <div className="space-y-1 text-center">
+            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+            <div className="flex text-sm text-gray-600">
+              <label
+                htmlFor="file-upload"
+                className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500"
+              >
+                <span>Upload a file</span>
+                <input
+                  id="file-upload"
+                  name="file-upload"
+                  type="file"
+                  className="sr-only"
+                  onChange={handleFileSelect}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                />
+              </label>
+              <p className="pl-1">or drag and drop</p>
+            </div>
+            <p className="text-xs text-gray-500">
+              PDF, PNG, JPG up to 10MB
+            </p>
+          </div>
         </div>
       </FormControl>
+
+      {selectedFile && (
+        <div className="text-sm text-gray-500">
+          Selected: {selectedFile.name}
+        </div>
+      )}
+
+      <Button
+        onClick={handleUpload}
+        disabled={!selectedFile || isUploading || isClassifying}
+        className="w-full"
+      >
+        {isUploading || isClassifying ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Upload className="mr-2 h-4 w-4" />
+        )}
+        {isUploading ? 'Uploading...' : isClassifying ? 'Classifying...' : 'Upload Document'}
+      </Button>
     </div>
   );
 } 
