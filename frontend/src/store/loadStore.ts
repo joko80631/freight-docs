@@ -24,7 +24,7 @@ interface LoadStore {
   pagination: LoadPagination;
   setFilters: (filters: LoadFilters) => void;
   setPagination: (pagination: LoadPagination) => void;
-  fetchLoads: () => Promise<void>;
+  fetchLoads: (teamId: string) => Promise<void>;
 }
 
 export const useLoadStore = create<LoadStore>((set, get) => ({
@@ -41,7 +41,7 @@ export const useLoadStore = create<LoadStore>((set, get) => ({
 
   setPagination: (pagination) => set({ pagination }),
 
-  fetchLoads: async () => {
+  fetchLoads: async (teamId: string) => {
     set({ isLoading: true, error: null });
     try {
       const supabase = createClientComponentClient<Database>();
@@ -59,6 +59,7 @@ export const useLoadStore = create<LoadStore>((set, get) => ({
             file_name
           )
         `)
+        .eq('team_id', teamId)
         .order('created_at', { ascending: false })
         .range((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit - 1);
 
