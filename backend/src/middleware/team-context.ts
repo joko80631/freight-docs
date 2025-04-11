@@ -2,6 +2,14 @@ import { Request, Response, NextFunction } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import { Database } from '../types/database';
 
+declare global {
+  namespace Express {
+    interface Request {
+      teamId?: string;
+    }
+  }
+}
+
 export async function teamContextMiddleware(
   req: Request,
   res: Response,

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
+      <DashboardHeader title="Dashboard" />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

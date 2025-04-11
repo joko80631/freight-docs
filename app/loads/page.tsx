@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import { LoadFilters } from '@/components/loads/LoadFilters';
 import { LoadList } from '@/components/loads/LoadList';
 import { Button } from '@/components/ui/button';
@@ -14,15 +14,14 @@ export default function LoadsPage() {
 
   return (
     <div className="space-y-6">
-      <DashboardHeader
-        title="Load Management"
-        description="Manage and track your freight loads"
-      >
+      <DashboardHeader title="Load Management" />
+
+      <div className="flex justify-end">
         <Button onClick={() => router.push('/loads/create')}>
           <Plus className="mr-2 h-4 w-4" />
           New Load
         </Button>
-      </DashboardHeader>
+      </div>
 
       <LoadFilters />
       <LoadList />

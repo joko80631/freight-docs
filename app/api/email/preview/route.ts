@@ -4,6 +4,37 @@ import { getCurrentUser } from '@/lib/auth';
 import { renderTemplate, TemplateName } from '@/lib/email/templates';
 import { NextRequest } from 'next/server';
 
+// Sample data map for each template type
+const sampleDataMap = {
+  'document-upload': {
+    documentType: 'Bill of Lading',
+    uploadedBy: 'John Doe',
+    documentUrl: 'https://example.com/documents/bol-123',
+    loadNumber: 'LOAD-123',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+  },
+  'missing-document': {
+    documentType: 'Bill of Lading',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    loadNumber: 'LOAD-123',
+    uploadUrl: 'https://example.com/documents/upload/bol',
+  },
+  'load-status': {
+    loadNumber: 'LOAD-123',
+    status: 'In Transit',
+    updatedBy: 'John Doe',
+    details: 'Load is currently in transit to destination',
+    loadUrl: 'https://example.com/loads/123',
+  },
+  'team-invite': {
+    teamName: 'Acme Corp',
+    inviterName: 'John Doe',
+    inviteUrl: 'https://example.com/invite/123',
+    role: 'Member',
+    expiresIn: '7 days',
+  },
+};
+
 export async function GET(req: Request) {
   try {
     // Check if preview is enabled
@@ -30,19 +61,12 @@ export async function GET(req: Request) {
       );
     }
 
-    // Mock sample data since the service is unavailable
-    const sampleData = {
-      name: 'John Doe',
-      company: 'Acme Inc',
-      loadNumber: 'LOAD-12345',
-      status: 'In Transit',
-      origin: 'New York, NY',
-      destination: 'Los Angeles, CA',
-      estimatedDelivery: '2023-12-15',
-    };
+    // Get the appropriate sample data for the template
+    const templateKey = templateName as TemplateName;
+    const sampleData = sampleDataMap[templateKey] || {};
 
     // Render the template
-    const { subject, html } = await renderTemplate(templateName as TemplateName, sampleData);
+    const { subject, html } = await renderTemplate(templateKey, sampleData);
 
     return NextResponse.json({
       template: templateName,
