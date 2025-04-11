@@ -59,4 +59,6 @@ export function FleetList({ vehicles, onEdit, onViewDetails }: FleetListProps) {
       </div>
     </div>
   );
-} 
+}
+
+export default FleetList; 

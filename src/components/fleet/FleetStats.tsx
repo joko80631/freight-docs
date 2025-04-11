@@ -67,4 +67,6 @@ export function FleetStats({
       </Card>
     </div>
   );
-} 
+}
+
+export default FleetStats; 

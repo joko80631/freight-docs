@@ -81,4 +81,6 @@ export function LoginForm({ onSubmit }: LoginFormProps) {
       </Button>
     </form>
   );
-} 
+}
+
+export default LoginForm; 

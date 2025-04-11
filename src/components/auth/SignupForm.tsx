@@ -115,4 +115,6 @@ export function SignupForm({ onSubmit }: SignupFormProps) {
       </Button>
     </form>
   );
-} 
+}
+
+export default SignupForm; 

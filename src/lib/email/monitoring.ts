@@ -1,3 +1,28 @@
+export enum EmailEventType {
+  SENT = 'SENT',
+  FAILED = 'FAILED',
+  BOUNCED = 'BOUNCED',
+  RETRIED = 'RETRIED',
+  PREVIEWED = 'PREVIEWED'
+}
+
+export interface EmailError {
+  message: string;
+  code?: string;
+  details?: Record<string, any>;
+}
+
+export interface EmailEvent {
+  id: string;
+  type: EmailEventType;
+  templateId?: string;
+  templateName?: string;
+  recipient?: string;
+  timestamp: Date;
+  error?: EmailError;
+  metadata?: Record<string, any>;
+}
+
 export class EmailMonitoring {
   private metrics: {
     [templateType: string]: {
@@ -6,6 +31,8 @@ export class EmailMonitoring {
       latency: number[];
     };
   } = {};
+
+  private events: EmailEvent[] = [];
 
   recordSuccess(templateType: string): void {
     if (!this.metrics[templateType]) {
@@ -65,4 +92,34 @@ export class EmailMonitoring {
 
     return result;
   }
-} 
+
+  recordEvent(event: EmailEvent): void {
+    if (!event.id) {
+      event.id = crypto.randomUUID();
+    }
+    this.events.unshift(event);
+  }
+
+  logEvent(event: Omit<EmailEvent, 'id' | 'timestamp'>): void {
+    const fullEvent: EmailEvent = {
+      ...event,
+      id: crypto.randomUUID(),
+      timestamp: new Date(),
+    };
+    this.events.unshift(fullEvent);
+  }
+
+  getRecentEvents(limit: number = 100): EmailEvent[] {
+    return this.events.slice(0, limit);
+  }
+
+  getFailedEvents(limit: number = 100): EmailEvent[] {
+    return this.events
+      .filter(event => event.type === EmailEventType.FAILED)
+      .slice(0, limit);
+  }
+}
+
+// Create and export the singleton instance
+const emailMonitoringService = new EmailMonitoring();
+export const getEmailMonitoringService = () => emailMonitoringService; 

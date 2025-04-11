@@ -11,6 +11,14 @@ interface AuditLogEntry {
   data: Record<string, unknown>;
 }
 
+export interface EmailLog {
+  id: string;
+  timestamp: string;
+  type: string;
+  status: string;
+  metadata?: Record<string, any>;
+}
+
 export class AuditLogger {
   private logs: AuditLogEntry[] = [];
 
@@ -53,5 +61,47 @@ export async function logEmailActivity({
     // This could be implemented based on your specific requirements
   } catch (error) {
     console.error('Error logging email activity:', error);
+  }
+}
+
+/**
+ * Get email logs for a specific user
+ */
+export async function getUserEmailLogs(userId: string): Promise<EmailLog[]> {
+  try {
+    // For now, return mock data
+    return [
+      {
+        id: '1',
+        timestamp: new Date().toISOString(),
+        type: 'welcome',
+        status: 'sent',
+        metadata: { userId }
+      }
+    ];
+  } catch (error) {
+    console.error('Error getting user email logs:', error);
+    return [];
+  }
+}
+
+/**
+ * Get email logs for a specific load
+ */
+export async function getLoadEmailLogs(loadId: string): Promise<EmailLog[]> {
+  try {
+    // For now, return mock data
+    return [
+      {
+        id: '1',
+        timestamp: new Date().toISOString(),
+        type: 'load_update',
+        status: 'sent',
+        metadata: { loadId }
+      }
+    ];
+  } catch (error) {
+    console.error('Error getting load email logs:', error);
+    return [];
   }
 } 

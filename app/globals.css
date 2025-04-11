@@ -37,58 +37,30 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-
-  /* Default heading styles */
-  h1 {
-    @apply h1 text-foreground;
-  }
-
-  h2 {
-    @apply h2 text-foreground;
-  }
-
-  h3 {
-    @apply h3 text-foreground;
-  }
-
-  h4 {
-    @apply h4 text-foreground;
-  }
-
-  h5 {
-    @apply h5 text-foreground;
-  }
-
-  /* Default paragraph styles */
-  p {
-    @apply body-medium text-foreground;
-  }
 }
 
 @layer components {
-  /* Heading styles */
-  h1 {
+  .h1 {
     @apply text-4xl font-bold tracking-tight text-foreground;
   }
 
-  h2 {
+  .h2 {
     @apply text-3xl font-semibold tracking-tight text-foreground;
   }
 
-  h3 {
+  .h3 {
     @apply text-2xl font-semibold tracking-tight text-foreground;
   }
 
-  h4 {
+  .h4 {
     @apply text-xl font-semibold tracking-tight text-foreground;
   }
 
-  h5 {
+  .h5 {
     @apply text-lg font-semibold tracking-tight text-foreground;
   }
 
-  /* Paragraph styles */
-  p {
+  .body-medium {
     @apply text-base leading-7 text-foreground [&:not(:first-child)]:mt-6;
   }
 } 
