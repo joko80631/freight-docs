@@ -1,12 +1,13 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
-import { useLoadStore } from '@/src/store/loadStore';
-import { useTeamStore } from '@/src/store/team-store';
+import { useLoadStore } from '@/store/loadStore';
+import { useTeamStore } from '@/store/team-store';
 import { useEffect, useState } from 'react';
 import { Loader2, Trash2 } from 'lucide-react';
 import type { Load } from '@/src/types/database';
-import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS, type LoadStatus } from '@/src/constants/loads';
+import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS, type LoadStatus } from '@/constants/loads';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';

@@ -1,10 +1,11 @@
 'use client';
 
-import { useLoadStore } from '@/src/store/loadStore';
-import { useTeamStore } from '@/src/store/team-store';
+import React from 'react';
+import { useLoadStore } from '@/store/loadStore';
+import { useTeamStore } from '@/store/team-store';
 import { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LOAD_STATUSES, LOAD_STATUS_LABELS, type LoadStatus } from '@/src/constants/loads';
+import { LOAD_STATUSES, LOAD_STATUS_LABELS, type LoadStatus } from '@/constants/loads';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormControl } from '@/components/ui/form-control';
