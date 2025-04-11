@@ -9,6 +9,7 @@ interface LoadFilters {
   load_number?: string;
   start_date?: string;
   end_date?: string;
+  search?: string;
 }
 
 interface LoadPagination {
@@ -78,6 +79,9 @@ export const useLoadStore = create<LoadStore>((set, get) => ({
       }
       if (filters.end_date) {
         query = query.lte('delivery_date', filters.end_date);
+      }
+      if (filters.search) {
+        query = query.or(`reference_number.ilike.%${filters.search}%,origin.ilike.%${filters.search}%,destination.ilike.%${filters.search}%`);
       }
 
       const { data, error } = await query.returns<Load[]>();
