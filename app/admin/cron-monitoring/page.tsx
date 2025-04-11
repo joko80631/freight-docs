@@ -1,14 +1,35 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getCronJobService } from '@/lib/cron/service';
-import { CronJob, CronJobStatus } from '@/lib/cron/types';
+// import { getCronJobService } from '@/lib/cron/service';
+// import { CronJob, CronJobStatus } from '@/lib/cron/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, RefreshCw, CheckCircle, XCircle, Clock, PlayCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { EmailErrorBoundary } from '@/components/email/EmailErrorBoundary';
+
+// Define types locally since we're removing the imports
+type CronJobStatus = 'COMPLETED' | 'FAILED' | 'RUNNING' | 'SKIPPED' | 'PENDING';
+
+interface CronJob {
+  id: string;
+  name: string;
+  description: string;
+  schedule: string;
+  status: CronJobStatus;
+  lastRun?: Date;
+  nextRun?: Date;
+  retryCount?: number;
+  result?: {
+    success: boolean;
+    message: string;
+    error?: {
+      code: string;
+    };
+  };
+}
 
 export default function CronMonitoringDashboard() {
   const [jobs, setJobs] = useState<CronJob[]>([]);
@@ -20,9 +41,10 @@ export default function CronMonitoringDashboard() {
   useEffect(() => {
     const fetchJobs = () => {
       try {
-        const cronService = getCronJobService();
-        const allJobs = cronService.getJobs();
-        setJobs(allJobs);
+        // const cronService = getCronJobService();
+        // const allJobs = cronService.getJobs();
+        // setJobs(allJobs);
+        setJobs([]); // Empty array since we're removing the service
         setError(null);
       } catch (err) {
         setError('Failed to load cron jobs');
@@ -44,15 +66,15 @@ export default function CronMonitoringDashboard() {
   const handleRunJob = async (jobId: string) => {
     try {
       setRunStatus(prev => ({ ...prev, [jobId]: true }));
-      const cronService = getCronJobService();
-      const result = await cronService.runJob(jobId);
+      // const cronService = getCronJobService();
+      // const result = await cronService.runJob(jobId);
       
       // Update UI after a short delay to allow for processing
       setTimeout(() => {
         setRunStatus(prev => ({ ...prev, [jobId]: false }));
         // Refresh the jobs
-        const allJobs = cronService.getJobs();
-        setJobs(allJobs);
+        // const allJobs = cronService.getJobs();
+        // setJobs(allJobs);
       }, 1000);
     } catch (err) {
       setRunStatus(prev => ({ ...prev, [jobId]: false }));
@@ -69,28 +91,28 @@ export default function CronMonitoringDashboard() {
   // Get status badge
   const getStatusBadge = (job: CronJob) => {
     switch (job.status) {
-      case CronJobStatus.COMPLETED:
+      case 'COMPLETED':
         return (
           <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
             <CheckCircle className="mr-1 h-3 w-3" />
             Completed
           </span>
         );
-      case CronJobStatus.FAILED:
+      case 'FAILED':
         return (
           <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800">
             <XCircle className="mr-1 h-3 w-3" />
             Failed
           </span>
         );
-      case CronJobStatus.RUNNING:
+      case 'RUNNING':
         return (
           <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
             <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
             Running
           </span>
         );
-      case CronJobStatus.SKIPPED:
+      case 'SKIPPED':
         return (
           <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
             <Clock className="mr-1 h-3 w-3" />
@@ -171,7 +193,7 @@ export default function CronMonitoringDashboard() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleRunJob(job.id)}
-                          disabled={runStatus[job.id] || job.status === CronJobStatus.RUNNING}
+                          disabled={runStatus[job.id] || job.status === 'RUNNING'}
                           className="flex items-center gap-2"
                         >
                           {runStatus[job.id] ? (

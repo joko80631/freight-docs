@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { getEmailMonitoringService, EmailEvent, EmailEventType } from '@/lib/email/monitoring';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+// import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, CheckCircle, RefreshCw, Mail, XCircle, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -46,17 +46,17 @@ export default function EmailMonitoringDashboard() {
   const getEventTypeBadge = (type: EmailEventType) => {
     switch (type) {
       case EmailEventType.SENT:
-        return <Badge variant="success" className="flex items-center gap-1"><CheckCircle className="h-3 w-3" /> Sent</Badge>;
+        return <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800"><CheckCircle className="h-3 w-3" /> Sent</span>;
       case EmailEventType.FAILED:
-        return <Badge variant="destructive" className="flex items-center gap-1"><XCircle className="h-3 w-3" /> Failed</Badge>;
+        return <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800"><XCircle className="h-3 w-3" /> Failed</span>;
       case EmailEventType.BOUNCED:
-        return <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> Bounced</Badge>;
+        return <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-800"><AlertTriangle className="h-3 w-3" /> Bounced</span>;
       case EmailEventType.RETRIED:
-        return <Badge variant="warning" className="flex items-center gap-1"><RefreshCw className="h-3 w-3" /> Retried</Badge>;
+        return <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-800"><RefreshCw className="h-3 w-3" /> Retried</span>;
       case EmailEventType.PREVIEWED:
-        return <Badge variant="outline" className="flex items-center gap-1"><Mail className="h-3 w-3" /> Preview</Badge>;
+        return <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800"><Mail className="h-3 w-3" /> Preview</span>;
       default:
-        return <Badge variant="outline">{type}</Badge>;
+        return <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">{type}</span>;
     }
   };
 
