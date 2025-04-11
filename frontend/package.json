@@ -77,6 +77,7 @@
   },
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
+    "@swc/jest": "^0.2.37",
     "@testing-library/jest-dom": "^6.4.2",
     "@testing-library/react": "^14.2.1",
     "@testing-library/user-event": "^14.5.2",
@@ -97,9 +98,6 @@
     "postcss": "^8",
     "prettier": "^3.0.0",
     "rimraf": "^5.0.5",
-    "tailwindcss": "^3.3.0",
-    "ts-jest": "^29.1.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5"
+    "tailwindcss": "^3.3.0"
   }
 }

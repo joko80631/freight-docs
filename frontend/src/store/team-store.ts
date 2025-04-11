@@ -1,5 +1,5 @@
+import { createBrowserClient } from '@supabase/ssr'
 import { create } from "zustand";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { persist } from "zustand/middleware";
 
 export interface Team {
@@ -47,11 +47,11 @@ interface TeamMemberWithProfile {
 }
 
 interface TeamStore {
-  currentTeam: Team | null;
   teams: Team[];
-  isLoading: boolean;
-  error: string | null;
+  currentTeam: Team | null;
   hasAttemptedLoad: boolean;
+  isLoading: boolean;
+  error: Error | null;
   setCurrentTeam: (team: Team | null) => void;
   fetchTeams: () => Promise<void>;
   createTeam: (name: string) => Promise<Team>;
@@ -63,16 +63,21 @@ interface TeamStore {
   removeTeamMember: (teamId: string, memberId: string) => Promise<void>;
 }
 
+const createSupabaseClient = () => createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 export const useTeamStore = create<TeamStore>()(
   persist(
     (set, get) => ({
-      currentTeam: null,
       teams: [],
+      currentTeam: null,
+      hasAttemptedLoad: false,
       isLoading: false,
       error: null,
-      hasAttemptedLoad: false,
 
-      setCurrentTeam: (team) => {
+      setCurrentTeam: (team: Team | null) => {
         set({ currentTeam: team });
         // Persist the current team ID in localStorage
         if (team) {
@@ -83,127 +88,50 @@ export const useTeamStore = create<TeamStore>()(
       },
 
       fetchTeams: async () => {
-        const { isLoading } = get();
-        if (isLoading) return; // Prevent multiple simultaneous fetches
-
         set({ isLoading: true, error: null });
         try {
-          const supabase = createClientComponentClient();
+          const supabase = createSupabaseClient();
           
           // Check authentication first
           const { data: { user }, error: authError } = await supabase.auth.getUser();
-          if (authError) throw new Error('Authentication required');
-          if (!user) throw new Error('No authenticated user');
-
-          // First ensure the user has a profile
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-
-          if (!profile) {
-            // Create profile if it doesn't exist
-            const { error: createProfileError } = await supabase
-              .from('profiles')
-              .insert([{
-                id: user.id,
-                email: user.email,
-                full_name: user.user_metadata?.full_name
-              }]);
-
-            if (createProfileError) throw createProfileError;
-          }
-
-          // Fetch teams where user is a member
-          const { data: teamMemberships, error: membershipError } = await supabase
-            .from('team_members')
-            .select('team_id, role')
-            .eq('user_id', user.id);
-
-          if (membershipError) throw membershipError;
-
-          if (!teamMemberships || teamMemberships.length === 0) {
-            // Create a default team for the user if they don't have any
-            const { data: defaultTeam, error: createTeamError } = await supabase
-              .from('teams')
-              .insert([{
-                name: 'My Team'
-              }])
-              .select()
-              .single();
-
-            if (createTeamError) throw createTeamError;
-
-            // Add the user as an owner of the default team
-            const { error: addMemberError } = await supabase
-              .from('team_members')
-              .insert([{
-                team_id: defaultTeam.id,
-                user_id: user.id,
-                role: 'owner'
-              }]);
-
-            if (addMemberError) throw addMemberError;
-
-            // Set the teams array with the default team
-            const teams: Team[] = [{
-              ...defaultTeam,
-              role: 'owner'
-            }];
-
-            set({ teams, currentTeam: teams[0], hasAttemptedLoad: true });
+          if (authError) throw authError;
+          if (!user) {
+            set({ 
+              teams: [], 
+              currentTeam: null, 
+              hasAttemptedLoad: true,
+              isLoading: false 
+            });
             return;
           }
 
-          // Fetch team details in a separate query
-          const { data: teamsData, error: teamsError } = await supabase
+          const { data: teams, error } = await supabase
             .from('teams')
-            .select('id, name, created_at, updated_at')
-            .in('id', teamMemberships.map(tm => tm.team_id));
+            .select('*')
+            .order('created_at', { ascending: false });
 
-          if (teamsError) throw teamsError;
+          if (error) throw error;
 
-          // Transform the data to match our Team interface
-          const teams: Team[] = teamsData.map(team => ({
-            ...team,
-            role: teamMemberships.find(tm => tm.team_id === team.id)?.role || 'member'
-          }));
-
-          set({ teams, hasAttemptedLoad: true });
-
-          // Set current team if not already set
-          const { currentTeam } = get();
-          if (!currentTeam && teams.length > 0) {
-            // Try to restore from localStorage first
-            const savedTeamId = localStorage.getItem('currentTeamId');
-            const savedTeam = teams.find(t => t.id === savedTeamId);
-            
-            if (savedTeam) {
-              set({ currentTeam: savedTeam });
-            } else {
-              set({ currentTeam: teams[0] });
-            }
-          }
+          set({ 
+            teams: teams || [], 
+            currentTeam: teams?.[0] || null,
+            hasAttemptedLoad: true,
+            isLoading: false 
+          });
         } catch (error) {
           console.error('Error fetching teams:', error);
           set({ 
-            error: error instanceof Error ? error.message : 'Failed to fetch teams',
-            teams: [], // Clear teams on error
-            currentTeam: null // Clear current team on error
+            error: error instanceof Error ? error : new Error('Failed to fetch teams'),
+            teams: [],
+            currentTeam: null,
+            isLoading: false 
           });
-          // Clear persisted team data on auth error
-          if (error instanceof Error && error.message === 'Authentication required') {
-            localStorage.removeItem('currentTeamId');
-          }
-        } finally {
-          set({ isLoading: false });
         }
       },
 
       createTeam: async (name) => {
         try {
-          const supabase = createClientComponentClient();
+          const supabase = createSupabaseClient();
           const { data: { user }, error: authError } = await supabase.auth.getUser();
           
           if (authError) throw new Error('Authentication required');
@@ -246,7 +174,7 @@ export const useTeamStore = create<TeamStore>()(
 
       updateTeam: async (teamId, updates) => {
         try {
-          const supabase = createClientComponentClient();
+          const supabase = createSupabaseClient();
           const { data: team, error } = await supabase
             .from('teams')
             .update(updates)
@@ -268,7 +196,7 @@ export const useTeamStore = create<TeamStore>()(
 
       deleteTeam: async (teamId) => {
         try {
-          const supabase = createClientComponentClient();
+          const supabase = createSupabaseClient();
           const { error } = await supabase
             .from('teams')
             .delete()
@@ -298,7 +226,7 @@ export const useTeamStore = create<TeamStore>()(
       },
 
       fetchTeamMembers: async (teamId: string) => {
-        const supabase = createClientComponentClient();
+        const supabase = createSupabaseClient();
         const { data: rawData, error } = await supabase
           .from('team_members')
           .select(`
@@ -325,7 +253,7 @@ export const useTeamStore = create<TeamStore>()(
       },
 
       updateTeamMemberRole: async (teamId: string, memberId: string, role: 'owner' | 'admin' | 'member') => {
-        const supabase = createClientComponentClient();
+        const supabase = createSupabaseClient();
         const { error } = await supabase
           .from('team_members')
           .update({ role })
@@ -336,7 +264,7 @@ export const useTeamStore = create<TeamStore>()(
       },
 
       removeTeamMember: async (teamId: string, memberId: string) => {
-        const supabase = createClientComponentClient();
+        const supabase = createSupabaseClient();
         const { error } = await supabase
           .from('team_members')
           .delete()

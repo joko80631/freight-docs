@@ -1,106 +1,50 @@
-import { toast } from 'sonner';
-
-interface ToastOptions {
-  duration?: number;
-  description?: string;
-  action?: {
-    label: string;
-    onClick: () => void;
-  };
-}
-
-interface PromiseOptions<T> {
-  loading?: string;
-  success?: string;
-  error?: string;
-  onSuccess?: (data: T) => void;
-  onError?: (error: Error) => void;
-}
+import { useCallback } from 'react';
+import { showToast, ToastOptions, PromiseToastOptions } from '@/lib/toast';
 
 export function useToast() {
-  const showSuccess = (title: string, options?: ToastOptions) => {
-    toast.success(title, {
-      description: options?.description,
-      duration: options?.duration ?? 4000,
-      action: options?.action,
-    });
-  };
+  const success = useCallback((title: string, options?: ToastOptions) => {
+    showToast.success(title, options);
+  }, []);
 
-  const showError = (title: string, options?: ToastOptions) => {
-    toast.error(title, {
-      description: options?.description,
-      duration: options?.duration ?? 5000,
-      action: options?.action,
-    });
-  };
+  const error = useCallback((title: string, options?: ToastOptions) => {
+    showToast.error(title, options);
+  }, []);
 
-  const showLoading = (title: string, options?: ToastOptions) => {
-    return toast.loading(title, {
-      description: options?.description,
-      action: options?.action,
-    });
-  };
+  const loading = useCallback((title: string, options?: ToastOptions) => {
+    return showToast.loading(title, options);
+  }, []);
 
-  const showInfo = (title: string, options?: ToastOptions) => {
-    toast(title, {
-      description: options?.description,
-      duration: options?.duration ?? 4000,
-      action: options?.action,
-    });
-  };
+  const info = useCallback((title: string, options?: ToastOptions) => {
+    showToast.info(title, options);
+  }, []);
 
-  const showWarning = (title: string, options?: ToastOptions) => {
-    toast.warning(title, {
-      description: options?.description,
-      duration: options?.duration ?? 4000,
-      action: options?.action,
-    });
-  };
+  const warning = useCallback((title: string, options?: ToastOptions) => {
+    showToast.warning(title, options);
+  }, []);
 
-  const showPromise = async <T>(
+  const promise = useCallback(<T>(
     promise: Promise<T>,
-    options: PromiseOptions<T> = {}
+    options?: PromiseToastOptions<T>
   ) => {
-    const {
-      loading = 'Loading...',
-      success = 'Completed successfully',
-      error = 'Something went wrong',
-      onSuccess,
-      onError,
-    } = options;
+    return showToast.promise(promise, options);
+  }, []);
 
-    try {
-      const result = await toast.promise(promise, {
-        loading,
-        success,
-        error,
-      });
-      
-      if (onSuccess) {
-        onSuccess(result as T);
-      }
-      return result as T;
-    } catch (err) {
-      if (onError) {
-        onError(err instanceof Error ? err : new Error(String(err)));
-      }
-      throw err;
-    }
-  };
+  const dismiss = useCallback((toastId: string) => {
+    showToast.dismiss(toastId);
+  }, []);
 
-  const dismiss = (toastId: string) => {
-    toast.dismiss(toastId);
-  };
+  const handleError = useCallback((error: unknown, defaultMessage = 'An error occurred') => {
+    return showToast.handleError(error, defaultMessage);
+  }, []);
 
   return {
-    showSuccess,
-    showError,
-    showLoading,
-    showInfo,
-    showWarning,
-    showPromise,
+    success,
+    error,
+    loading,
+    info,
+    warning,
+    promise,
     dismiss,
-    // Also export the raw toast function for advanced use cases
-    toast
+    handleError,
   };
 } 

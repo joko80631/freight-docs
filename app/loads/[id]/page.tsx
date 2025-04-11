@@ -4,29 +4,25 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { Loader2 } from 'lucide-react';
-import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS, type LoadStatus } from '@/src/constants/loads';
+import { LOAD_STATUS_COLORS, LOAD_STATUS_LABELS, type LoadStatus } from '@/constants/loads';
 import { DocumentUpload } from '@/components/documents/DocumentUpload';
 import { Button } from '@/components/ui/button';
 import { FormControl } from '@/components/ui/form-control';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { loadFormSchema } from '@/src/lib/validations/load';
-import type { Database } from '@/src/types/database';
+import { Card, CardContent } from '@/components/ui/card';
+import { loadFormSchema } from '@/lib/validations/load';
+import { LoadCompletionStatus } from '@/components/loads/LoadCompletionStatus';
+import { LoadDocumentList } from '@/components/loads/LoadDocumentList';
+import type { Database } from '@/types/database';
 
 type Load = Database['public']['Tables']['loads']['Row'];
 type Document = Database['public']['Tables']['documents']['Row'];
 
-interface Load {
-  id: string;
-  team_id: string;
-  load_number: string;
-  status: LoadStatus;
-  origin: string;
-  destination: string;
-  created_at: string;
-  updated_at: string | null;
-  delivery_date: string;
-  notes: string | null;
+interface LoadFormData extends Omit<Load, 'id' | 'created_at' | 'updated_at'> {
+  id?: string;
+  created_at?: string;
+  updated_at?: string | null;
 }
 
 export default function LoadDetailPage() {
@@ -36,7 +32,7 @@ export default function LoadDetailPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState<Partial<Load>>({});
+  const [formData, setFormData] = useState<LoadFormData>({} as LoadFormData);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const fetchLoad = async () => {
@@ -67,11 +63,12 @@ export default function LoadDetailPage() {
   }, [params?.id]);
 
   const handleStatusChange = async (newStatus: LoadStatus) => {
+    if (!load?.id) return;
     try {
       const { error } = await supabase
         .from('loads')
         .update({ status: newStatus })
-        .eq('id', params.id);
+        .eq('id', load.id);
 
       if (error) throw error;
       setLoad(prev => prev ? { ...prev, status: newStatus } : null);
@@ -95,11 +92,13 @@ export default function LoadDetailPage() {
       return;
     }
 
+    if (!load?.id) return;
+
     try {
       const { error } = await supabase
         .from('loads')
         .update(formData)
-        .eq('id', params.id);
+        .eq('id', load.id);
 
       if (error) throw error;
       setLoad(prev => prev ? { ...prev, ...formData } : null);
@@ -138,7 +137,7 @@ export default function LoadDetailPage() {
             {isEditing ? 'Cancel' : 'Edit'}
           </Button>
           <Button
-            onClick={() => handleSubmit}
+            onClick={handleSubmit}
             disabled={!isEditing}
           >
             Save Changes
@@ -146,81 +145,68 @@ export default function LoadDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <FormControl label="Load Number" error={formErrors.load_number}>
-            <Input
-              value={formData.load_number || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, load_number: e.target.value }))}
-              disabled={!isEditing}
-            />
-          </FormControl>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <FormControl label="Load Number" error={formErrors.load_number}>
+                  <Input
+                    value={formData.load_number || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, load_number: e.target.value }))}
+                    disabled={!isEditing}
+                  />
+                </FormControl>
 
-          <FormControl label="Status" error={formErrors.status}>
-            <Select
-              value={formData.status || ''}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as LoadStatus }))}
-              disabled={!isEditing}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(LOAD_STATUS_LABELS).map(([status, label]) => (
-                  <SelectItem key={status} value={status}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormControl>
+                <FormControl label="Status" error={formErrors.status}>
+                  <Select
+                    value={formData.status || ''}
+                    onValueChange={(value: LoadStatus) => setFormData(prev => ({ ...prev, status: value }))}
+                    disabled={!isEditing}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(LOAD_STATUS_LABELS).map(([status, label]) => (
+                        <SelectItem key={status} value={status}>
+                          {label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormControl>
 
-          <FormControl label="Origin" error={formErrors.origin}>
-            <Input
-              value={formData.origin || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, origin: e.target.value }))}
-              disabled={!isEditing}
-            />
-          </FormControl>
+                <FormControl label="Origin" error={formErrors.origin}>
+                  <Input
+                    value={formData.origin || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, origin: e.target.value }))}
+                    disabled={!isEditing}
+                  />
+                </FormControl>
 
-          <FormControl label="Destination" error={formErrors.destination}>
-            <Input
-              value={formData.destination || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, destination: e.target.value }))}
-              disabled={!isEditing}
-            />
-          </FormControl>
+                <FormControl label="Destination" error={formErrors.destination}>
+                  <Input
+                    value={formData.destination || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, destination: e.target.value }))}
+                    disabled={!isEditing}
+                  />
+                </FormControl>
+              </div>
+            </CardContent>
+          </Card>
+
+          <LoadDocumentList documents={documents} />
         </div>
 
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Documents</h2>
-          <DocumentUpload loadId={load.id} onUploadComplete={fetchLoad} />
-          
-          {documents.length > 0 ? (
-            <div className="space-y-2">
-              {documents.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <p className="font-medium">{doc.file_name}</p>
-                    <p className="text-sm text-gray-500">{doc.type}</p>
-                  </div>
-                  <a
-                    href={doc.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-500"
-                  >
-                    View
-                  </a>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500">No documents uploaded yet.</p>
-          )}
+        <div className="space-y-6">
+          <LoadCompletionStatus documents={documents} />
+          <Card>
+            <CardContent className="pt-6">
+              <h2 className="text-lg font-semibold mb-4">Upload Document</h2>
+              <DocumentUpload loadId={load.id} onUploadComplete={fetchLoad} />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ import { useTeamStore } from './teamStore';
 import type { Database, Document } from '@/types/database';
 import { getErrorMessage } from '@/lib/errors';
 import { showToast } from '@/lib/toast';
+import { classifyDocument, ClassificationResult, ClassificationHistory } from '@/lib/classification';
 
 export interface DocumentFilters {
   type: string | null;
@@ -35,6 +36,8 @@ interface DocumentStore {
   uploadDocument: (file: File, metadata: Partial<Document>) => Promise<Document>;
   deleteDocument: (id: string) => Promise<void>;
   resetFilters: () => void;
+  classifyDocument: (documentId: string) => Promise<void>;
+  retryClassification: (documentId: string) => Promise<void>;
 }
 
 export const useDocumentStore = create<DocumentStore>((set, get) => {
@@ -133,7 +136,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => {
 
         if (uploadError) throw uploadError;
 
-        const { data: document, error } = await supabase
+        // Create initial document record
+        const { data: document, error: dbError } = await supabase
           .from('documents')
           .insert([{ 
             ...metadata, 
@@ -141,12 +145,48 @@ export const useDocumentStore = create<DocumentStore>((set, get) => {
             file_path: filePath,
             file_name: file.name,
             file_size: file.size,
-            file_type: file.type
+            file_type: file.type,
+            status: 'pending',
+            classification_history: []
           }])
           .select()
           .single();
 
-        if (error) throw error;
+        if (dbError) throw dbError;
+
+        // Trigger classification
+        try {
+          const classification = await classifyDocument(file);
+          
+          const { error: updateError } = await supabase
+            .from('documents')
+            .update({
+              type: classification.type,
+              confidence_score: classification.confidence,
+              classification_reason: classification.reason,
+              status: 'classified',
+              classification_history: [{
+                timestamp: new Date().toISOString(),
+                ...classification
+              }]
+            })
+            .eq('id', document.id);
+
+          if (updateError) throw updateError;
+
+          document.type = classification.type;
+          document.confidence_score = classification.confidence;
+          document.classification_reason = classification.reason;
+          document.status = 'classified';
+          document.classification_history = [{
+            timestamp: new Date().toISOString(),
+            ...classification
+          }];
+        } catch (classificationError) {
+          console.error('Classification error:', classificationError);
+          // Don't throw - document is still uploaded
+          showToast.error('Warning', 'Document uploaded but classification failed');
+        }
 
         set((state) => ({ 
           documents: [document, ...state.documents] 
@@ -196,6 +236,80 @@ export const useDocumentStore = create<DocumentStore>((set, get) => {
       } finally {
         set({ isLoading: false });
       }
+    },
+
+    classifyDocument: async (documentId) => {
+      set({ isLoading: true, error: null });
+      try {
+        const document = get().documents.find(d => d.id === documentId);
+        if (!document) throw new Error('Document not found');
+
+        const { data: fileData, error: downloadError } = await supabase.storage
+          .from('documents')
+          .download(document.file_path);
+
+        if (downloadError) throw downloadError;
+
+        // Convert Blob to File
+        const file = new File([fileData], document.name, {
+          type: document.file_type || 'application/octet-stream'
+        });
+
+        const classification = await classifyDocument(file);
+        
+        const { error: updateError } = await supabase
+          .from('documents')
+          .update({
+            type: classification.type,
+            confidence_score: classification.confidence,
+            classification_reason: classification.reason,
+            status: 'classified',
+            classification_history: [
+              ...(document.classification_history || []),
+              {
+                timestamp: new Date().toISOString(),
+                ...classification
+              }
+            ]
+          })
+          .eq('id', documentId);
+
+        if (updateError) throw updateError;
+
+        set((state) => ({
+          documents: state.documents.map(doc => 
+            doc.id === documentId 
+              ? {
+                  ...doc,
+                  type: classification.type,
+                  confidence_score: classification.confidence,
+                  classification_reason: classification.reason,
+                  status: 'classified',
+                  classification_history: [
+                    ...(doc.classification_history || []),
+                    {
+                      timestamp: new Date().toISOString(),
+                      ...classification
+                    }
+                  ]
+                }
+              : doc
+          )
+        }));
+
+        showToast.success('Success', 'Document classified successfully');
+      } catch (error) {
+        const message = getErrorMessage(error);
+        set({ error: message });
+        showToast.error('Error', message);
+        throw error;
+      } finally {
+        set({ isLoading: false });
+      }
+    },
+
+    retryClassification: async (documentId) => {
+      return get().classifyDocument(documentId);
     }
   };
 }); 

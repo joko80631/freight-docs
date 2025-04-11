@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createBrowserClient } from '@supabase/ssr';
 import type { Database, Load } from '@/types/database';
 import { getErrorMessage } from '@/lib/errors';
+import { api } from '@/lib/api';
 
 interface LoadFilters {
   status?: string;
@@ -26,6 +27,8 @@ interface LoadStore {
   setFilters: (filters: LoadFilters) => void;
   setPagination: (pagination: LoadPagination) => void;
   fetchLoads: (teamId: string) => Promise<void>;
+  linkDocumentToLoad: (documentId: string, loadId: string) => Promise<void>;
+  unlinkDocumentFromLoad: (documentId: string) => Promise<void>;
 }
 
 export const useLoadStore = create<LoadStore>((set, get) => {
@@ -103,6 +106,28 @@ export const useLoadStore = create<LoadStore>((set, get) => {
           error: getErrorMessage(error), 
           isLoading: false 
         });
+      }
+    },
+
+    linkDocumentToLoad: async (documentId: string, loadId: string) => {
+      set({ isLoading: true, error: null });
+      try {
+        await api.post(`/documents/${documentId}/link-load`, { loadId });
+        set({ isLoading: false });
+      } catch (error) {
+        set({ error: 'Failed to link document to load', isLoading: false });
+        throw error;
+      }
+    },
+
+    unlinkDocumentFromLoad: async (documentId: string) => {
+      set({ isLoading: true, error: null });
+      try {
+        await api.post(`/documents/${documentId}/unlink-load`);
+        set({ isLoading: false });
+      } catch (error) {
+        set({ error: 'Failed to unlink document from load', isLoading: false });
+        throw error;
       }
     }
   };

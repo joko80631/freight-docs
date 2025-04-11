@@ -50,29 +50,15 @@ export interface DocumentEvent {
 export interface Document {
   id: string;
   name: string;
-  storage_path: string;
-  type?: DocumentType | null;
-  confidence_score?: number | null;
-  classified_by?: string | null;
-  classified_at?: string | null;
-  classification_reason?: string | null;
-  source?: DocumentSource | null;
-  team_id: string;
-  uploaded_by: string;
-  uploaded_at: string;
-  size?: number | null;
-  mime_type?: string | null;
-  load_id?: string | null;
-  load?: {
-    id: string;
-    reference_number?: string;
-    origin?: string;
-    destination?: string;
-  } | null;
-  status: DocumentStatus;
-  classification_history?: ClassificationHistoryEntry[];
-  events?: DocumentEvent[];
-  url?: string;
+  type: string;
+  fileUrl: string;
+  size?: number;
+  mimeType?: string;
+  createdAt: string;
+  updatedAt: string;
+  metadata?: Record<string, unknown>;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  error?: string;
 }
 
 export interface AuditLogEntry {

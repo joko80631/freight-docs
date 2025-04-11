@@ -1,16 +1,30 @@
 /** Status of a document in the classification process */
 export type DocumentStatus = 'pending' | 'classified' | 'error';
 
+/** Classification history entry */
+export interface ClassificationHistory {
+  timestamp: string;
+  type: string;
+  confidence: number;
+  reason: string;
+}
+
 /** Represents a document in the system */
 export interface Document {
   /** Unique identifier for the document */
   id: string;
   /** ID of the team that owns this document */
   team_id: string;
+  /** ID of the associated load, if any */
+  load_id: string | null;
   /** Original name of the uploaded file */
   name: string;
   /** Path to the file in storage */
   file_path: string;
+  /** MIME type of the file */
+  file_type: string;
+  /** Size of the file in bytes */
+  file_size: number;
   /** Classification type of the document (e.g., 'bol', 'pod', 'invoice') */
   type: string | null;
   /** Current status of the document */
@@ -19,6 +33,8 @@ export interface Document {
   confidence_score: number | null;
   /** Explanation for the classification decision */
   classification_reason: string | null;
+  /** History of classification attempts */
+  classification_history: ClassificationHistory[];
   /** Timestamp when the document was created */
   created_at: string;
   /** Timestamp when the document was last updated */

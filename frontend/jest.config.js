@@ -7,38 +7,22 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  testEnvironment: 'jest-environment-jsdom',
   setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+  testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  testMatch: ['**/__tests__/**/*.test.[jt]s?(x)'],
   transform: {
-    '^.+\\.(t|j)sx?$': ['@swc/jest', {
-      jsc: {
-        transform: {
-          react: {
-            runtime: 'automatic'
-          }
-        }
-      }
-    }]
+    '^.+\\.(t|j)sx?$': ['@swc/jest']
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(jose|@supabase|openai)/)'
+    'node_modules/(?!(jose|@supabase|@radix-ui|@floating-ui|cmdk|openai)/)'
   ],
-  collectCoverageFrom: [
-    'src/**/*.{js,jsx,ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/*.stories.{js,jsx,ts,tsx}',
-    '!src/**/*.test.{js,jsx,ts,tsx}',
-    '!src/**/index.{js,ts}',
-    '!src/**/*.config.{js,ts}',
-  ],
-  testPathIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/.next/'],
   moduleDirectories: ['node_modules', '<rootDir>'],
   testEnvironmentOptions: {
-    customExportConditions: []
-  },
+    customExportConditions: ['']
+  }
 };
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
