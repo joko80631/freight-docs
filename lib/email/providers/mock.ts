@@ -1,10 +1,10 @@
-import { EmailProvider, EmailOptions, SendResult } from '../types';
+import { EmailProvider, EmailOptions, SendResult, EmailRecipient } from '../types';
 
 /**
  * Mock email provider for testing
  * Stores sent emails in memory and provides utilities for assertions
  */
-export class MockEmailProvider implements EmailProvider {
+export class MockProvider implements EmailProvider {
   private sentEmails: Array<{
     options: EmailOptions;
     timestamp: Date;
@@ -55,9 +55,11 @@ export class MockEmailProvider implements EmailProvider {
     const matchingEmail = this.sentEmails.find(({ options }) => {
       return Object.entries(criteria).every(([key, value]) => {
         if (key === 'to' && typeof value === 'string') {
-          return typeof options.to === 'string' 
-            ? options.to === value
-            : options.to.email === value;
+          const to = options.to;
+          if (Array.isArray(to)) {
+            return to.some(recipient => recipient.email === value);
+          }
+          return to.email === value;
         }
         return options[key as keyof EmailOptions] === value;
       });

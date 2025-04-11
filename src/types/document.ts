@@ -1,10 +1,24 @@
+export type DocumentType = 'bol' | 'pod' | 'invoice' | 'other';
+export type DocumentSource = 'openai' | 'user' | 'openai_retry';
+export type DocumentStatus = 'received' | 'missing' | 'invalid' | 'pending' | 'processed' | 'rejected';
+
 export interface ClassificationHistoryEntry {
   id: string;
-  type: string;
+  document_id: string;
+  previous_type: string | null;
+  new_type: string;
+  confidence_score: number | null;
+  classified_by: string;
+  classified_at: string;
+  source: DocumentSource;
+  reason: string | null;
+  created_at: string;
+}
+
+export interface ClassificationResult {
+  type: DocumentType;
   confidence: number;
   reason?: string;
-  timestamp: string;
-  changed_by?: string;
 }
 
 export type DocumentEventType = 
@@ -36,18 +50,48 @@ export interface DocumentEvent {
 export interface Document {
   id: string;
   name: string;
-  type: string;
-  confidence: number;
-  load_id?: string;
+  storage_path: string;
+  type?: DocumentType | null;
+  confidence_score?: number | null;
+  classified_by?: string | null;
+  classified_at?: string | null;
+  classification_reason?: string | null;
+  source?: DocumentSource | null;
+  team_id: string;
+  uploaded_by: string;
+  uploaded_at: string;
+  size?: number | null;
+  mime_type?: string | null;
+  load_id?: string | null;
   load?: {
     id: string;
     reference_number?: string;
-    origin: string;
-    destination: string;
-  };
-  uploaded_at: string;
-  status: 'pending' | 'processed' | 'error';
-  classification_history: ClassificationHistoryEntry[];
-  events: DocumentEvent[];
+    origin?: string;
+    destination?: string;
+  } | null;
+  status: DocumentStatus;
+  classification_history?: ClassificationHistoryEntry[];
+  events?: DocumentEvent[];
   url?: string;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  action: string;
+  document_ids: string[];
+  team_id: string;
+  user_id: string;
+  metadata: Record<string, any>;
+  created_at: string;
+  users?: {
+    email?: string;
+    display_name?: string;
+  };
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  details?: string;
 } 

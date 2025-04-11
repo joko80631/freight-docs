@@ -1,7 +1,7 @@
 import { getEmailRecoveryService } from '@/lib/email/recovery';
 import { getEmailMonitoringService, EmailEventType } from '@/lib/email/monitoring';
-import { EmailSendError } from '@/lib/email/errors';
-import { EmailOptions } from '@/lib/email/types';
+import { EmailSendError, EmailRecipientError } from '@/lib/email/errors';
+import { EmailOptions, EmailRecipient } from '@/lib/email/types';
 
 describe('Email Recovery System', () => {
   let recoveryService: ReturnType<typeof getEmailRecoveryService>;
@@ -13,8 +13,6 @@ describe('Email Recovery System', () => {
     monitoringService = getEmailMonitoringService();
     
     // Clear any existing retry records
-    // This is a bit of a hack since we don't have a public method to clear the queue
-    // In a real implementation, we would have a method to reset the service for testing
     (recoveryService as any).retryQueue = [];
   });
   
@@ -22,8 +20,9 @@ describe('Email Recovery System', () => {
     it('should add a failed email to the retry queue', () => {
       // Create test data
       const emailId = 'test-email-123';
+      const recipient: EmailRecipient = { email: 'test@example.com' };
       const options: EmailOptions = {
-        to: 'test@example.com',
+        to: recipient,
         subject: 'Test Email',
         content: 'This is a test email',
       };
@@ -49,12 +48,13 @@ describe('Email Recovery System', () => {
     it('should not add non-retryable errors to the queue', () => {
       // Create test data with a non-retryable error
       const emailId = 'test-email-123';
+      const recipient: EmailRecipient = { email: 'test@example.com' };
       const options: EmailOptions = {
-        to: 'test@example.com',
+        to: recipient,
         subject: 'Test Email',
         content: 'This is a test email',
       };
-      const error = new Error('Invalid recipient');
+      const error = new EmailRecipientError('Invalid recipient');
       
       // Add to retry queue
       const retryRecord = recoveryService.addToRetryQueue(emailId, options, error);
@@ -73,8 +73,9 @@ describe('Email Recovery System', () => {
       // Add multiple retry records
       const emailId1 = 'test-email-1';
       const emailId2 = 'test-email-2';
+      const recipient: EmailRecipient = { email: 'test@example.com' };
       const options: EmailOptions = {
-        to: 'test@example.com',
+        to: recipient,
         subject: 'Test Email',
         content: 'This is a test email',
       };
@@ -94,13 +95,15 @@ describe('Email Recovery System', () => {
       // Add retry records for different recipients
       const emailId1 = 'test-email-1';
       const emailId2 = 'test-email-2';
+      const recipient1: EmailRecipient = { email: 'test1@example.com' };
+      const recipient2: EmailRecipient = { email: 'test2@example.com' };
       const options1: EmailOptions = {
-        to: 'test1@example.com',
+        to: recipient1,
         subject: 'Test Email 1',
         content: 'This is a test email',
       };
       const options2: EmailOptions = {
-        to: 'test2@example.com',
+        to: recipient2,
         subject: 'Test Email 2',
         content: 'This is a test email',
       };
@@ -122,8 +125,9 @@ describe('Email Recovery System', () => {
     it('should retry a specific email', async () => {
       // Add a retry record
       const emailId = 'test-email-123';
+      const recipient: EmailRecipient = { email: 'test@example.com' };
       const options: EmailOptions = {
-        to: 'test@example.com',
+        to: recipient,
         subject: 'Test Email',
         content: 'This is a test email',
       };
@@ -133,8 +137,6 @@ describe('Email Recovery System', () => {
       expect(retryRecord).not.toBeNull();
       
       // Mock the email provider to simulate a successful retry
-      // This is a bit of a hack since we don't have a proper way to mock the provider
-      // In a real implementation, we would use a proper mocking framework
       const originalGetEmailProvider = (global as any).getEmailProvider;
       (global as any).getEmailProvider = jest.fn().mockReturnValue({
         sendEmail: jest.fn().mockResolvedValue({
@@ -160,8 +162,9 @@ describe('Email Recovery System', () => {
     it('should handle retry failures', async () => {
       // Add a retry record
       const emailId = 'test-email-123';
+      const recipient: EmailRecipient = { email: 'test@example.com' };
       const options: EmailOptions = {
-        to: 'test@example.com',
+        to: recipient,
         subject: 'Test Email',
         content: 'This is a test email',
       };
@@ -173,13 +176,7 @@ describe('Email Recovery System', () => {
       // Mock the email provider to simulate a failed retry
       const originalGetEmailProvider = (global as any).getEmailProvider;
       (global as any).getEmailProvider = jest.fn().mockReturnValue({
-        sendEmail: jest.fn().mockResolvedValue({
-          success: false,
-          error: {
-            code: 'SEND_ERROR',
-            message: 'Failed to send email again',
-          },
-        }),
+        sendEmail: jest.fn().mockRejectedValue(new EmailSendError('Failed to send email again')),
       });
       
       // Retry the email
@@ -202,8 +199,9 @@ describe('Email Recovery System', () => {
     it('should handle email bounces', () => {
       // Add a retry record
       const emailId = 'test-email-123';
+      const recipient: EmailRecipient = { email: 'test@example.com' };
       const options: EmailOptions = {
-        to: 'test@example.com',
+        to: recipient,
         subject: 'Test Email',
         content: 'This is a test email',
       };

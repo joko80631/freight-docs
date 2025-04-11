@@ -1,20 +1,31 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/database';
+import { Load as LoadType, LoadStatus } from '@/types/database';
 
 export interface Load {
   id: string;
-  reference_number: string;
-  status: string;
+  team_id: string;
+  load_number: string;
+  status: LoadStatus;
   origin: string;
   destination: string;
   created_at: string;
-  team_id: string;
-  // Add other load properties as needed
+  updated_at: string | null;
+  delivery_date: string;
+  vehicle_id?: string;
+  driver_id?: string;
+  customer_name?: string | null;
+  carrier_name?: string;
+  carrier_mc_number?: string;
+  carrier_dot_number?: string;
+  driver_name?: string;
+  driver_phone?: string;
+  notes?: string | null;
 }
 
 interface LoadFilters {
-  status?: string;
+  status?: LoadStatus;
   dateRange?: string;
   search?: string;
 }
@@ -123,7 +134,7 @@ export const useLoadStore = create<LoadStore>((set, get) => ({
         }
       }
       if (filters.search) {
-        query = query.or(`reference_number.ilike.%${filters.search}%,origin.ilike.%${filters.search}%,destination.ilike.%${filters.search}%`);
+        query = query.or(`load_number.ilike.%${filters.search}%,origin.ilike.%${filters.search}%,destination.ilike.%${filters.search}%`);
       }
 
       const { data, error } = await query;

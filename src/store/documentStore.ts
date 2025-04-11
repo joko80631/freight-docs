@@ -1,24 +1,31 @@
 import { create } from 'zustand';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/types/database';
+import { Document as DocumentType, DocumentType as DocType, DocumentStatus } from '@/types/document';
 
 export interface Document {
   id: string;
   name: string;
-  file_path: string;
-  file_url: string;
-  file_type: string;
-  file_size: number;
-  document_type: string;
-  confidence: number;
-  load_id: string | null;
+  storage_path: string;
+  type?: DocType | null;
+  confidence_score?: number | null;
+  classified_by?: string | null;
+  classified_at?: string | null;
+  classification_reason?: string | null;
+  source?: string | null;
   team_id: string;
-  created_at: string;
-  updated_at: string;
+  uploaded_by: string;
+  uploaded_at: string;
+  size?: number | null;
+  mime_type?: string | null;
+  load_id?: string | null;
+  status: DocumentStatus;
+  url?: string;
 }
 
 interface DocumentFilters {
-  type?: string;
+  type?: DocType;
+  status?: DocumentStatus;
   confidence?: number;
   loadId?: string;
   search?: string;
@@ -92,15 +99,18 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
         .from('documents')
         .select('*')
         .eq('team_id', teamId)
-        .order('created_at', { ascending: false })
+        .order('uploaded_at', { ascending: false })
         .range((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit - 1);
 
       // Apply filters
       if (filters.type) {
-        query = query.eq('document_type', filters.type);
+        query = query.eq('type', filters.type);
+      }
+      if (filters.status) {
+        query = query.eq('status', filters.status);
       }
       if (filters.confidence !== undefined) {
-        query = query.gte('confidence', filters.confidence);
+        query = query.gte('confidence_score', filters.confidence);
       }
       if (filters.loadId) {
         query = query.eq('load_id', filters.loadId);

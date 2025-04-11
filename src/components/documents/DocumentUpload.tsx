@@ -7,6 +7,22 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Upload } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTeamStore } from '@/store/team-store';
+import { DocumentType, DocumentStatus } from '@/types/document';
+import { ApiResponse } from '@/types/document';
+
+const documentTypes: DocumentType[] = [
+  'BOL', // Bill of Lading
+  'POD', // Proof of Delivery
+  'INVOICE',
+  'OTHER'
+];
+
+interface UploadResponse {
+  id: string;
+  name: string;
+  status: DocumentStatus;
+  url: string;
+}
 
 export function DocumentUpload() {
   const [isUploading, setIsUploading] = useState(false);
@@ -37,10 +53,14 @@ export function DocumentUpload() {
           body: formData
         });
 
-        const data = await response.json();
+        const data: ApiResponse<UploadResponse> = await response.json();
 
-        if (!response.ok) {
+        if (!response.ok || !data.success) {
           throw new Error(data.error || 'Failed to upload document');
+        }
+
+        if (data.data?.status === 'INVALID') {
+          throw new Error('Invalid document format');
         }
       }
 

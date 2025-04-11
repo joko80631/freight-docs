@@ -1,58 +1,51 @@
-import { RenderedEmailTemplate, BaseTemplateData, TEMPLATE_VERSIONS } from './index';
+import { EmailTemplate, TEMPLATE_VERSIONS } from '../types';
+import { baseTemplate } from './base';
 
-interface MissingDocumentData extends BaseTemplateData {
-  documentType: string;
-  dueDate: string;
-  loadNumber?: string;
-  uploadUrl: string;
-}
-
-export async function missingDocumentTemplate(data: MissingDocumentData): Promise<RenderedEmailTemplate> {
-  const {
-    documentType,
-    dueDate,
-    loadNumber,
-    uploadUrl,
-  } = data;
-
-  const loadInfo = loadNumber ? `for Load #${loadNumber}` : '';
-  const subject = `Missing ${documentType} Document ${loadInfo}`;
-  
-  const html = `
-    <h2>Missing Document Notice</h2>
-    <p>A ${documentType} document is required ${loadInfo}.</p>
-    
-    <div style="margin: 20px 0;">
-      <p><strong>Document Details:</strong></p>
+export const missingDocumentTemplate: EmailTemplate = {
+  type: 'missing-document',
+  to: '{{user.email}}',
+  subject: 'Missing Document Required for {{shipment.id}}',
+  html: baseTemplate({
+    content: `
+      <h1>Missing Document Required</h1>
+      <p>Hello {{user.name}},</p>
+      <p>We noticed that the following document is missing for shipment {{shipment.id}}:</p>
       <ul>
-        <li>Document Type: ${documentType}</li>
-        <li>Due Date: ${dueDate}</li>
-        ${loadNumber ? `<li>Load Number: ${loadNumber}</li>` : ''}
+        {{#each shipment.missingDocuments}}
+          <li>{{this}}</li>
+        {{/each}}
       </ul>
-    </div>
-
-    <div style="margin: 20px 0;">
-      <a href="${uploadUrl}" style="
-        display: inline-block;
-        background-color: #0070f3;
-        color: white;
-        text-decoration: none;
-        padding: 12px 24px;
-        border-radius: 4px;
-        font-weight: 500;
-      ">
-        Upload Document
-      </a>
-    </div>
-
-    <p style="color: #666; font-size: 14px;">
-      Please upload the required document before the due date to avoid any delays.
-    </p>
-  `;
-
-  return { 
-    subject, 
-    html,
-    version: TEMPLATE_VERSIONS['missing-document']
-  };
-} 
+      <p>Please upload the missing document(s) as soon as possible to avoid any delays.</p>
+      <p>Due date: {{shipment.dueDate}}</p>
+      <p>
+        <a href="{{app.url}}/shipments/{{shipment.id}}/documents" class="button">
+          Upload Document
+        </a>
+      </p>
+      <p>If you have any questions, please don't hesitate to contact us.</p>
+      <p>Best regards,<br>The {{app.name}} Team</p>
+    `,
+    title: 'Missing Document Required',
+    unsubscribeUrl: '{{unsubscribeUrl}}'
+  }),
+  version: TEMPLATE_VERSIONS['missing-document'],
+  metadata: {
+    template: 'missing-document',
+    variables: {
+      shipment: {
+        id: 'string',
+        missingDocuments: 'string[]',
+        dueDate: 'string'
+      },
+      user: {
+        name: 'string',
+        email: 'string'
+      },
+      app: {
+        name: 'string',
+        url: 'string'
+      },
+      unsubscribeUrl: 'string'
+    }
+  }
+}; 

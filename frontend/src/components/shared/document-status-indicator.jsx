@@ -73,15 +73,16 @@ const DocumentStatusIndicator = memo(({ documents = [], showDetails = true }) =>
         </div>
       )}
       
-      <div className="w-full bg-gray-200 rounded-full h-1.5">
-        <div
-          className={`h-1.5 rounded-full transition-all duration-300 ${
-            status === 'complete' ? 'bg-green-500' :
-            status === 'partial' ? 'bg-yellow-500' :
-            'bg-red-500'
+      <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div 
+          className={`absolute h-full transition-all duration-300 ease-in-out ${
+            completionPercentage >= 100 ? 'bg-green-500' : 'bg-blue-500'
           }`}
           style={{ width: `${completionPercentage}%` }}
         />
+        <div className="absolute inset-0 flex items-center justify-center text-xs font-medium text-gray-700">
+          {completionPercentage}%
+        </div>
       </div>
     </div>
   );

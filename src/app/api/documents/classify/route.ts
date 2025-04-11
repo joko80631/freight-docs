@@ -3,10 +3,16 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import OpenAI from 'openai';
 import { withAuditLogging, AUDIT_ACTIONS } from '@/lib/audit-middleware-stub';
+import { DocumentType, DocumentStatus, DocumentSource } from '@/types/document';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
+
+const documentTypeSchema = {
+  type: 'string',
+  enum: ['bol', 'pod', 'invoice', 'other'],
+} as const;
 
 async function handleClassification(request: Request, context: { userId: string, teamId: string }) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -111,13 +117,13 @@ async function handleClassification(request: Request, context: { userId: string,
   } catch (error) {
     // Fallback: Parse from text response
     const content = response.choices[0].message.content || '';
-    const typeMatch = content.match(/type:?\s*([a-z]+)/i);
+    const typeMatch = content.match(/type:\s*([A-Za-z_]+)/i);
     const confidenceMatch = content.match(/confidence:?\s*(0\.\d+)/i);
     
     classification = {
-      type: typeMatch ? typeMatch[1].toLowerCase() : 'other',
+      type: typeMatch ? typeMatch[1].toLowerCase() as DocumentType : 'other',
       confidence: confidenceMatch ? parseFloat(confidenceMatch[1]) : 0.5,
-      reason: 'Extracted from text response'
+      reason: 'Classified based on document content'
     };
   }
 
@@ -125,12 +131,13 @@ async function handleClassification(request: Request, context: { userId: string,
   const { error: updateError } = await supabase
     .from('documents')
     .update({
-      type: classification.type,
+      type: classification.type.toLowerCase() as DocumentType,
       confidence_score: classification.confidence,
       classified_by: context.userId,
       classified_at: new Date().toISOString(),
       classification_reason: classification.reason || null,
-      source: 'openai'
+      source: 'openai' as DocumentSource,
+      status: 'processed' as DocumentStatus
     })
     .eq('id', documentId);
 
@@ -148,11 +155,11 @@ async function handleClassification(request: Request, context: { userId: string,
     .insert({
       document_id: documentId,
       previous_type: null,
-      new_type: classification.type,
+      new_type: classification.type.toLowerCase() as DocumentType,
       confidence_score: classification.confidence,
       classified_by: context.userId,
       classified_at: new Date().toISOString(),
-      source: 'openai',
+      source: 'openai' as DocumentSource,
       reason: classification.reason || null
     });
 
@@ -176,6 +183,6 @@ export const POST = withAuditLogging(handleClassification, {
   getMetadata: (body, result) => ({
     confidence: result?.classification?.confidence,
     type: result?.classification?.type,
-    source: 'openai'
+    source: 'openai' as DocumentSource
   })
 }); 

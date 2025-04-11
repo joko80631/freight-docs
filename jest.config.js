@@ -1,15 +1,18 @@
 module.exports = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
+    '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
+    '^@/app/(.*)$': '<rootDir>/src/app/$1',
+    '^@/src/(.*)$': '<rootDir>/src/$1',
+    '^@/providers/(.*)$': '<rootDir>/src/providers/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
-  testMatch: ['**/tests/**/*.test.ts'],
+  testMatch: ['**/tests/**/*.test.ts', '**/src/tests/**/*.test.ts'],
   collectCoverageFrom: [
-    'lib/**/*.ts',
-    'app/**/*.ts',
-    'app/**/*.tsx',
+    'src/**/*.ts',
+    'src/**/*.tsx',
     '!**/*.d.ts',
     '!**/node_modules/**',
   ],
@@ -23,9 +26,12 @@ module.exports = {
       statements: 80,
     },
   },
-  globals: {
-    'ts-jest': {
+  transform: {
+    '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: 'tsconfig.json',
-    },
+      useESM: true
+    }]
   },
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node']
 }; 

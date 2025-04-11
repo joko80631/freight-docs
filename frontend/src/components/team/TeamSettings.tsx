@@ -18,15 +18,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useTeamStore } from '@/store/teamStore';
+import { useTeamStore, Team } from '@/store/team-store';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/types/permissions';
+import { RequirePermission } from '@/components/RequirePermission';
+import { UnauthorizedAccess } from '@/components/UnauthorizedAccess';
 
 export function TeamSettings() {
   const [teamName, setTeamName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { currentTeam, fetchTeams } = useTeamStore();
+  const { canManageTeam, canDeleteTeam } = usePermissions();
   const supabase = createClientComponentClient();
   const router = useRouter();
 
@@ -34,7 +39,7 @@ export function TeamSettings() {
 
   const handleUpdateTeam = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!teamName.trim()) return;
+    if (!teamName.trim() || !canManageTeam()) return;
 
     setIsUpdating(true);
     try {
@@ -56,6 +61,8 @@ export function TeamSettings() {
   };
 
   const handleDeleteTeam = async () => {
+    if (!canDeleteTeam()) return;
+    
     setIsDeleting(true);
     try {
       const { error } = await supabase
@@ -78,76 +85,90 @@ export function TeamSettings() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Team Settings</CardTitle>
-          <CardDescription>
-            Manage your team's basic information and settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleUpdateTeam} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="teamName">Team Name</Label>
-              <Input
-                id="teamName"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                placeholder={currentTeam.name}
-              />
-            </div>
-            <Button type="submit" disabled={isUpdating}>
-              {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Update Team
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive">Danger Zone</CardTitle>
-          <CardDescription>
-            Irreversible and destructive actions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <h3 className="text-lg font-medium">Danger Zone</h3>
-            <p className="text-sm text-muted-foreground">
-              Once you delete a team, there is no going back. Please be certain.
-            </p>
-          </div>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="mt-4">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Team
+      <RequirePermission 
+        permission={PERMISSIONS.UPDATE_TEAM}
+        fallback={<UnauthorizedAccess message="You don't have permission to manage team settings." />}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>Team Settings</CardTitle>
+            <CardDescription>
+              Manage your team's basic information and settings.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleUpdateTeam} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="teamName">Team Name</Label>
+                <Input
+                  id="teamName"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  placeholder={currentTeam.name}
+                />
+              </div>
+              <Button type="submit" disabled={isUpdating || !canManageTeam()}>
+                {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Update Team
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the team
-                  and remove all team members.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteTeam}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  disabled={isDeleting}
+            </form>
+          </CardContent>
+        </Card>
+      </RequirePermission>
+
+      <RequirePermission 
+        permission={PERMISSIONS.DELETE_TEAM}
+        fallback={<UnauthorizedAccess message="You don't have permission to delete this team." />}
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-destructive">Danger Zone</CardTitle>
+            <CardDescription>
+              Irreversible and destructive actions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium">Delete Team</h3>
+              <p className="text-sm text-muted-foreground">
+                Once you delete a team, there is no going back. Please be certain.
+              </p>
+            </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="destructive" 
+                  className="mt-4"
+                  disabled={!canDeleteTeam()}
                 >
-                  {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Delete Team
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardContent>
-      </Card>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the team
+                    and remove all team members.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteTeam}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={isDeleting || !canDeleteTeam()}
+                  >
+                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Delete Team
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardContent>
+        </Card>
+      </RequirePermission>
     </div>
   );
 } 

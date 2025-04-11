@@ -40,273 +40,275 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Plus, Trash2 } from "lucide-react";
-import { useTeamStore } from '@/store/teamStore';
-import { TeamRole, TeamMember } from '@/types/team';
-import { createTeamScopedApi } from '@/utils/api';
+import { useTeamStore } from '@/store/team-store';
 import { roleColors } from '@/lib/theme';
 import { toast } from 'sonner';
+import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/types/permissions';
+import { RequirePermission } from '@/components/RequirePermission';
+import { UnauthorizedAccess } from '@/components/UnauthorizedAccess';
 
-const ROLE_CONFIG = {
+type TeamRole = 'owner' | 'admin' | 'member';
+
+interface TeamMember {
+  id: string;
+  email: string;
+  full_name: string;
+  role: TeamRole;
+}
+
+const ROLE_CONFIG: Record<TeamRole, { label: string; className: string }> = {
   owner: {
     label: 'Owner',
-    ...roleColors.admin,
+    className: roleColors.admin.bg,
   },
   admin: {
     label: 'Admin',
-    ...roleColors.admin,
+    className: roleColors.admin.bg,
   },
   member: {
     label: 'Member',
-    ...roleColors.user,
+    className: roleColors.user.bg,
   },
-} as const;
+};
 
 interface TeamMemberBadgeProps {
   role: TeamRole;
 }
 
-export const TeamMemberBadge: React.FC<TeamMemberBadgeProps> = ({ role }) => {
-  const config = ROLE_CONFIG[role] || ROLE_CONFIG.member;
-
+function TeamMemberBadge({ role }: TeamMemberBadgeProps) {
+  const config = ROLE_CONFIG[role];
   return (
-    <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full ${config.bg} ${config.text} ${config.border}`}>
-      <span className="text-sm font-medium">{config.label}</span>
-    </div>
+    <Badge variant="outline" className={config.className}>
+      {config.label}
+    </Badge>
   );
-};
+}
 
 export function TeamMembers() {
-  const { currentTeam } = useTeamStore();
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<TeamRole>('member');
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const api = createTeamScopedApi();
+  const [isInviting, setIsInviting] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [email, setEmail] = useState('');
+  const [selectedRole, setSelectedRole] = useState<TeamRole>('member');
+  const { currentTeam, fetchTeamMembers, updateTeamMemberRole, removeTeamMember } = useTeamStore();
+  const { canInviteMembers, canManageMembers } = usePermissions();
 
   useEffect(() => {
-    if (currentTeam?.id) {
-      fetchMembers();
+    if (currentTeam) {
+      loadMembers();
     }
-  }, [currentTeam?.id]);
+  }, [currentTeam]);
 
-  const fetchMembers = async () => {
+  const loadMembers = async () => {
+    if (!currentTeam) return;
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const data = await api.get('/');
-      if (data?.members) {
-        setMembers(data.members);
-      } else {
-        setMembers([]);
-      }
+      const members = await fetchTeamMembers(currentTeam.id);
+      setMembers(members);
     } catch (error) {
-      console.error('Failed to fetch team members:', error);
-      setError('Failed to load team members');
-      setMembers([]);
+      console.error('Error loading team members:', error);
+      toast.error('Failed to load team members');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInvite = async (e: React.FormEvent) => {
+  const handleInviteMember = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentTeam || !canInviteMembers()) return;
+
+    setIsInviting(true);
     try {
-      const response = await fetch('/api/teams/invite', {
+      const response = await fetch(`/api/teams/${currentTeam.id}/members`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole,
+          email,
+          role: selectedRole,
         }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to send invitation');
+        throw new Error('Failed to invite member');
       }
 
-      const data = await response.json();
-      toast.success('Invitation sent', {
-        description: `Invitation sent to ${data.email}`,
-      });
-
-      setInviteEmail('');
-      setIsInviteDialogOpen(false);
+      toast.success('Member invited successfully');
+      setEmail('');
+      loadMembers();
     } catch (error) {
-      console.error('Failed to invite member:', error);
-      toast.error('Failed to send invitation', {
-        description: error instanceof Error ? error.message : 'An error occurred',
-      });
+      console.error('Error inviting member:', error);
+      toast.error('Failed to invite member');
+    } finally {
+      setIsInviting(false);
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: TeamRole) => {
+  const handleUpdateRole = async (memberId: string, role: TeamRole) => {
+    if (!currentTeam || !canManageMembers()) return;
+
     try {
-      const response = await api.patch(`/${userId}`, { role: newRole });
-      if (response.success) {
-        await fetchMembers();
-        toast.success('Role updated successfully');
-      } else {
-        throw new Error('Failed to update role');
-      }
+      await updateTeamMemberRole(currentTeam.id, memberId, role);
+      toast.success('Member role updated successfully');
+      loadMembers();
     } catch (error) {
-      console.error('Failed to update role:', error);
-      toast.error('Failed to update role', {
-        description: error instanceof Error ? error.message : 'An error occurred',
-      });
+      console.error('Error updating member role:', error);
+      toast.error('Failed to update member role');
     }
   };
 
-  const handleRemoveMember = async (userId: string) => {
+  const handleRemoveMember = async (memberId: string) => {
+    if (!currentTeam || !canManageMembers()) return;
+
+    setIsRemoving(true);
     try {
-      const response = await api.delete(`/${userId}`);
-      if (response.success) {
-        await fetchMembers();
-        toast.success('Team member removed successfully');
-      } else {
-        throw new Error('Failed to remove member');
-      }
+      await removeTeamMember(currentTeam.id, memberId);
+      toast.success('Member removed successfully');
+      loadMembers();
     } catch (error) {
-      console.error('Failed to remove member:', error);
-      toast.error('Failed to remove team member', {
-        description: error instanceof Error ? error.message : 'An error occurred',
-      });
+      console.error('Error removing member:', error);
+      toast.error('Failed to remove member');
+    } finally {
+      setIsRemoving(false);
     }
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading members...</div>;
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-black">Team Members</h2>
-        {currentTeam?.role === 'admin' && (
-          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Invite Member
+    <div className="space-y-6">
+      <RequirePermission 
+        permission={PERMISSIONS.INVITE_TEAM_MEMBER}
+        fallback={<UnauthorizedAccess message="You don't have permission to invite team members." />}
+      >
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Invite Member
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Invite Team Member</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleInviteMember} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="member@example.com"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  value={selectedRole}
+                  onValueChange={(value: TeamRole) => setSelectedRole(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="member">Member</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" disabled={isInviting}>
+                {isInviting ? 'Inviting...' : 'Invite Member'}
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite Team Member</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleInvite} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select value={inviteRole} onValueChange={(value: TeamRole) => setInviteRole(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
+            </form>
+          </DialogContent>
+        </Dialog>
+      </RequirePermission>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {members.map((member) => (
+            <TableRow key={member.id}>
+              <TableCell>{member.full_name}</TableCell>
+              <TableCell>{member.email}</TableCell>
+              <TableCell>
+                <RequirePermission 
+                  permission={PERMISSIONS.UPDATE_TEAM_MEMBER}
+                  fallback={<TeamMemberBadge role={member.role} />}
+                >
+                  <Select
+                    value={member.role}
+                    onValueChange={(value: TeamRole) => handleUpdateRole(member.id, value)}
+                    disabled={!canManageMembers()}
+                  >
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue>
+                        <TeamMemberBadge role={member.role} />
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      {Object.entries(ROLE_CONFIG).map(([role, config]) => (
-                        <SelectItem key={role} value={role as TeamRole}>
-                          {config.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="member">Member</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit">Send Invitation</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        )}
-      </div>
-
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {members.map((member) => (
-              <TableRow key={member.user_id}>
-                <TableCell>
-                  <div>
-                    <div className="font-medium">{member.profile?.full_name || 'Unknown'}</div>
-                    <div className="text-sm text-gray-500">{member.profile?.email}</div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <TeamMemberBadge role={member.role} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center space-x-2">
-                    {currentTeam?.role === 'admin' && (
-                      <>
-                        <Select
-                          value={member.role}
-                          onValueChange={(value: TeamRole) => handleRoleChange(member.user_id, value)}
+                </RequirePermission>
+              </TableCell>
+              <TableCell className="text-right">
+                <RequirePermission 
+                  permission={PERMISSIONS.DELETE_TEAM_MEMBER}
+                  fallback={null}
+                >
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        disabled={!canManageMembers()}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to remove this team member? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleRemoveMember(member.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          disabled={isRemoving}
                         >
-                          <SelectTrigger className="w-[120px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(ROLE_CONFIG).map(([role, config]) => (
-                              <SelectItem key={role} value={role as TeamRole}>
-                                {config.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="icon">
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to remove this member from the team? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleRemoveMember(member.user_id)}>
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                          {isRemoving ? 'Removing...' : 'Remove Member'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </RequirePermission>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 } 

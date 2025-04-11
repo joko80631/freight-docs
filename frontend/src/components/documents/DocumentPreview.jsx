@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { DocumentIcon } from '@/components/icons/DocumentIcon';
 
 // Set up PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -166,8 +167,15 @@ export default function DocumentPreview({ document, onDownload }) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-[600px]">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="relative w-full h-full">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-full h-full flex flex-col items-center justify-center p-4">
+            <div className="w-16 h-16 mb-4">
+              <DocumentIcon className="w-full h-full text-gray-400" />
+            </div>
+            <p className="text-sm text-gray-500 text-center">{document.name}</p>
+          </div>
+        </div>
       </div>
     );
   }

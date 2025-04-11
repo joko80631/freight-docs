@@ -43,13 +43,13 @@ export const DocumentProgressBar = ({ status, progress }) => {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.incomplete;
 
   return (
-    <div className="w-full">
-      <div className="w-full bg-gray-100 rounded-full h-1.5">
-        <div
-          className={`h-1.5 rounded-full ${config.bg}`}
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+    <div className="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div 
+        className={`absolute h-full transition-all duration-300 ease-in-out ${
+          progress >= 100 ? 'bg-green-500' : 'bg-blue-500'
+        }`}
+        style={{ width: `${progress}%` }}
+      />
     </div>
   );
 };

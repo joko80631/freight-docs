@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { withAuditLogging, AUDIT_ACTIONS } from '@/lib/audit-middleware-stub';
+import { DocumentType, DocumentStatus, DocumentSource } from '@/types/document';
 
 async function handleReclassification(request: Request, context: { userId: string, teamId: string }) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -16,8 +17,8 @@ async function handleReclassification(request: Request, context: { userId: strin
   }
 
   // Validate document type
-  const validTypes = ['bol', 'pod', 'invoice', 'other'];
-  if (!validTypes.includes(newType)) {
+  const validTypes: DocumentType[] = ['bol', 'pod', 'invoice', 'other'];
+  if (!validTypes.includes(newType.toLowerCase() as DocumentType)) {
     return NextResponse.json(
       { error: 'Invalid document type' },
       { status: 400 }
@@ -45,10 +46,12 @@ async function handleReclassification(request: Request, context: { userId: strin
   const { data, error } = await supabase.rpc('reclassify_document', {
     p_document_id: documentId,
     p_previous_type: previousType,
-    p_new_type: newType,
+    p_new_type: newType.toLowerCase(),
     p_classified_by: context.userId,
     p_classified_at: timestamp,
-    p_team_id: document.team_id
+    p_team_id: document.team_id,
+    p_status: 'processed' as DocumentStatus,
+    p_source: 'user' as DocumentSource
   });
 
   if (error) {
@@ -63,8 +66,10 @@ async function handleReclassification(request: Request, context: { userId: strin
     success: true,
     document: {
       id: documentId,
-      type: newType,
-      previous_type: previousType
+      type: newType.toLowerCase() as DocumentType,
+      previous_type: previousType,
+      status: 'processed' as DocumentStatus,
+      source: 'user' as DocumentSource
     }
   });
 }
@@ -74,7 +79,7 @@ export const POST = withAuditLogging(handleReclassification, {
   getDocumentIds: (body) => [body.documentId],
   getMetadata: (body, result) => ({
     previous_type: result?.document?.previous_type,
-    new_type: body.newType,
-    source: 'user'
+    new_type: body.newType.toLowerCase(),
+    source: 'user' as DocumentSource
   })
 }); 

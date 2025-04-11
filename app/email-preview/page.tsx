@@ -49,7 +49,7 @@ export default function EmailPreviewPage() {
 
   useEffect(() => {
     setTestData(defaultTestData[selectedTemplate]);
-  }, [selectedTemplate]);
+  }, [selectedTemplate, defaultTestData]);
 
   const handlePreview = async () => {
     setIsLoading(true);

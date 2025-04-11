@@ -16,6 +16,19 @@ import type { Database } from '@/src/types/database';
 type Load = Database['public']['Tables']['loads']['Row'];
 type Document = Database['public']['Tables']['documents']['Row'];
 
+interface Load {
+  id: string;
+  team_id: string;
+  load_number: string;
+  status: LoadStatus;
+  origin: string;
+  destination: string;
+  created_at: string;
+  updated_at: string | null;
+  delivery_date: string;
+  notes: string | null;
+}
+
 export default function LoadDetailPage() {
   const params = useParams();
   const supabase = createClientComponentClient<Database>();
@@ -26,21 +39,14 @@ export default function LoadDetailPage() {
   const [formData, setFormData] = useState<Partial<Load>>({});
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    fetchLoad();
-  }, [params.id]);
-
   const fetchLoad = async () => {
+    if (!params?.id) return;
     try {
-      const { data: loadData, error: loadError } = await supabase
-        .from('loads')
-        .select('*')
-        .eq('id', params.id)
-        .single();
-
-      if (loadError) throw loadError;
-      setLoad(loadData);
-      setFormData(loadData);
+      const response = await fetch(`/api/loads/${params.id}`);
+      if (!response.ok) throw new Error('Failed to fetch load');
+      const data = await response.json();
+      setLoad(data);
+      setFormData(data);
 
       const { data: documentsData, error: documentsError } = await supabase
         .from('documents')
@@ -55,6 +61,10 @@ export default function LoadDetailPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchLoad();
+  }, [params?.id]);
 
   const handleStatusChange = async (newStatus: LoadStatus) => {
     try {

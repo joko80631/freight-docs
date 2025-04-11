@@ -1,6 +1,7 @@
-import { getEmailProvider } from '@/lib/email/providers/factory';
+import { createEmailProvider } from '@/lib/email/providers/factory';
+import { MockProvider } from '@/lib/email/providers/mock';
 import { ResendProvider } from '@/lib/email/providers/resend';
-import { MockEmailProvider } from '@/lib/email/providers/mock';
+import { EmailOptions, SendResult } from '@/lib/email/types';
 
 describe('Email Provider Factory', () => {
   const originalEnv = process.env;
@@ -10,56 +11,54 @@ describe('Email Provider Factory', () => {
     process.env = { ...originalEnv };
   });
 
-  afterAll(() => {
+  afterEach(() => {
     process.env = originalEnv;
   });
 
-  it('should return ResendProvider in production', () => {
-    process.env.NODE_ENV = 'production';
-    process.env.EMAIL_PROVIDER = 'resend';
-    
-    const provider = getEmailProvider();
+  it('should return MockProvider in test environment', () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'test' });
+    const provider = createEmailProvider();
+    expect(provider).toBeInstanceOf(MockProvider);
+  });
+
+  it('should return MockProvider in development when EMAIL_PROVIDER is mock', () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'development' });
+    Object.defineProperty(process.env, 'EMAIL_PROVIDER', { value: 'mock' });
+    const provider = createEmailProvider();
+    expect(provider).toBeInstanceOf(MockProvider);
+  });
+
+  it('should return ResendProvider in development when EMAIL_PROVIDER is resend and API key is provided', () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'development' });
+    Object.defineProperty(process.env, 'EMAIL_PROVIDER', { value: 'resend' });
+    Object.defineProperty(process.env, 'RESEND_API_KEY', { value: 'test-api-key' });
+    const provider = createEmailProvider();
     expect(provider).toBeInstanceOf(ResendProvider);
   });
 
-  it('should return MockEmailProvider in test environment', () => {
-    process.env.NODE_ENV = 'test';
-    process.env.EMAIL_PROVIDER = 'mock';
-    
-    const provider = getEmailProvider();
-    expect(provider).toBeInstanceOf(MockEmailProvider);
+  it('should throw error in development when EMAIL_PROVIDER is resend but no API key is provided', () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'development' });
+    Object.defineProperty(process.env, 'EMAIL_PROVIDER', { value: 'resend' });
+    Object.defineProperty(process.env, 'RESEND_API_KEY', { value: undefined });
+    expect(() => createEmailProvider()).toThrow('RESEND_API_KEY is required for ResendProvider');
   });
 
-  it('should return MockEmailProvider in development when EMAIL_PROVIDER is mock', () => {
-    process.env.NODE_ENV = 'development';
-    process.env.EMAIL_PROVIDER = 'mock';
-    
-    const provider = getEmailProvider();
-    expect(provider).toBeInstanceOf(MockEmailProvider);
+  it('should throw error for unsupported provider in development', () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'development' });
+    Object.defineProperty(process.env, 'EMAIL_PROVIDER', { value: 'unsupported' });
+    expect(() => createEmailProvider()).toThrow('Unsupported email provider: unsupported');
   });
 
-  it('should return ResendProvider in development when EMAIL_PROVIDER is resend', () => {
-    process.env.NODE_ENV = 'development';
-    process.env.EMAIL_PROVIDER = 'resend';
-    
-    const provider = getEmailProvider();
+  it('should return ResendProvider in production when API key is provided', () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production' });
+    Object.defineProperty(process.env, 'RESEND_API_KEY', { value: 'test-api-key' });
+    const provider = createEmailProvider();
     expect(provider).toBeInstanceOf(ResendProvider);
   });
 
-  it('should use sandbox email override in non-production environments', async () => {
-    process.env.NODE_ENV = 'development';
-    process.env.EMAIL_PROVIDER = 'resend';
-    process.env.EMAIL_SANDBOX_OVERRIDE = 'sandbox@example.com';
-    
-    const provider = getEmailProvider();
-    const result = await provider.sendEmail({
-      to: 'real@example.com',
-      subject: 'Test',
-      content: 'Test content',
-    });
-    
-    // In development, emails should be redirected to the sandbox
-    expect(result.success).toBe(true);
-    // The actual implementation would check the email was sent to sandbox@example.com
+  it('should throw error in production when no API key is provided', () => {
+    Object.defineProperty(process.env, 'NODE_ENV', { value: 'production' });
+    Object.defineProperty(process.env, 'RESEND_API_KEY', { value: undefined });
+    expect(() => createEmailProvider()).toThrow('RESEND_API_KEY is required for ResendProvider');
   });
 }); 

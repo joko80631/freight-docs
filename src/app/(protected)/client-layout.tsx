@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTeamStore } from '@/store/team-store';
 import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
-import { ErrorBoundary } from '@/components/error-boundary';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { FallbackError } from '@/components/shared/FallbackError';
 import { Loader2 } from 'lucide-react';
 

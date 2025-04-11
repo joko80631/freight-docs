@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { persist } from "zustand/middleware";
 
-interface Team {
+export interface Team {
   id: string;
   name: string;
   created_at: string;
