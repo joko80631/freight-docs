@@ -1,6 +1,5 @@
 'use client';
 
-import { Metadata } from 'next';
 import { useRouter } from 'next/navigation';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import LoadManagement from '../../components/load/LoadManagement';
@@ -8,11 +7,6 @@ import LoadFilters from '../../components/load/LoadFilters';
 import { useTeamStore } from '@/src/store/team-store';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-
-export const metadata: Metadata = {
-  title: 'Load Management - Freight Document Platform',
-  description: 'Manage and track your freight loads',
-};
 
 export default function LoadsPage() {
   const router = useRouter();

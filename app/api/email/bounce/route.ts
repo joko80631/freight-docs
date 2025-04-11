@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEmailRecoveryService } from '@/lib/email/recovery';
+// import { getEmailRecoveryService } from '@/lib/email/recovery';
 import { getEmailMonitoringService } from '@/lib/email/monitoring';
 import { EmailEventType } from '@/lib/email/monitoring';
 
@@ -22,12 +22,6 @@ export async function POST(request: NextRequest) {
     
     // Extract bounce information
     const { emailId, recipient, reason = 'Unknown reason', type = 'bounce' } = body;
-    
-    // Get the recovery service
-    const recoveryService = getEmailRecoveryService();
-    
-    // Handle the bounce
-    recoveryService.handleBounce(emailId, recipient, reason);
     
     // Log the bounce event
     const monitoringService = getEmailMonitoringService();

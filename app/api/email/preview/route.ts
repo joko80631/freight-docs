@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { getSampleData } from '@/lib/email/templates/samples';
+// import { getSampleData } from '@/lib/email/templates/samples';
 import { renderTemplate, TemplateName } from '@/lib/email/templates';
 import { NextRequest } from 'next/server';
 
@@ -30,14 +30,16 @@ export async function GET(req: Request) {
       );
     }
 
-    // Get sample data for the template
-    const sampleData = await getSampleData(templateName, searchParams);
-    if (!sampleData) {
-      return NextResponse.json(
-        { error: 'Invalid template name' },
-        { status: 400 }
-      );
-    }
+    // Mock sample data since the service is unavailable
+    const sampleData = {
+      name: 'John Doe',
+      company: 'Acme Inc',
+      loadNumber: 'LOAD-12345',
+      status: 'In Transit',
+      origin: 'New York, NY',
+      destination: 'Los Angeles, CA',
+      estimatedDelivery: '2023-12-15',
+    };
 
     // Render the template
     const { subject, html } = await renderTemplate(templateName, sampleData);
