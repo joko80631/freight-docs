@@ -1,7 +1,7 @@
 import React from 'react';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
-import { Providers } from '@/providers';
+// import { Providers } from '@/providers';
 import './globals.css';
 import type { Metadata } from 'next';
 
@@ -26,10 +26,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
         <ErrorBoundary>
-          <Providers>
+          {/* <Providers> */}
             {children}
             <Toaster />
-          </Providers>
+          {/* </Providers> */}
         </ErrorBoundary>
       </body>
     </html>

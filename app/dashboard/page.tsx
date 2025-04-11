@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import LoadList from '@/components/dashboard/LoadList';
-import DocumentOverview from '@/components/dashboard/DocumentOverview';
+// import LoadList from '@/components/dashboard/LoadList';
+// import DocumentOverview from '@/components/dashboard/DocumentOverview';
 
 export const metadata: Metadata = {
   title: 'Dashboard - Freight Document Platform',
@@ -20,7 +20,8 @@ export default function DashboardPage() {
             <div className="bg-white shadow rounded-lg">
               <div className="px-4 py-5 sm:p-6">
                 <h2 className="text-lg font-medium text-gray-900">Recent Loads</h2>
-                <LoadList />
+                {/* <LoadList /> */}
+                <p className="text-gray-500">Load list will be implemented here</p>
               </div>
             </div>
           </div>
@@ -30,7 +31,8 @@ export default function DashboardPage() {
             <div className="bg-white shadow rounded-lg">
               <div className="px-4 py-5 sm:p-6">
                 <h2 className="text-lg font-medium text-gray-900">Document Overview</h2>
-                <DocumentOverview />
+                {/* <DocumentOverview /> */}
+                <p className="text-gray-500">Document overview will be implemented here</p>
               </div>
             </div>
           </div>
