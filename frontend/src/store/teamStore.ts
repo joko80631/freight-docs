@@ -1,8 +1,9 @@
 import { create } from 'zustand';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import { persist } from 'zustand/middleware';
 import { toast } from 'sonner';
 import { Team, TeamMember, TeamRole } from '@/types/team';
+import { showToast } from '@/lib/toast';
 
 export interface TeamWithRole extends Team {
   role: TeamRole;
@@ -34,7 +35,10 @@ interface TeamState {
 export const useTeamStore = create<TeamState>()(
   persist(
     (set, get) => {
-      const supabase = createClientComponentClient();
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
 
       return {
         teams: [],
@@ -68,14 +72,15 @@ export const useTeamStore = create<TeamState>()(
               .filter(membership => membership.teams)
               .map(membership => ({
                 ...membership.teams,
-                role: membership.role
+                role: membership.role,
+                members: []
               }));
 
             set({ teams, isLoading: false });
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams';
             set({ error: errorMessage, isLoading: false });
-            toast.error(errorMessage);
+            showToast.error('Error', errorMessage);
           }
         },
 
@@ -105,7 +110,8 @@ export const useTeamStore = create<TeamState>()(
 
             const newTeam: TeamWithRole = {
               ...team,
-              role: 'ADMIN'
+              role: 'ADMIN',
+              members: []
             };
 
             set(state => ({
@@ -114,12 +120,12 @@ export const useTeamStore = create<TeamState>()(
               isLoading: false
             }));
 
-            toast.success("Team created successfully");
+            showToast.success('Success', 'Team created successfully');
             return newTeam;
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to create team';
             set({ error: errorMessage, isLoading: false });
-            toast.error(errorMessage);
+            showToast.error('Error', errorMessage);
             return null;
           }
         },
@@ -144,11 +150,11 @@ export const useTeamStore = create<TeamState>()(
               isLoading: false
             }));
 
-            toast.success("Team deleted successfully");
+            showToast.success('Success', 'Team deleted successfully');
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to delete team';
             set({ error: errorMessage, isLoading: false });
-            toast.error(errorMessage);
+            showToast.error('Error', errorMessage);
           }
         },
 
@@ -169,24 +175,24 @@ export const useTeamStore = create<TeamState>()(
               );
 
               const updatedTeams = state.teams.map(team => {
-                if (team.id === teamId && team.members) {
+                if (team.id === teamId) {
                   return {
                     ...team,
-                    members: team.members.map(member =>
+                    members: team.members?.map(member =>
                       member.user_id === userId ? { ...member, role: data.role } : member
-                    )
-                  } as TeamWithRole;
+                    ) || []
+                  };
                 }
                 return team;
               });
 
-              const updatedCurrentTeam = state.currentTeam?.id === teamId && state.currentTeam.members
+              const updatedCurrentTeam = state.currentTeam?.id === teamId
                 ? {
                     ...state.currentTeam,
-                    members: state.currentTeam.members.map(member =>
+                    members: state.currentTeam.members?.map(member =>
                       member.user_id === userId ? { ...member, role: data.role } : member
-                    )
-                  } as TeamWithRole
+                    ) || []
+                  }
                 : state.currentTeam;
 
               return {
@@ -197,11 +203,11 @@ export const useTeamStore = create<TeamState>()(
               };
             });
 
-            toast.success("Team member updated successfully");
+            showToast.success('Success', 'Team member updated successfully');
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to update team member';
             set({ error: errorMessage, isLoading: false });
-            toast.error(errorMessage);
+            showToast.error('Error', errorMessage);
           }
         },
 
@@ -216,18 +222,28 @@ export const useTeamStore = create<TeamState>()(
 
             if (error) throw error;
 
-            set(state => ({
-              teams: state.teams.map(team =>
-                team.id === teamId ? { ...team, members: team.members?.filter(member => member.user_id !== userId) } : team
-              ),
-              isLoading: false
-            }));
+            set(state => {
+              const updatedTeams = state.teams.map(team => {
+                if (team.id === teamId) {
+                  return {
+                    ...team,
+                    members: team.members?.filter(member => member.user_id !== userId) || []
+                  };
+                }
+                return team;
+              });
 
-            toast.success("Team member removed successfully");
+              return {
+                teams: updatedTeams,
+                isLoading: false
+              };
+            });
+
+            showToast.success('Success', 'Team member removed successfully');
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to remove team member';
             set({ error: errorMessage, isLoading: false });
-            toast.error(errorMessage);
+            showToast.error('Error', errorMessage);
           }
         },
 
@@ -249,26 +265,39 @@ export const useTeamStore = create<TeamState>()(
 
             if (error) throw error;
 
-            const typedMembers = teamMembers.map(member => ({
+            const typedMembers: TeamMember[] = teamMembers.map(member => ({
               user_id: member.user_id,
+              team_id: teamId,
               role: member.role as TeamRole,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
               profile: {
-                full_name: member.profile[0].full_name,
-                email: member.profile[0].email,
-                avatar_url: member.profile[0].avatar_url
+                full_name: member.profile?.[0]?.full_name || '',
+                email: member.profile?.[0]?.email || '',
+                avatar_url: member.profile?.[0]?.avatar_url || ''
               }
             }));
 
-            set(state => ({
-              teams: state.teams.map(team =>
-                team.id === teamId ? { ...team, members: typedMembers } : team
-              ),
-              isFetching: false
-            }));
+            set(state => {
+              const updatedTeams = state.teams.map(team => {
+                if (team.id === teamId) {
+                  return {
+                    ...team,
+                    members: typedMembers
+                  };
+                }
+                return team;
+              });
+
+              return {
+                teams: updatedTeams,
+                isFetching: false
+              };
+            });
           } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to fetch team members';
             set({ error: errorMessage, isFetching: false });
-            toast.error(errorMessage);
+            showToast.error('Error', errorMessage);
           }
         }
       };

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useState } from "react";
 import Link from "next/link";
@@ -6,21 +6,19 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useToastNotification } from "@/components/shared";
 import { LoadingSkeleton } from "@/components/shared";
-import { layout } from "@/lib/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { createBrowserClient } from '@supabase/ssr';
 
 interface FormData {
   email: string;
   password: string;
-  rememberMe: boolean;
+  confirmPassword: string;
 }
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
   const { showSuccess, showError } = useToastNotification();
   const [isLoading, setIsLoading] = useState(false);
@@ -32,35 +30,58 @@ export default function LoginPage() {
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
-    rememberMe: false,
+    confirmPassword: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
+    if (formData.password !== formData.confirmPassword) {
+      showError("Error", "Passwords do not match");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
+        options: {
+          data: {
+            full_name: formData.email.split('@')[0], // Default name from email
+          },
+          emailRedirectTo: `${window.location.origin}/verify-email`,
+        },
       });
       
       if (error) throw error;
       
-      showSuccess("Success", "Logged in successfully");
-      router.push("/dashboard");
+      if (!data.user) {
+        throw new Error("User data not returned from signup");
+      }
+      
+      // Create profile after successful signup
+      const { error: profileError } = await supabase.rpc('create_profile_for_user', {
+        user_id: data.user.id
+      });
+      
+      if (profileError) throw profileError;
+      
+      showSuccess("Success", "Account created successfully. Please check your email to verify your account.");
+      router.push("/login?message=Please check your email to verify your account");
     } catch (error: any) {
-      showError("Error", error.message || "Invalid email or password");
+      showError("Error", error.message || "Failed to create account");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     }));
   };
 
@@ -69,15 +90,15 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
-            Sign in to your account
+            Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{" "}
             <Link
-              href="/signup"
+              href="/login"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
-              create a new account
+              sign in to your account
             </Link>
           </p>
         </div>
@@ -108,7 +129,7 @@ export default function LoginPage() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                     required
                     value={formData.password}
                     onChange={handleChange}
@@ -129,31 +150,20 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Checkbox
-                    id="rememberMe"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, rememberMe: checked as boolean }))
-                    }
+              <div>
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <div className="mt-1">
+                  <Input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className="block w-full"
+                    placeholder="••••••••"
                   />
-                  <Label
-                    htmlFor="rememberMe"
-                    className="ml-2 block text-sm text-gray-900"
-                  >
-                    Remember me
-                  </Label>
-                </div>
-
-                <div className="text-sm">
-                  <Link
-                    href="/forgot-password"
-                    className="font-medium text-indigo-600 hover:text-indigo-500"
-                  >
-                    Forgot your password?
-                  </Link>
                 </div>
               </div>
 
@@ -166,7 +176,7 @@ export default function LoginPage() {
                   {isLoading ? (
                     <LoadingSkeleton className="h-5 w-5" />
                   ) : (
-                    "Sign in"
+                    "Sign up"
                   )}
                 </Button>
               </div>

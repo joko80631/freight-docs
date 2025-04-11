@@ -62,6 +62,20 @@ const nextConfig = {
       },
     });
 
+    // Handle require.extensions for Handlebars
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+      os: false,
+    };
+    
+    // Ignore require.extensions warning for Handlebars
+    config.module.rules.push({
+      test: /node_modules\/handlebars/,
+      loader: 'ignore-loader',
+    });
+
     return config;
   }
 }

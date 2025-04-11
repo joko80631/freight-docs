@@ -1,82 +1,90 @@
 "use client";
 
-import * as React from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { LogOut, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/providers/auth-provider";
+import { routes } from "@/config/routes";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User, Settings, LogOut } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
-export function UserNav() {
-  const { user, signOut } = useAuth();
+export function UserNavigation() {
   const router = useRouter();
+  const { user, signOut } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignOut = async () => {
-    await signOut();
-    router.push("/login");
+    try {
+      setIsLoading(true);
+      await signOut();
+      router.push(routes.auth.login);
+    } catch (error) {
+      toast.error("Error", {
+        description: "Failed to sign out. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!user) return null;
 
-  // Bulletproof fallbacks for user metadata
-  const userEmail = user.email || "unknown@example.com";
-  const userInitial = userEmail.charAt(0).toUpperCase() || "U";
-  const userFullName = user.user_metadata?.full_name || "Unknown User";
-  const userAvatarUrl = user.user_metadata?.avatar_url || null;
+  const userInitial = user.email?.[0]?.toUpperCase() || "U";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          className="relative h-8 w-8 rounded-full"
-          data-testid="user-nav-trigger"
-        >
-          <Avatar className="h-8 w-8">
-            <AvatarImage 
-              src={userAvatarUrl} 
-              alt={userFullName} 
-              data-testid="user-avatar"
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <span className="sr-only">Open user menu</span>
+          {user.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt={user.email || "User avatar"}
+              className="h-8 w-8 rounded-full"
             />
-            <AvatarFallback data-testid="user-avatar-fallback">
-              {userInitial}
-            </AvatarFallback>
-          </Avatar>
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+              <span className="text-sm font-medium text-primary-foreground">
+                {userInitial}
+              </span>
+            </div>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{userEmail}</p>
+            <p className="text-sm font-medium leading-none">{user.email}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {userFullName}
+              {user.user_metadata?.full_name}
             </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => router.push("/profile")}>
-            <User className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push("/settings")}>
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Settings</span>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        <DropdownMenuItem onClick={() => router.push("/profile")}>
+          <User className="mr-2 h-4 w-4" />
+          <span>Profile</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push(routes.settings.index)}>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleSignOut}>
+        <DropdownMenuItem
+          onClick={handleSignOut}
+          disabled={isLoading}
+          className="text-red-600 focus:text-red-600"
+        >
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>{isLoading ? "Signing out..." : "Sign out"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

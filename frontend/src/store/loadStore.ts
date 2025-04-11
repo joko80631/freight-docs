@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createBrowserClient } from '@supabase/ssr';
 import type { Database, Load } from '@/types/database';
 import { getErrorMessage } from '@/lib/errors';
 
@@ -28,71 +28,82 @@ interface LoadStore {
   fetchLoads: (teamId: string) => Promise<void>;
 }
 
-export const useLoadStore = create<LoadStore>((set, get) => ({
-  loads: [],
-  isLoading: false,
-  error: null,
-  filters: {},
-  pagination: {
-    page: 1,
-    limit: 10
-  },
+export const useLoadStore = create<LoadStore>((set, get) => {
+  const supabase = createBrowserClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
-  setFilters: (filters) => set({ filters }),
+  return {
+    loads: [],
+    isLoading: false,
+    error: null,
+    filters: {},
+    pagination: {
+      page: 1,
+      limit: 10
+    },
 
-  setPagination: (pagination) => set({ pagination }),
+    setFilters: (filters) => set((state) => ({ 
+      filters: { ...state.filters, ...filters } 
+    })),
 
-  fetchLoads: async (teamId: string) => {
-    set({ isLoading: true, error: null });
-    try {
-      const supabase = createClientComponentClient<Database>();
-      const { filters, pagination } = get();
+    setPagination: (pagination) => set((state) => ({ 
+      pagination: { ...state.pagination, ...pagination } 
+    })),
 
-      let query = supabase
-        .from('loads')
-        .select(`
-          *,
-          documents (
-            id,
-            type,
-            status,
-            file_url,
-            file_name
-          )
-        `)
-        .eq('team_id', teamId)
-        .order('created_at', { ascending: false })
-        .range((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit - 1);
+    fetchLoads: async (teamId: string) => {
+      set({ isLoading: true, error: null });
+      try {
+        const { filters, pagination } = get();
 
-      // Apply filters
-      if (filters.status) {
-        query = query.eq('status', filters.status);
+        let query = supabase
+          .from('loads')
+          .select(`
+            *,
+            documents (
+              id,
+              type,
+              status,
+              file_url,
+              file_name
+            )
+          `)
+          .eq('team_id', teamId)
+          .order('created_at', { ascending: false })
+          .range((pagination.page - 1) * pagination.limit, pagination.page * pagination.limit - 1);
+
+        // Apply filters
+        if (filters.status) {
+          query = query.eq('status', filters.status);
+        }
+        if (filters.carrier_name) {
+          query = query.ilike('carrier_name', `%${filters.carrier_name}%`);
+        }
+        if (filters.load_number) {
+          query = query.ilike('load_number', `%${filters.load_number}%`);
+        }
+        if (filters.start_date) {
+          query = query.gte('delivery_date', filters.start_date);
+        }
+        if (filters.end_date) {
+          query = query.lte('delivery_date', filters.end_date);
+        }
+        if (filters.search) {
+          query = query.or(`load_number.ilike.%${filters.search}%,carrier_name.ilike.%${filters.search}%`);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        set({ loads: data || [], isLoading: false });
+      } catch (error) {
+        set({ 
+          error: getErrorMessage(error), 
+          isLoading: false 
+        });
       }
-      if (filters.carrier_name) {
-        query = query.ilike('carrier_name', `%${filters.carrier_name}%`);
-      }
-      if (filters.load_number) {
-        query = query.ilike('load_number', `%${filters.load_number}%`);
-      }
-      if (filters.start_date) {
-        query = query.gte('delivery_date', filters.start_date);
-      }
-      if (filters.end_date) {
-        query = query.lte('delivery_date', filters.end_date);
-      }
-      if (filters.search) {
-        query = query.or(`reference_number.ilike.%${filters.search}%,origin.ilike.%${filters.search}%,destination.ilike.%${filters.search}%`);
-      }
-
-      const { data, error } = await query.returns<Load[]>();
-
-      if (error) throw error;
-
-      set({ loads: data ?? [] });
-    } catch (error) {
-      set({ error: getErrorMessage(error) });
-    } finally {
-      set({ isLoading: false });
     }
-  }
-})); 
+  };
+}); 
