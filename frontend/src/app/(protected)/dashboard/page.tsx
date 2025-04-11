@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { BarChart, Clock, DollarSign, FileText, Package, Truck, Plus } from "lucide-react"
+import { BarChart, DollarSign, FileText, Package, Truck, Plus } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
